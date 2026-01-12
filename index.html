@@ -56,7 +56,7 @@ input:disabled{background:#eee}
   <label>Narration</label>
   <input type="text" id="narration" required>
 
-  <!-- ? PURPOSE -->
+  <!-- Purpose -->
   <label>Purpose</label>
   <select id="purpose">
     <option value="">Select</option>
@@ -73,7 +73,7 @@ input:disabled{background:#eee}
   </select>
   <input type="text" id="purpose_other" class="hidden" placeholder="Enter purpose">
 
-  <!-- ? SPENT FOR / EARNED BY -->
+  <!-- Spent for -->
   <label>Spent for / Earned by</label>
   <select id="spent_for">
     <option value="">Select</option>
@@ -121,6 +121,20 @@ input:disabled{background:#eee}
 <script>
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyCNqjN0LF98wlT6RRuoOlrPzqqsNZy6_OGZbAZv50TurOPGca5ddXgY2H-eL7Tw2oP/exec";
 
+/* DOM elements (FIXED) */
+const date = document.getElementById("date");
+const narration = document.getElementById("narration");
+const purpose = document.getElementById("purpose");
+const purposeOther = document.getElementById("purpose_other");
+const spentFor = document.getElementById("spent_for");
+const spentForOther = document.getElementById("spent_for_other");
+const flow = document.getElementById("flow");
+const trtype = document.getElementById("trtype");
+const accountBlock = document.getElementById("accountBlock");
+const account = document.getElementById("account");
+const withdrawn = document.getElementById("withdrawn");
+const deposit = document.getElementById("deposit");
+
 /* Accounts */
 const bankAccounts = ["FI","HDFC Old","HDFC New","ICICI","RBL","Kotak","SBI","IndusInd"];
 const creditCards = [
@@ -133,26 +147,14 @@ const creditCards = [
   "SBI BPCL","Standard Chartered"
 ];
 
-const trtype = document.getElementById("trtype");
-const accountBlock = document.getElementById("accountBlock");
-const account = document.getElementById("account");
-const flow = document.getElementById("flow");
-const withdrawn = document.getElementById("withdrawn");
-const deposit = document.getElementById("deposit");
+/* Purpose / Spent-for */
+purpose.addEventListener("change", () =>
+  purposeOther.classList.toggle("hidden", purpose.value !== "Other")
+);
 
-/* Purpose & Spent-for logic */
-const purpose = document.getElementById("purpose");
-const purposeOther = document.getElementById("purpose_other");
-const spentFor = document.getElementById("spent_for");
-const spentForOther = document.getElementById("spent_for_other");
-
-purpose.addEventListener("change", () => {
-  purposeOther.classList.toggle("hidden", purpose.value !== "Other");
-});
-
-spentFor.addEventListener("change", () => {
-  spentForOther.classList.toggle("hidden", spentFor.value !== "Other");
-});
+spentFor.addEventListener("change", () =>
+  spentForOther.classList.toggle("hidden", spentFor.value !== "Other")
+);
 
 /* Account dropdown */
 trtype.addEventListener("change", () => {
@@ -166,7 +168,7 @@ trtype.addEventListener("change", () => {
   list.forEach(a => account.add(new Option(a, a)));
 });
 
-/* Enable / Disable amount fields */
+/* Amount enable/disable */
 flow.addEventListener("change", () => {
   if (flow.value === "withdraw") {
     withdrawn.disabled = false;
@@ -209,13 +211,12 @@ document.getElementById("txnForm").addEventListener("submit", e => {
     purposeOther.classList.add("hidden");
     spentForOther.classList.add("hidden");
   })
-  .catch(() => alert("Error saving transaction"));
+  .catch(err => {
+    console.error(err);
+    alert("Error saving transaction");
+  });
 });
 </script>
 
 </body>
 </html>
-
-
-
-
