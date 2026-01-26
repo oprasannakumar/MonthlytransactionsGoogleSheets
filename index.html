@@ -196,28 +196,36 @@ input[type="date"]:disabled{
 <label>Purpose</label>
 <select id="purpose">
   <option value="">Select</option>
-  <option>Groceries</option>
-  <option>Food</option>
-  <option>Travel</option>
-  <option>Rent</option>
-  <option>Utilities</option>
-  <option>Shopping</option>
-  <option>Medical</option>
+  <option>Business</option>
+  <option>Donation</option>
   <option>Entertainment</option>
-  <option>Investment</option>
+  <option>Food</option>
+  <option>Grocery</option>
+  <option>Hospital</option>
+  <option>House</option>
+  <option>Income</option>
+  <option>Insurance</option>
+  <option>Loan</option>
+  <option>Medicines</option>
+  <option>Miscellaneous</option>
+  <option>Puja</option>
+  <option>Tax</option>
+  <option>Travelling</option>
+  <option>Utility Bills</option>
+  <option>Water</option>
   <option>Other</option>
 </select>
 <input id="purpose_other" class="hidden" placeholder="Enter purpose">
 
-<label>Spent for / Earned by</label>
-<select id="spent_for">
+<label>Spent For / Earned By</label>
+<select id="spentFor">
   <option value="">Select</option>
   <option>Self</option>
+  <option>House</option>
+  <option>Mother</option>
+  <option>Father</option>
   <option>Family</option>
-  <option>Wife</option>
-  <option>Parents</option>
-  <option>Friends</option>
-  <option>Office</option>
+  <option>Vasavi</option>
   <option>Other</option>
 </select>
 <input id="spent_for_other" class="hidden" placeholder="Enter name">
@@ -285,8 +293,14 @@ const cashBlock=document.getElementById("cashBlock");
 const cashGrid=document.getElementById("cashGrid");
 
 /* Data */
-const bankAccounts=["FI","HDFC Old","HDFC New","ICICI","RBL","Kotak","SBI","IndusInd"];
-const creditCards=["Axis Flipkart","Axis MyZone","Axis Neo"];
+const bankAccounts=["FI","HDFC Old","HDFC New","ICICI","IndusInd","Kotak","RBL","SBI"];
+const creditCards=["Axis Flipkart","Axis MyZone","Axis Neo",
+  "HDFC PhonePe","HDFC Tata Neu","HDFC Millennia",
+  "HSBC","IDFC First Millenia",
+  "ICICI Amazon","ICICI Coral","ICICI Expressions",
+  "Indusind Plat Aura EDGE","Indusind Legend",
+  "Yes Finbooster","Kotak League","Kotak Image",
+  "SBI BPCL","Standard Chartered"];
 const denoms=[500,200,100,50,20,10,5,2,1];
 
 /* Helpers */
@@ -396,4 +410,5 @@ document.getElementById("txnForm").addEventListener("submit",e=>{
 
 </body>
 </html>
+
 
