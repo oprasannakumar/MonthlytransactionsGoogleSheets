@@ -29,7 +29,11 @@ form{
   box-shadow:0 18px 40px rgba(0,0,0,.08);
 }
 
-h3{text-align:center;margin-bottom:16px;font-weight:600}
+h3{
+  text-align:center;
+  margin-bottom:16px;
+  font-weight:600;
+}
 
 label{
   font-size:13px;
@@ -39,7 +43,7 @@ label{
   color:#374151;
 }
 
-input,select,button{
+input, select, button{
   width:100%;
   height:var(--h);
   margin-top:6px;
@@ -50,7 +54,7 @@ input,select,button{
   font-size:14px;
 }
 
-input:focus,select:focus{
+input:focus, select:focus{
   outline:none;
   border-color:#6366f1;
   box-shadow:0 0 0 3px rgba(99,102,241,.15);
@@ -70,39 +74,45 @@ button:hover{background:#4f46e5}
 .hidden{display:none}
 input:disabled{background:#f3f4f6}
 
-/* Cash cards */
+/* ===== Cash cards ===== */
 .cash-wrapper{
   border:1px solid #e5e7eb;
   border-radius:16px;
   padding:16px;
   margin-top:16px;
 }
+
 .cash-title{
   font-weight:600;
   color:#2563eb;
   margin-bottom:12px;
 }
+
 .cash-grid{
   display:grid;
   grid-template-columns:repeat(3,1fr);
   gap:14px;
 }
+
 .cash-card{
   border:1px solid #e5e7eb;
   border-radius:14px;
   padding:12px;
   text-align:center;
 }
+
 .cash-card span{
   display:block;
   font-weight:600;
   margin-bottom:8px;
 }
+
 .cash-card input{
   width:100%;
   height:40px;
   text-align:center;
-}/* ===== Mobile dropdown fix ===== */
+}
+/* ===== Mobile dropdown fix ===== */
 select{
   background-color:#ffffff !important;
   color:#111827;
@@ -178,204 +188,211 @@ input[type="date"]:disabled{
   color:#6b7280;
 }
 
-
 </style>
 </head>
 
 <body>
 
 <form id="txnForm">
-<h3>Monthly Transaction</h3>
+  <h3>Monthly Transaction</h3>
 
-<label>Date</label>
-<input type="date" id="date" required>
+  <label>Date</label>
+  <input type="date" id="date" required>
 
-<label>Narration</label>
-<input type="text" id="narration" required>
+  <label>Narration</label>
+  <input type="text" id="narration" required>
 
-<label>Purpose</label>
-<select id="purpose">
-  <option value="">Select</option>
-  <option>Business</option>
-  <option>Donation</option>
-  <option>Entertainment</option>
-  <option>Food</option>
-  <option>Grocery</option>
-  <option>Hospital</option>
-  <option>House</option>
-  <option>Income</option>
-  <option>Insurance</option>
-  <option>Loan</option>
-  <option>Medicines</option>
-  <option>Miscellaneous</option>
-  <option>Puja</option>
-  <option>Tax</option>
-  <option>Travelling</option>
-  <option>Utility Bills</option>
-  <option>Water</option>
-  <option>Other</option>
-</select>
-<input id="purpose_other" class="hidden" placeholder="Enter purpose">
+  <label>Purpose</label>
+  <select id="purpose">
+    <option value="">Select</option>
+    <option>Business</option>
+    <option>Donation</option>
+    <option>Entertainment</option>
+    <option>Food</option>
+    <option>Grocery</option>
+    <option>Hospital</option>
+    <option>House</option>
+    <option>Income</option>
+    <option>Insurance</option>
+    <option>Loan</option>
+    <option>Medicines</option>
+    <option>Miscellaneous</option>
+    <option>Puja</option>
+    <option>Tax</option>
+    <option>Travelling</option>
+    <option>Utility Bills</option>
+    <option>Water</option>
+    <option>Other</option>
+  </select>
+  <input id="purpose_other" class="hidden" placeholder="Enter purpose">
 
-<label>Spent For / Earned By</label>
-<select id="spentFor">
-  <option value="">Select</option>
-  <option>Self</option>
-  <option>House</option>
-  <option>Mother</option>
-  <option>Father</option>
-  <option>Family</option>
-  <option>Vasavi</option>
-  <option>Other</option>
-</select>
-<input id="spent_for_other" class="hidden" placeholder="Enter name">
+  <label>Spent for / Earned by</label>
+  <select id="spent_for">
+    <option value="">Select</option>
+    <option>Self</option>
+    <option>House</option>
+    <option>Mother</option>
+    <option>Father</option>
+    <option>Family</option>
+    <option>Vasavi</option>
+    <option>Other</option>  </select>
+  <input id="spent_for_other" class="hidden" placeholder="Enter name">
 
-<label>Transaction Flow</label>
-<select id="flow" required>
-  <option value="">Select</option>
-  <option value="withdraw">Withdraw</option>
-  <option value="deposit">Deposit</option>
-</select>
+  <label>Transaction Flow</label>
+  <select id="flow" required>
+    <option value="">Select</option>
+    <option value="withdraw">Withdraw</option>
+    <option value="deposit">Deposit</option>
+  </select>
 
-<label>Transaction Type</label>
-<select id="trtype" required>
-  <option value="">Select</option>
-  <option value="CASH">Cash</option>
-  <option value="DEBIT">Debit</option>
-  <option value="UPI">UPI</option>
-  <option value="NET">Net</option>
-  <option value="CREDIT">Credit</option>
-</select>
+  <label>Transaction Type</label>
+  <select id="trtype" required>
+    <option value="">Select</option>
+    <option value="CASH">Cash</option>
+    <option value="DEBIT">Debit</option>
+    <option value="UPI">UPI</option>
+    <option value="NET">Net</option>
+    <option value="CREDIT">Credit</option>
+  </select>
 
-<div id="accountBlock" class="hidden">
-  <label>Account</label>
-  <select id="account"></select>
-</div>
+  <div id="accountBlock" class="hidden">
+    <label>Account</label>
+    <select id="account"></select>
+  </div>
 
-<!-- CASH -->
-<div id="cashBlock" class="hidden cash-wrapper">
-  <div class="cash-title">Cash Denominations</div>
-  <div class="cash-grid" id="cashGrid"></div>
-</div>
+  <!-- CASH -->
+  <div id="cashBlock" class="hidden cash-wrapper">
+    <div class="cash-title">Cash Denominations</div>
+    <div class="cash-grid" id="cashGrid"></div>
+  </div>
 
-<div id="withdrawBlock" class="hidden">
-  <label>Withdrawn Amount</label>
-  <input type="number" id="withdrawn">
-</div>
+  <div id="withdrawBlock" class="hidden">
+    <label>Withdrawn Amount</label>
+    <input type="number" id="withdrawn">
+  </div>
 
-<div id="depositBlock" class="hidden">
-  <label>Deposit Amount</label>
-  <input type="number" id="deposit">
-</div>
+  <div id="depositBlock" class="hidden">
+    <label>Deposit Amount</label>
+    <input type="number" id="deposit">
+  </div>
 
-<button type="submit">Save Transaction</button>
+  <button type="submit">Save Transaction</button>
 </form>
 
 <script>
-const SCRIPT_URL="https://script.google.com/macros/s/AKfycbw319yHFXlAOwCs4N2YHOXcrjxJ9IwW3Bb13SRx0Q94JF3PRWDYQNthVddgVwfb6hZ9/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw319yHFXlAOwCs4N2YHOXcrjxJ9IwW3Bb13SRx0Q94JF3PRWDYQNthVddgVwfb6hZ9/exec";
 
-/* DOM */
+/* ===== DOM ===== */
 const date = document.getElementById("date");
 const narration = document.getElementById("narration");
-const purpose=document.getElementById("purpose");
-const purposeOther=document.getElementById("purpose_other");
-const spentFor=document.getElementById("spent_for");
-const spentForOther=document.getElementById("spent_for_other");
-const flow=document.getElementById("flow");
-const trtype=document.getElementById("trtype");
-const accountBlock=document.getElementById("accountBlock");
-const account=document.getElementById("account");
-const withdrawBlock=document.getElementById("withdrawBlock");
-const depositBlock=document.getElementById("depositBlock");
-const withdrawn=document.getElementById("withdrawn");
-const deposit=document.getElementById("deposit");
-const cashBlock=document.getElementById("cashBlock");
-const cashGrid=document.getElementById("cashGrid");
+const purpose = document.getElementById("purpose");
+const purposeOther = document.getElementById("purpose_other");
+const spentFor = document.getElementById("spent_for");
+const spentForOther = document.getElementById("spent_for_other");
+const flow = document.getElementById("flow");
+const trtype = document.getElementById("trtype");
+const accountBlock = document.getElementById("accountBlock");
+const account = document.getElementById("account");
+const withdrawBlock = document.getElementById("withdrawBlock");
+const depositBlock = document.getElementById("depositBlock");
+const withdrawn = document.getElementById("withdrawn");
+const deposit = document.getElementById("deposit");
+const cashBlock = document.getElementById("cashBlock");
+const cashGrid = document.getElementById("cashGrid");
 
-/* Data */
-const bankAccounts=["FI","HDFC Old","HDFC New","ICICI","IndusInd","Kotak","RBL","SBI"];
-const creditCards=["Axis Flipkart","Axis MyZone","Axis Neo",
+/* ===== Data ===== */
+const bankAccounts = ["FI","HDFC Old","HDFC New","ICICI","IndusInd","Kotak","RBL","SBI"];
+const creditCards = [ "Axis Flipkart","Axis MyZone","Axis Neo",
   "HDFC PhonePe","HDFC Tata Neu","HDFC Millennia",
   "HSBC","IDFC First Millenia",
   "ICICI Amazon","ICICI Coral","ICICI Expressions",
   "Indusind Plat Aura EDGE","Indusind Legend",
   "Yes Finbooster","Kotak League","Kotak Image",
   "SBI BPCL","Standard Chartered"];
-const denoms=[500,200,100,50,20,10,5,2,1];
+const denoms = [500,200,100,50,20,10,5,2,1];
 
-/* Helpers */
-function setTodayDate(){
-  date.value = new Date().toISOString().split("T")[0];
-}
-setTodayDate();
+/* ===== Helpers ===== */
+date.value = new Date().toISOString().split("T")[0];
 
-/* Other logic */
-purpose.addEventListener("change",()=>purposeOther.classList.toggle("hidden",purpose.value!=="Other"));
-spentFor.addEventListener("change",()=>spentForOther.classList.toggle("hidden",spentFor.value!=="Other"));
+purpose.addEventListener("change", () =>
+  purposeOther.classList.toggle("hidden", purpose.value !== "Other")
+);
 
-trtype.addEventListener("change",()=>{
-  account.innerHTML="";
-  cashGrid.innerHTML="";
+spentFor.addEventListener("change", () =>
+  spentForOther.classList.toggle("hidden", spentFor.value !== "Other")
+);
+
+trtype.addEventListener("change", () => {
+  account.innerHTML = "";
+  cashGrid.innerHTML = "";
   cashBlock.classList.add("hidden");
-  withdrawn.value=""; deposit.value="";
-  withdrawn.disabled=false; deposit.disabled=false;
 
-  if(trtype.value==="cash"){
+  withdrawn.value = "";
+  deposit.value = "";
+  withdrawn.disabled = false;
+  deposit.disabled = false;
+
+  if (trtype.value === "CASH") {
     accountBlock.classList.add("hidden");
     cashBlock.classList.remove("hidden");
-    withdrawn.disabled=true;
-    deposit.disabled=true;
+    withdrawn.disabled = true;
+    deposit.disabled = true;
     renderCash();
     return;
   }
 
   accountBlock.classList.remove("hidden");
-  (trtype.value==="credit"?creditCards:bankAccounts).forEach(a=>account.add(new Option(a,a)));
+  (trtype.value === "CREDIT" ? creditCards : bankAccounts)
+    .forEach(a => account.add(new Option(a, a)));
 });
 
-flow.addEventListener("change",()=>{
+flow.addEventListener("change", () => {
   withdrawBlock.classList.add("hidden");
   depositBlock.classList.add("hidden");
 
-  if(flow.value==="withdraw") withdrawBlock.classList.remove("hidden");
-  if(flow.value==="deposit") depositBlock.classList.remove("hidden");
+  if (flow.value === "withdraw") withdrawBlock.classList.remove("hidden");
+  if (flow.value === "deposit") depositBlock.classList.remove("hidden");
 });
 
+/* ===== Cash Logic ===== */
 function renderCash(){
-  cashGrid.innerHTML="";
-  denoms.forEach(v=>{
-    const c=document.createElement("div");
-    c.className="cash-card";
-    c.innerHTML=`<span>₹${v}</span><input type="number" min="0" value="0" data-val="${v}">`;
-    c.querySelector("input").addEventListener("input",calcCash);
+  cashGrid.innerHTML = "";
+  denoms.forEach(v => {
+    const c = document.createElement("div");
+    c.className = "cash-card";
+    c.innerHTML = `
+      <span>₹${v}</span>
+      <input type="number" min="0" value="0" data-val="${v}">
+    `;
+    c.querySelector("input").addEventListener("input", calcCash);
     cashGrid.appendChild(c);
   });
 }
 
 function calcCash(){
-  let total=0;
-  document.querySelectorAll("#cashGrid input").forEach(i=>{
-    total+=Number(i.value||0)*Number(i.dataset.val);
+  let total = 0;
+  document.querySelectorAll("#cashGrid input").forEach(i => {
+    total += Number(i.value || 0) * Number(i.dataset.val);
   });
-  if(flow.value==="withdraw") withdrawn.value=total;
-  if(flow.value==="deposit") deposit.value=total;
+  if (flow.value === "withdraw") withdrawn.value = total;
+  if (flow.value === "deposit") deposit.value = total;
 }
 
 function getDenominationData(){
-  const data={};
-  document.querySelectorAll("#cashGrid input").forEach(i=>{
-    data["d"+i.dataset.val]=i.value||0;
+  const data = {};
+  document.querySelectorAll("#cashGrid input").forEach(i => {
+    data["d" + i.dataset.val] = i.value || 0;
   });
   return data;
 }
 
-/* Submit */
-document.getElementById("txnForm").addEventListener("submit",e=>{
+/* ===== Submit ===== */
+document.getElementById("txnForm").addEventListener("submit", e => {
   e.preventDefault();
 
-  const denomData = trtype.value==="cash"?getDenominationData():{};
+  const denomData = trtype.value === "cash" ? getDenominationData() : {};
 
-  const payload=new URLSearchParams({
+  const payload = new URLSearchParams({
     category:"monthly transactions",
     date:date.value,
     narration:narration.value,
@@ -402,7 +419,7 @@ document.getElementById("txnForm").addEventListener("submit",e=>{
     depositBlock.classList.add("hidden");
     purposeOther.classList.add("hidden");
     spentForOther.classList.add("hidden");
-    setTodayDate();
+    date.value = new Date().toISOString().split("T")[0];
   })
   .catch(()=>alert("Error saving transaction"));
 });
@@ -410,5 +427,3 @@ document.getElementById("txnForm").addEventListener("submit",e=>{
 
 </body>
 </html>
-
-
