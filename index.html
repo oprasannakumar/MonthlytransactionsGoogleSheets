@@ -268,19 +268,19 @@ input[type="date"]:disabled{
 
   <div id="withdrawBlock" class="hidden">
     <label>Withdrawn Amount</label>
-    <input type="number" id="withdrawn">
+    <input type="number" id="withdrawn" step="0.01">
   </div>
 
   <div id="depositBlock" class="hidden">
     <label>Deposit Amount</label>
-    <input type="number" id="deposit">
+    <input type="number" id="deposit" step="0.01">
   </div>
 
   <button type="submit">Save Transaction</button>
 </form>
 
 <script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw319yHFXlAOwCs4N2YHOXcrjxJ9IwW3Bb13SRx0Q94JF3PRWDYQNthVddgVwfb6hZ9/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyf3m0znn9DDB-GWwCICXwWqH7Si6g9FCX6tDgusMYnUQLhfI8EQGHZ-1eNaxTb8Gs/exec";
 
 /* ===== DOM ===== */
 const date = document.getElementById("date");
@@ -390,27 +390,37 @@ function getDenominationData(){
 document.getElementById("txnForm").addEventListener("submit", e => {
   e.preventDefault();
 
-  const denomData = trtype.value === "cash" ? getDenominationData() : {};
+  if (trtype.value === "CASH" && !flow.value) {
+    alert("Please select Transaction Flow");
+    return;
+  }
 
-  const payload = new URLSearchParams({
-    category:"monthly transactions",
-    date:date.value,
-    narration:narration.value,
-    purpose:purpose.value==="Other"?purposeOther.value:purpose.value,
-    spent_for:spentFor.value==="Other"?spentForOther.value:spentFor.value,
-    trtype:trtype.value,
-    from_to:trtype.value==="cash"?"Cash":account.value,
-    withdrawn:withdrawn.value,
-    deposit:deposit.value,
-    ...denomData
-  });
+  const params = new URLSearchParams();
 
-  fetch(SCRIPT_URL,{
-    method:"POST",
-    headers:{"Content-Type":"application/x-www-form-urlencoded"},
-    body:payload
+  // Core fields
+  params.append("category", "monthly transactions");
+  params.append("date", date.value);
+  params.append("narration", narration.value);
+  params.append("purpose", purpose.value === "Other" ? purposeOther.value : purpose.value);
+  params.append("spent_for", spentFor.value === "Other" ? spentForOther.value : spentFor.value);
+  params.append("trtype", trtype.value);
+  params.append("from_to", trtype.value === "CASH" ? "Cash" : account.value);
+  params.append("withdrawn", withdrawn.value || 0);
+  params.append("deposit", deposit.value || 0);
+
+  // ✅ Append denominations SAFELY
+  if (trtype.value === "CASH") {
+    document.querySelectorAll("#cashGrid input").forEach(i => {
+      params.append("d" + i.dataset.val, i.value || 0);
+    });
+  }
+
+  fetch(SCRIPT_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: params
   })
-  .then(()=>{
+  .then(() => {
     alert("Transaction saved successfully");
     e.target.reset();
     accountBlock.classList.add("hidden");
@@ -421,9 +431,10 @@ document.getElementById("txnForm").addEventListener("submit", e => {
     spentForOther.classList.add("hidden");
     date.value = new Date().toISOString().split("T")[0];
   })
-  .catch(()=>alert("Error saving transaction"));
+  .catch(() => alert("Error saving transaction"));
 });
 </script>
 
 </body>
 </html>
+
