@@ -153,6 +153,13 @@ input:disabled{background:#f3f4f6}
 <script>
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwInKOM9oS6ZimUafm-J5i-6rINe0aLvfJ_5BRP_jS_gKagApXbnxEFKu5rikhd3FnV/exec";
 
+  /* Date formatter */
+function formatDate(dateStr){
+  const d = new Date(dateStr);
+  const day = String(d.getDate()).padStart(2,'0');
+  const month = d.toLocaleString('en-US',{month:'short'});
+  return `${day}-${month}-${d.getFullYear()}`;
+}
 /* DOM */
 const date = document.getElementById("date");
 const narration = document.getElementById("narration");
@@ -248,4 +255,5 @@ document.getElementById("txnForm").addEventListener("submit",e=>{
 
 </body>
 </html>
+
 
