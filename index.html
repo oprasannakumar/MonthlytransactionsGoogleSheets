@@ -6,42 +6,71 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
 body{
-  font-family: Arial, sans-serif;
-  background:#f5f5f5;
+  font-family:'Inter', sans-serif;
+  background:linear-gradient(135deg,#eef2f7,#f9fafb);
   padding:20px;
 }
+
 form{
-  background:#fff;
-  max-width:420px;
+  background:#ffffff;
+  max-width:440px;
   margin:auto;
-  padding:20px;
-  border-radius:8px;
-  box-shadow:0 0 10px rgba(0,0,0,.1);
+  padding:22px;
+  border-radius:16px;
+  box-shadow:0 18px 40px rgba(0,0,0,.08);
 }
+
+h3{
+  text-align:center;
+  margin-bottom:16px;
+  font-weight:600;
+}
+
 label{
-  font-weight:bold;
+  font-size:13px;
+  font-weight:600;
   display:block;
-  margin-top:12px;
+  margin-top:14px;
+  color:#374151;
 }
-input, select, button{
+
+input, select{
   width:100%;
-  height:42px;
+  height:44px;
   margin-top:6px;
-  padding:8px;
+  padding:0 12px;
   box-sizing:border-box;
+  border-radius:10px;
+  border:1px solid #d1d5db;
+  font-size:14px;
 }
+
+input:focus, select:focus{
+  outline:none;
+  border-color:#6366f1;
+  box-shadow:0 0 0 3px rgba(99,102,241,.15);
+}
+
 button{
-  background:#007bff;
+  width:100%;
+  height:46px;
+  background:#6366f1;
   color:#fff;
   border:none;
-  border-radius:4px;
-  margin-top:16px;
+  border-radius:12px;
+  margin-top:22px;
+  font-size:15px;
+  font-weight:600;
   cursor:pointer;
 }
-button:hover{background:#0056b3}
+
+button:hover{background:#4f46e5}
+
 .hidden{display:none}
-input:disabled{background:#eee}
+input:disabled{background:#f3f4f6}
 </style>
 </head>
 
@@ -56,7 +85,6 @@ input:disabled{background:#eee}
   <label>Narration</label>
   <input type="text" id="narration" required>
 
-  <!-- Purpose -->
   <label>Purpose</label>
   <select id="purpose">
     <option value="">Select</option>
@@ -73,7 +101,6 @@ input:disabled{background:#eee}
   </select>
   <input type="text" id="purpose_other" class="hidden" placeholder="Enter purpose">
 
-  <!-- Spent for -->
   <label>Spent for / Earned by</label>
   <select id="spent_for">
     <option value="">Select</option>
@@ -104,16 +131,21 @@ input:disabled{background:#eee}
     <option value="credit">Credit</option>
   </select>
 
-  <div id="accountBlock">
+  <div id="accountBlock" class="hidden">
     <label>Account</label>
     <select id="account"></select>
   </div>
 
-  <label>Withdrawn Amount</label>
-  <input type="number" id="withdrawn" step="0.01">
+  <!-- Amounts (HIDDEN INITIALLY) -->
+  <div id="withdrawBlock" class="hidden">
+    <label>Withdrawn Amount</label>
+    <input type="number" id="withdrawn" step="0.01">
+  </div>
 
-  <label>Deposit Amount</label>
-  <input type="number" id="deposit" step="0.01">
+  <div id="depositBlock" class="hidden">
+    <label>Deposit Amount</label>
+    <input type="number" id="deposit" step="0.01">
+  </div>
 
   <button type="submit">Save Transaction</button>
 </form>
@@ -121,7 +153,7 @@ input:disabled{background:#eee}
 <script>
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwZjdu1k_-4r-zywWDlPAdNtDFYvTErRosIaXebLD6pUSW0jbDoGXvvCBazbGzNWbpY/exec";
 
-/* DOM elements (FIXED) */
+/* DOM */
 const date = document.getElementById("date");
 const narration = document.getElementById("narration");
 const purpose = document.getElementById("purpose");
@@ -132,89 +164,85 @@ const flow = document.getElementById("flow");
 const trtype = document.getElementById("trtype");
 const accountBlock = document.getElementById("accountBlock");
 const account = document.getElementById("account");
+const withdrawBlock = document.getElementById("withdrawBlock");
+const depositBlock = document.getElementById("depositBlock");
 const withdrawn = document.getElementById("withdrawn");
 const deposit = document.getElementById("deposit");
 
 /* Accounts */
 const bankAccounts = ["FI","HDFC Old","HDFC New","ICICI","RBL","Kotak","SBI","IndusInd"];
 const creditCards = [
-  "Axis Flipkart","Axis MyZone","Axis Neo",
-  "HDFC PhonePe","HDFC Tata Neu","HDFC Millennia",
-  "HSBC","IDFC First Millenia",
-  "ICICI Amazon","ICICI Coral","ICICI Expressions",
-  "Indusind Plat Aura EDGE","Indusind Legend",
-  "Yes Finbooster","Kotak League","Kotak Image",
-  "SBI BPCL","Standard Chartered"
+  "Axis Flipkart","Axis MyZone","Axis Neo","HDFC PhonePe","HDFC Tata Neu",
+  "HDFC Millennia","HSBC","IDFC First Millenia","ICICI Amazon","ICICI Coral",
+  "ICICI Expressions","Indusind Plat Aura EDGE","Indusind Legend",
+  "Yes Finbooster","Kotak League","Kotak Image","SBI BPCL","Standard Chartered"
 ];
 
-/* Purpose / Spent-for */
-purpose.addEventListener("change", () =>
-  purposeOther.classList.toggle("hidden", purpose.value !== "Other")
-);
+/* Other logic */
+purpose.addEventListener("change",()=>purposeOther.classList.toggle("hidden",purpose.value!=="Other"));
+spentFor.addEventListener("change",()=>spentForOther.classList.toggle("hidden",spentFor.value!=="Other"));
 
-spentFor.addEventListener("change", () =>
-  spentForOther.classList.toggle("hidden", spentFor.value !== "Other")
-);
-
-/* Account dropdown */
-trtype.addEventListener("change", () => {
-  account.innerHTML = "";
-  if (trtype.value === "cash") {
-    accountBlock.classList.add("hidden");
-    return;
-  }
+/* Account logic */
+trtype.addEventListener("change",()=>{
+  account.innerHTML="";
+  if(trtype.value==="cash"){accountBlock.classList.add("hidden");return;}
   accountBlock.classList.remove("hidden");
-  const list = trtype.value === "credit" ? creditCards : bankAccounts;
-  list.forEach(a => account.add(new Option(a, a)));
+  const list=trtype.value==="credit"?creditCards:bankAccounts;
+  list.forEach(a=>account.add(new Option(a,a)));
 });
 
-/* Amount enable/disable */
-flow.addEventListener("change", () => {
-  if (flow.value === "withdraw") {
-    withdrawn.disabled = false;
-    deposit.value = "";
-    deposit.disabled = true;
-  } else if (flow.value === "deposit") {
-    deposit.disabled = false;
-    withdrawn.value = "";
-    withdrawn.disabled = true;
+/* ✅ Amount visibility FIX */
+flow.addEventListener("change",()=>{
+  withdrawBlock.classList.add("hidden");
+  depositBlock.classList.add("hidden");
+  withdrawn.value="";
+  deposit.value="";
+  withdrawn.disabled=false;
+  deposit.disabled=false;
+
+  if(flow.value==="withdraw"){
+    withdrawBlock.classList.remove("hidden");
+    deposit.disabled=true;
+  }
+
+  if(flow.value==="deposit"){
+    depositBlock.classList.remove("hidden");
+    withdrawn.disabled=true;
   }
 });
 
 /* Submit */
-document.getElementById("txnForm").addEventListener("submit", e => {
+document.getElementById("txnForm").addEventListener("submit",e=>{
   e.preventDefault();
 
-  const payload = new URLSearchParams({
-    category: "monthly transactions",
-    date: date.value,
-    narration: narration.value,
-    purpose: purpose.value === "Other" ? purposeOther.value : purpose.value,
-    spent_for: spentFor.value === "Other" ? spentForOther.value : spentFor.value,
-    trtype: trtype.value,
-    from_to: trtype.value === "cash" ? "Cash" : account.value,
-    withdrawn: withdrawn.value,
-    deposit: deposit.value
+  if(trtype.value!=="cash" && !account.value){
+    alert("Please select an account");
+    return;
+  }
+
+  const payload=new URLSearchParams({
+    category:"monthly transactions",
+    date:date.value,
+    narration:narration.value,
+    purpose:purpose.value==="Other"?purposeOther.value:purpose.value,
+    spent_for:spentFor.value==="Other"?spentForOther.value:spentFor.value,
+    trtype:trtype.value,
+    from_to:trtype.value==="cash"?"Cash":account.value,
+    withdrawn:withdrawn.value,
+    deposit:deposit.value
   });
 
-  fetch(SCRIPT_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: payload
-  })
-  .then(() => {
+  fetch(SCRIPT_URL,{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:payload})
+  .then(()=>{
     alert("Transaction saved successfully");
     e.target.reset();
-    withdrawn.disabled = false;
-    deposit.disabled = false;
     accountBlock.classList.add("hidden");
+    withdrawBlock.classList.add("hidden");
+    depositBlock.classList.add("hidden");
     purposeOther.classList.add("hidden");
     spentForOther.classList.add("hidden");
   })
-  .catch(err => {
-    console.error(err);
-    alert("Error saving transaction");
-  });
+  .catch(()=>alert("Error saving transaction"));
 });
 </script>
 
