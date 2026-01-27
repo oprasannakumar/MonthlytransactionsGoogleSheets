@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -332,14 +333,27 @@ body.dark button:hover{
   <div id="withdrawBlock" class="hidden">
     <label>Withdrawn Amount</label>
     <input type="number" id="withdrawn" step="0.01">
+    <div id="withdrawErr" style="font-size:12px;color:#dc2626;display:none">
+    Enter a valid withdrawn amount
+  </div>
   </div>
 
   <div id="depositBlock" class="hidden">
     <label>Deposit Amount</label>
     <input type="number" id="deposit" step="0.01">
+    <div id="depositErr" style="font-size:12px;color:#dc2626;display:none">
+    Enter a valid deposit amount
+  </div>
   </div>
 
   <button type="submit">Save Transaction</button>
+<div id="syncIndicator" class="hidden" style="
+  margin-top:10px;
+  font-size:12px;
+  color:#6b7280;
+  text-align:center
+"></div>
+
 </form>
 
 <script>
@@ -364,17 +378,117 @@ const withdrawn = document.getElementById("withdrawn");
 const deposit = document.getElementById("deposit");
 const cashBlock = document.getElementById("cashBlock");
 const cashGrid = document.getElementById("cashGrid");
+const withdrawErr = document.getElementById("withdrawErr");
+const depositErr = document.getElementById("depositErr");
+
+function showError(input, errBox, msg){
+  input.style.borderColor = "#dc2626";
+  errBox.textContent = msg;
+  errBox.style.display = "block";
+}
+
+function clearError(input, errBox){
+  input.style.borderColor = "";
+  errBox.style.display = "none";
+}
 
 /* ===== Data ===== */
 const bankAccounts = ["FI","HDFC Old","HDFC New","ICICI","IndusInd","Kotak","RBL","SBI"];
-const creditCards = [ "Axis Flipkart","Axis MyZone","Axis Neo",
+const creditCards = [
+  "Axis Flipkart","Axis MyZone","Axis Neo",
   "HDFC PhonePe","HDFC Tata Neu","HDFC Millennia",
   "HSBC","IDFC First Millenia",
   "ICICI Amazon","ICICI Coral","ICICI Expressions",
   "Indusind Plat Aura EDGE","Indusind Legend",
   "Yes Finbooster","Kotak League","Kotak Image",
-  "SBI BPCL","Standard Chartered"];
+  "SBI BPCL","Standard Chartered"
+];
 const denoms = [500,200,100,50,20,10,5,2,1];
+
+/* ===== IndexedDB (OFFLINE QUEUE) ===== */
+const DB_NAME = "txnQueueDB";
+const STORE_NAME = "queue";
+let db;
+
+/* Open DB */
+(function initDB(){
+  const req = indexedDB.open(DB_NAME, 1);
+  req.onupgradeneeded = e => {
+    e.target.result.createObjectStore(STORE_NAME, { autoIncrement: true });
+  };
+  req.onsuccess = e => {
+    db = e.target.result;
+  };
+})();
+
+function saveOffline(data){
+  if (!db) return;
+  const tx = db.transaction(STORE_NAME, "readwrite");
+  tx.objectStore(STORE_NAME).add(data);
+}
+
+function getAllOffline(){
+  return new Promise(resolve => {
+    if (!db) return resolve([]);
+    const tx = db.transaction(STORE_NAME, "readonly");
+    const req = tx.objectStore(STORE_NAME).getAll();
+    req.onsuccess = () => resolve(req.result || []);
+  });
+}
+const syncIndicator = document.getElementById("syncIndicator");
+
+async function updatePendingCount(){
+  const items = await getAllOffline();
+
+  if (!items.length) {
+    syncIndicator.classList.add("hidden");
+    return;
+  }
+
+  syncIndicator.textContent = `⏳ ${items.length} pending sync`;
+  syncIndicator.classList.remove("hidden");
+}
+
+function clearOffline(){
+  if (!db) return;
+  const tx = db.transaction(STORE_NAME, "readwrite");
+  tx.objectStore(STORE_NAME).clear();
+}
+
+/* Auto sync when back online */
+/* ===== OFFLINE SYNC ===== */
+async function syncOffline(){
+  if (!navigator.onLine) return;
+
+  const items = await getAllOffline();
+  if (!items.length) return;
+
+  syncIndicator.textContent = "🔄 Syncing offline data…";
+  syncIndicator.classList.remove("hidden");
+
+  for (let body of items) {
+    try {
+      await fetch(SCRIPT_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body
+      });
+    } catch {
+      updatePendingCount(); // restore pending count on failure
+      return;
+    }
+  }
+
+  clearOffline();
+  syncIndicator.classList.add("hidden");
+}
+document.addEventListener("DOMContentLoaded", () => {
+  updatePendingCount();
+  syncOffline();
+});
+window.addEventListener("online", syncOffline);
+
+
 
 /* ===== Helpers ===== */
 date.value = new Date().toISOString().split("T")[0];
@@ -386,6 +500,30 @@ purpose.addEventListener("change", () =>
 spentFor.addEventListener("change", () =>
   spentForOther.classList.toggle("hidden", spentFor.value !== "Other")
 );
+/* ===== Inline Amount Validation ===== */
+withdrawn.addEventListener("input", () => {
+  if (flow.value !== "withdraw") return;
+
+  if (Number(withdrawn.value) <= 0) {
+    showError(withdrawn, withdrawErr, "Withdraw amount must be greater than 0");
+  } else {
+    clearError(withdrawn, withdrawErr);
+    deposit.value = "";
+    clearError(deposit, depositErr);
+  }
+});
+
+deposit.addEventListener("input", () => {
+  if (flow.value !== "deposit") return;
+
+  if (Number(deposit.value) <= 0) {
+    showError(deposit, depositErr, "Deposit amount must be greater than 0");
+  } else {
+    clearError(deposit, depositErr);
+    withdrawn.value = "";
+    clearError(withdrawn, withdrawErr);
+  }
+});
 
 trtype.addEventListener("change", () => {
   account.innerHTML = "";
@@ -412,6 +550,8 @@ trtype.addEventListener("change", () => {
 });
 
 flow.addEventListener("change", () => {
+clearError(withdrawn, withdrawErr);
+clearError(deposit, depositErr);
   withdrawBlock.classList.add("hidden");
   depositBlock.classList.add("hidden");
 
@@ -419,7 +559,7 @@ flow.addEventListener("change", () => {
   if (flow.value === "deposit") depositBlock.classList.remove("hidden");
 });
 
-/* ===== Cash Logic ===== */
+/* ===== Cash Logic (UNCHANGED) ===== */
 function renderCash(){
   cashGrid.innerHTML = "";
   denoms.forEach(v => {
@@ -427,7 +567,7 @@ function renderCash(){
     c.className = "cash-card";
     c.innerHTML = `
       <span>₹${v}</span>
-      <input type="number" min="0" value="0" data-val="${v}">
+      <input type="number" data-val="${v}">
     `;
     c.querySelector("input").addEventListener("input", calcCash);
     cashGrid.appendChild(c);
@@ -442,41 +582,40 @@ function calcCash(){
   if (flow.value === "withdraw") withdrawn.value = total;
   if (flow.value === "deposit") deposit.value = total;
 }
+/* ===== FULL RESET (FIX) ===== */
+function fullReset(){
+  // Reset native form fields
+  document.getElementById("txnForm").reset();
 
-function getDenominationData(){
-  const data = {};
-  document.querySelectorAll("#cashGrid input").forEach(i => {
-    data["d" + i.dataset.val] = i.value || 0;
-  });
-  return data;
+  // Clear dynamic account options
+  account.innerHTML = "";
+
+  // Clear amounts explicitly
+  withdrawn.value = "";
+  deposit.value = "";
+
+  // Re-enable amount inputs
+  withdrawn.disabled = false;
+  deposit.disabled = false;
+
+  // Hide dynamic blocks
+  accountBlock.classList.add("hidden");
+  cashBlock.classList.add("hidden");
+  withdrawBlock.classList.add("hidden");
+  depositBlock.classList.add("hidden");
+  purposeOther.classList.add("hidden");
+  spentForOther.classList.add("hidden");
+
+  // Clear cash grid
+  cashGrid.innerHTML = "";
+
+  // Reset date to today
+  date.value = new Date().toISOString().split("T")[0];
 }
 
-/* ===== Submit ===== */
-document.getElementById("txnForm").addEventListener("submit", e => {
-  e.preventDefault();
-
-  /* 🔒 Prevent duplicate submit */
-  if (isSubmitting) return;
-
-  /* 🌐 Offline protection */
-  if (!navigator.onLine) {
-    alert("No internet connection. Transaction not saved.");
-    return;
-  }
-
-  isSubmitting = true;
-  submitBtn.disabled = true;
-  submitBtn.textContent = "Saving...";
-
-  if (trtype.value === "CASH" && !flow.value) {
-    alert("Please select Transaction Flow");
-    resetSubmitState();
-    return;
-  }
-
+/* ===== Build Params (REUSED) ===== */
+function buildParams(){
   const params = new URLSearchParams();
-
-  // Core fields
   params.append("category", "monthly transactions");
   params.append("date", date.value);
   params.append("narration", narration.value);
@@ -487,12 +626,53 @@ document.getElementById("txnForm").addEventListener("submit", e => {
   params.append("withdrawn", withdrawn.value || 0);
   params.append("deposit", deposit.value || 0);
 
-  // Cash denominations
   if (trtype.value === "CASH") {
     document.querySelectorAll("#cashGrid input").forEach(i => {
       params.append("d" + i.dataset.val, i.value || 0);
     });
   }
+  return params;
+}
+
+/* ===== Submit (OFFLINE SAFE) ===== */
+document.getElementById("txnForm").addEventListener("submit", e => {
+  e.preventDefault();
+  if (isSubmitting) return;
+
+  if (trtype.value === "CASH" && !flow.value) {
+    alert("Please select Transaction Flow");
+    return;
+  }
+/* ===== Final Amount Validation ===== */
+if (flow.value === "withdraw") {
+  if (Number(withdrawn.value) <= 0) {
+    showError(withdrawn, withdrawErr, "Enter valid withdrawn amount");
+    return;
+  }
+}
+
+if (flow.value === "deposit") {
+  if (Number(deposit.value) <= 0) {
+    showError(deposit, depositErr, "Enter valid deposit amount");
+    return;
+  }
+}
+
+  const params = buildParams();
+
+  /* OFFLINE → SAVE LOCALLY */
+ if (!navigator.onLine) {
+saveOffline(params.toString());
+updatePendingCount();   // ✅ ADD THIS
+alert("No internet. Transaction saved offline.");
+fullReset();
+return;
+}
+
+
+  isSubmitting = true;
+  submitBtn.disabled = true;
+  submitBtn.textContent = "Saving...";
 
   fetch(SCRIPT_URL, {
     method: "POST",
@@ -503,42 +683,27 @@ document.getElementById("txnForm").addEventListener("submit", e => {
     if (!res.ok) throw new Error("Network error");
     return res.text();
   })
-  .then(() => {
-    alert("Transaction saved successfully");
-    e.target.reset();
+ .then(() => {
+  alert("Transaction saved successfully");
+  fullReset();   // ✅ FIX
+})
 
-    accountBlock.classList.add("hidden");
-    cashBlock.classList.add("hidden");
-    withdrawBlock.classList.add("hidden");
-    depositBlock.classList.add("hidden");
-    purposeOther.classList.add("hidden");
-    spentForOther.classList.add("hidden");
-
-    date.value = new Date().toISOString().split("T")[0];
-  })
   .catch(() => {
     alert("Failed to save transaction. Please try again.");
   })
   .finally(() => {
-    resetSubmitState();
+    isSubmitting = false;
+    submitBtn.disabled = false;
+    submitBtn.textContent = "Save Transaction";
   });
 });
 
-/* 🔁 Reset submit state safely */
-function resetSubmitState(){
-  isSubmitting = false;
-  submitBtn.disabled = false;
-  submitBtn.textContent = "Save Transaction";
-}
-/* ===== Double Tap / Double Click Theme Toggle ===== */
+/* ===== Theme toggle (UNCHANGED) ===== */
 let lastTap = 0;
 const form = document.getElementById("txnForm");
-
 form.addEventListener("click", () => {
   const now = Date.now();
-  if (now - lastTap < 300) {
-    document.body.classList.toggle("dark");
-  }
+  if (now - lastTap < 300) document.body.classList.toggle("dark");
   lastTap = now;
 });
 </script>
