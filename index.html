@@ -250,6 +250,7 @@ body.dark button{
 body.dark button:hover{
   background:#6366f1;
 }
+
 </style>
 </head>
 
@@ -343,6 +344,8 @@ body.dark button:hover{
 
 <script>
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxrZ4MX7yWH2mdcDnsoDJ8k1vP-uHYdKV4kJn0I32a2W_6sV7D1iVu3oM-XUynDljeZ/exec";
+let isSubmitting = false;
+const submitBtn = document.querySelector('button[type="submit"]');
 
 /* ===== DOM ===== */
 const date = document.getElementById("date");
@@ -452,8 +455,22 @@ function getDenominationData(){
 document.getElementById("txnForm").addEventListener("submit", e => {
   e.preventDefault();
 
+  /* 🔒 Prevent duplicate submit */
+  if (isSubmitting) return;
+
+  /* 🌐 Offline protection */
+  if (!navigator.onLine) {
+    alert("No internet connection. Transaction not saved.");
+    return;
+  }
+
+  isSubmitting = true;
+  submitBtn.disabled = true;
+  submitBtn.textContent = "Saving...";
+
   if (trtype.value === "CASH" && !flow.value) {
     alert("Please select Transaction Flow");
+    resetSubmitState();
     return;
   }
 
@@ -470,7 +487,7 @@ document.getElementById("txnForm").addEventListener("submit", e => {
   params.append("withdrawn", withdrawn.value || 0);
   params.append("deposit", deposit.value || 0);
 
-  // ✅ Append denominations SAFELY
+  // Cash denominations
   if (trtype.value === "CASH") {
     document.querySelectorAll("#cashGrid input").forEach(i => {
       params.append("d" + i.dataset.val, i.value || 0);
@@ -482,19 +499,37 @@ document.getElementById("txnForm").addEventListener("submit", e => {
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: params
   })
+  .then(res => {
+    if (!res.ok) throw new Error("Network error");
+    return res.text();
+  })
   .then(() => {
     alert("Transaction saved successfully");
     e.target.reset();
+
     accountBlock.classList.add("hidden");
     cashBlock.classList.add("hidden");
     withdrawBlock.classList.add("hidden");
     depositBlock.classList.add("hidden");
     purposeOther.classList.add("hidden");
     spentForOther.classList.add("hidden");
+
     date.value = new Date().toISOString().split("T")[0];
   })
-  .catch(() => alert("Error saving transaction"));
+  .catch(() => {
+    alert("Failed to save transaction. Please try again.");
+  })
+  .finally(() => {
+    resetSubmitState();
+  });
 });
+
+/* 🔁 Reset submit state safely */
+function resetSubmitState(){
+  isSubmitting = false;
+  submitBtn.disabled = false;
+  submitBtn.textContent = "Save Transaction";
+}
 /* ===== Double Tap / Double Click Theme Toggle ===== */
 let lastTap = 0;
 const form = document.getElementById("txnForm");
@@ -510,5 +545,3 @@ form.addEventListener("click", () => {
 
 </body>
 </html>
-
-
