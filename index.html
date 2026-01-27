@@ -187,7 +187,69 @@ input[type="date"]:disabled{
   background-color:#ffffff !important;
   color:#6b7280;
 }
+/* ===== DARK MODE ===== */
+body.dark{
+  background:linear-gradient(135deg,#0f172a,#020617);
+}
 
+body.dark form{
+  background:#020617;
+  color:#e5e7eb;
+}
+
+body.dark h3,
+body.dark label{
+  color:#e5e7eb;
+}
+
+body.dark input,
+body.dark select{
+  background-color:#020617 !important;
+  color:#e5e7eb !important;
+  border-color:#334155;
+}
+
+body.dark input:focus,
+body.dark select:focus{
+  border-color:#818cf8;
+  box-shadow:0 0 0 3px rgba(129,140,248,.25);
+}
+
+body.dark input::placeholder{
+  color:#94a3b8;
+}
+
+/* Date picker text */
+body.dark input[type="date"]::-webkit-date-and-time-value{
+  color:#e5e7eb;
+}
+
+/* Dropdown arrow */
+body.dark select{
+  background-image:
+    linear-gradient(45deg, transparent 50%, #c7d2fe 50%),
+    linear-gradient(135deg, #c7d2fe 50%, transparent 50%);
+}
+
+/* Cash cards */
+body.dark .cash-wrapper,
+body.dark .cash-card{
+  background:#020617;
+  border-color:#334155;
+}
+
+body.dark .cash-title{
+  color:#93c5fd;
+}
+
+/* Button */
+body.dark button{
+  background:#4f46e5;
+}
+
+body.dark button:hover{
+  background:#6366f1;
+}
 </style>
 </head>
 
@@ -432,6 +494,17 @@ document.getElementById("txnForm").addEventListener("submit", e => {
     date.value = new Date().toISOString().split("T")[0];
   })
   .catch(() => alert("Error saving transaction"));
+});
+/* ===== Double Tap / Double Click Theme Toggle ===== */
+let lastTap = 0;
+const form = document.getElementById("txnForm");
+
+form.addEventListener("click", () => {
+  const now = Date.now();
+  if (now - lastTap < 300) {
+    document.body.classList.toggle("dark");
+  }
+  lastTap = now;
 });
 </script>
 
