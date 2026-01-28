@@ -2,14 +2,14 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Monthly Transaction (Perfect Tabular Centering)</title>
+<title>Monthly Transaction (Button Swap)</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
 
 :root{ 
-  --h:44px; --r:10px; --b:#d1d5db; --primary: #6366f1; --danger: #ef4444; 
+  --h:44px; --r:10px; --b:#d1d5db; --primary: #6366f1; --secondary: #10b981; --danger: #ef4444; 
   --bg-body: linear-gradient(135deg,#eef2f7,#f9fafb);
   --bg-card: #ffffff;
   --text-main: #1f2937;
@@ -34,7 +34,12 @@ label{ font-size:13px; font-weight:600; margin-top:14px; display:block; color: v
 
 input, select, button{ width:100%; height:var(--h); margin-top:6px; padding:0 12px; border-radius:var(--r); border:1px solid var(--border-color); box-sizing:border-box; font-size:14px; background: var(--bg-input); color: var(--text-main); }
 input:focus, select:focus{ outline:none; border-color:var(--primary); box-shadow:0 0 0 3px rgba(99,102,241,.15); }
-button{ background:var(--primary); color:#fff; border:none; margin-top:22px; font-weight:600; cursor:pointer; transition: 0.2s; }
+
+/* Button layout: Save Left, Repeat Right */
+.btn-group { display: grid; grid-template-columns: 1.5fr 1fr; gap: 10px; margin-top: 22px; }
+button[type="submit"] { background: var(--primary); color: #fff; border: none; font-weight: 600; cursor: pointer; transition: 0.2s; margin-top: 0; }
+#btnRepeat { background: var(--bg-input); color: var(--secondary); border: 1px solid var(--secondary); font-weight: 600; cursor: pointer; margin-top: 0; }
+
 button:hover{ filter:brightness(0.9) }
 button:disabled { opacity: 0.7; cursor: not-allowed; }
 .hidden{ display:none !important }
@@ -59,30 +64,9 @@ button:disabled { opacity: 0.7; cursor: not-allowed; }
 table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 750px; table-layout: fixed; }
 th { background: var(--bg-input); color: var(--text-label); font-weight: 600; text-align: center; padding: 12px; border-bottom: 2px solid var(--border-color); text-transform: uppercase; font-size: 10px; }
 
-/* Table Centering Logic */
-td { 
-  padding: 10px; 
-  border-bottom: 1px solid var(--border-color); 
-  color: var(--text-main); 
-  text-align: center; 
-  vertical-align: middle; 
-}
-
-/* Specific Trash Bin Centering */
-.col-act { width: 60px; padding: 0 !important; } /* Removing padding helps centering */
-.btn-del-mini { 
-  background: #fee2e2; 
-  color: #ef4444; 
-  border: none; 
-  width: 34px; 
-  height: 34px; 
-  border-radius: 10px; 
-  cursor: pointer; 
-  display: block; 
-  margin: 0 auto; /* Horizontal center */
-  padding: 0;
-  line-height: 34px;
-}
+td { padding: 10px; border-bottom: 1px solid var(--border-color); color: var(--text-main); text-align: center; vertical-align: middle; }
+.col-act { width: 60px; padding: 0 !important; }
+.btn-del-mini { background: #fee2e2; color: #ef4444; border: none; width: 34px; height: 34px; border-radius: 10px; cursor: pointer; display: block; margin: 0 auto; padding: 0; line-height: 34px; }
 body.dark .btn-del-mini { background: #450a0a; color: #f87171; }
 
 .amt-withdraw { color: #f87171; font-weight: 700; }
@@ -103,13 +87,13 @@ body.dark .btn-del-mini { background: #450a0a; color: #f87171; }
   <label>Purpose</label>
   <select id="purpose">
     <option value="">Select</option>
-    <option>Business</option><option>Donation</option><option>Entertainment</option><option>Food</option><option>Grocery</option><option>Hospital</option><option>House</option><option>Income</option><option>Insurance</option><option>Loan</option><option>Medicines</option><option>Miscellaneous</option><option>Puja</option><option>Tax</option><option>Travelling</option><option>Utility Bills</option><option>Water</option><option>Other</option>
+    <option>Business</option><option>Donation</option><option>Entertainment</option><option>Food</option><option>Grocery</option><option>Hospital</option><option>House</option><option>Income</option><option>Insurance</option><option>Loan</option><option>Medicines</option><option>Miscellaneous</option><option>Puja</option><option>Tax</option><option>Travelling</option><option>Utility Bills</option><option>Water</option><option value="Other">Other</option>
   </select>
   <input id="purpose_other" class="hidden" placeholder="Specify purpose">
   <label>Spent for / Earned by</label>
   <select id="spent_for">
     <option value="">Select</option>
-    <option>Self</option><option>House</option><option>Mother</option><option>Father</option><option>Family</option><option>Vasavi</option><option>Other</option>
+    <option>Self</option><option>House</option><option>Mother</option><option>Father</option><option>Family</option><option>Vasavi</option><option value="Other">Other</option>
   </select>
   <input id="spent_for_other" class="hidden" placeholder="Specify name">
   <label>Transaction Flow</label>
@@ -140,7 +124,12 @@ body.dark .btn-del-mini { background: #450a0a; color: #f87171; }
     <label>Deposit Amount (₹)</label>
     <input type="number" id="deposit" step="0.01" placeholder="0.00">
   </div>
-  <button type="submit">Save Transaction</button>
+
+  <div class="btn-group">
+    <button type="submit">Save Transaction</button>
+    <button type="button" id="btnRepeat">↺ Repeat Last</button>
+  </div>
+
   <div class="sync-wrapper">
     <div id="syncIndicator" class="hidden"></div>
     <button type="button" id="btnViewQueue" class="hidden">View Pending</button>
@@ -178,6 +167,7 @@ body.dark .btn-del-mini { background: #450a0a; color: #f87171; }
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbysvpY7m7Iw6CO6GPyrJFNR6hcs3bK3XVnEVIySYe-unbIc0kBh_c_TNaZ5mIiDRnRi/exec";
 let isSubmitting = false;
 const submitBtn = document.querySelector('button[type="submit"]');
+const repeatBtn = document.getElementById("btnRepeat");
 
 /* Elements */
 const date = document.getElementById("date"), narration = document.getElementById("narration"), purpose = document.getElementById("purpose"), purposeOther = document.getElementById("purpose_other"), spentFor = document.getElementById("spent_for"), spentForOther = document.getElementById("spent_for_other"), flow = document.getElementById("flow"), trtype = document.getElementById("trtype"), accountBlock = document.getElementById("accountBlock"), account = document.getElementById("account"), accountOther = document.getElementById("account_other"), withdrawBlock = document.getElementById("withdrawBlock"), depositBlock = document.getElementById("depositBlock"), withdrawn = document.getElementById("withdrawn"), deposit = document.getElementById("deposit"), cashBlock = document.getElementById("cashBlock"), cashGrid = document.getElementById("cashGrid");
@@ -200,6 +190,7 @@ function saveOffline(data){
   if (!db) return;
   const tx = db.transaction(STORE_NAME, "readwrite");
   tx.objectStore(STORE_NAME).add(data);
+  localStorage.setItem("lastTxn", data);
 }
 
 async function updatePendingCount(){
@@ -284,13 +275,15 @@ btnViewQueue.onclick = () => { renderQueueTable(); queueModal.classList.remove("
 closeModal.onclick = () => queueModal.classList.add("hidden");
 
 date.value = new Date().toISOString().split("T")[0];
+
 purpose.onchange = () => purposeOther.classList.toggle("hidden", purpose.value !== "Other");
 spentFor.onchange = () => spentForOther.classList.toggle("hidden", spentFor.value !== "Other");
-account.onchange = () => accountOther.classList.toggle("hidden", account.value !== "Others");
+account.onchange = () => accountOther.classList.toggle("hidden", account.value !== "Others" && account.value !== "Other");
 
 trtype.onchange = () => {
+  const currentAccount = account.value;
   account.innerHTML = ""; cashGrid.innerHTML = ""; cashBlock.classList.add("hidden"); 
-  accountOther.classList.add("hidden"); withdrawn.value = deposit.value = "";
+  accountOther.classList.add("hidden"); 
   if (trtype.value === "CASH") { 
     accountBlock.classList.add("hidden"); cashBlock.classList.remove("hidden"); 
     withdrawn.readOnly = deposit.readOnly = true; renderCash(); 
@@ -299,15 +292,21 @@ trtype.onchange = () => {
     accountBlock.classList.remove("hidden"); withdrawn.readOnly = deposit.readOnly = false;
     let list = (trtype.value === "CREDIT") ? creditCards : (trtype.value === "REWARDS" ? rewardPlatforms : bankAccounts);
     account.add(new Option("Select Platform", ""));
-    list.forEach(a => account.add(new Option(a, a))); 
+    list.forEach(a => account.add(new Option(a, a)));
+    if(list.includes(currentAccount)) account.value = currentAccount; 
   }
 };
 
-flow.onchange = () => { withdrawBlock.classList.add("hidden"); depositBlock.classList.add("hidden"); if (flow.value === "withdraw") { withdrawBlock.classList.remove("hidden"); deposit.value = ""; } if (flow.value === "deposit") { depositBlock.classList.remove("hidden"); withdrawn.value = ""; } };
+flow.onchange = () => { 
+  withdrawBlock.classList.add("hidden"); 
+  depositBlock.classList.add("hidden"); 
+  if (flow.value === "withdraw") { withdrawBlock.classList.remove("hidden"); } 
+  if (flow.value === "deposit") { depositBlock.classList.remove("hidden"); } 
+};
 
 function renderCash(){
   cashGrid.innerHTML = ""; denoms.forEach(v => {
-    const c = document.createElement("div"); c.className = "cash-card"; c.innerHTML = `<span>₹${v}</span><input type="number" data-val="${v}">`;
+    const c = document.createElement("div"); c.className = "cash-card"; c.innerHTML = `<span>₹${v}</span><input type="number" data-val="${v}" class="denom-input">`;
     c.querySelector("input").oninput = () => {
       let total = 0; document.querySelectorAll("#cashGrid input").forEach(i => total += Number(i.value || 0) * Number(i.dataset.val));
       if (flow.value === "withdraw") withdrawn.value = Math.abs(total); 
@@ -317,24 +316,78 @@ function renderCash(){
   });
 }
 
-function fullReset(){ document.getElementById("txnForm").reset(); account.innerHTML = ""; accountBlock.classList.add("hidden"); cashBlock.classList.add("hidden"); withdrawBlock.classList.add("hidden"); depositBlock.classList.add("hidden"); purposeOther.classList.add("hidden"); spentForOther.classList.add("hidden"); accountOther.classList.add("hidden"); date.value = new Date().toISOString().split("T")[0]; }
+function fullReset(){ 
+  document.getElementById("txnForm").reset(); 
+  account.innerHTML = ""; 
+  accountBlock.classList.add("hidden"); 
+  cashBlock.classList.add("hidden"); 
+  withdrawBlock.classList.add("hidden"); 
+  depositBlock.classList.add("hidden"); 
+  purposeOther.classList.add("hidden"); 
+  spentForOther.classList.add("hidden"); 
+  accountOther.classList.add("hidden"); 
+  date.value = new Date().toISOString().split("T")[0]; 
+}
+
+repeatBtn.onclick = () => {
+  const last = localStorage.getItem("lastTxn");
+  if(!last) { alert("No previous transaction found"); return; }
+  const p = new URLSearchParams(last);
+  
+  narration.value = p.get("narration");
+  
+  const pVal = p.get("purpose");
+  const isPOther = !Array.from(purpose.options).some(o => o.value === pVal);
+  if(isPOther) { purpose.value = "Other"; purposeOther.value = pVal; purposeOther.classList.remove("hidden"); }
+  else { purpose.value = pVal; purposeOther.classList.add("hidden"); }
+
+  const sVal = p.get("spent_for");
+  const isSOther = !Array.from(spentFor.options).some(o => o.value === sVal);
+  if(isSOther) { spentFor.value = "Other"; spentForOther.value = sVal; spentForOther.classList.remove("hidden"); }
+  else { spentFor.value = sVal; spentForOther.classList.add("hidden"); }
+
+  flow.value = p.get("flow") || (parseFloat(p.get("withdrawn")) > 0 ? "withdraw" : "deposit");
+  flow.onchange();
+
+  trtype.value = p.get("trtype");
+  trtype.onchange();
+
+  if(trtype.value !== "CASH") {
+    const accVal = p.get("from_to");
+    const isAccOther = !Array.from(account.options).some(o => o.value === accVal);
+    if(isAccOther) { account.value = "Others"; accountOther.value = accVal; accountOther.classList.remove("hidden"); }
+    else { account.value = accVal; }
+  }
+
+  withdrawn.value = "";
+  deposit.value = "";
+  document.querySelectorAll(".denom-input").forEach(i => i.value = "");
+};
 
 document.getElementById("txnForm").onsubmit = e => {
   e.preventDefault(); if (isSubmitting) return;
   let finalFromTo = (trtype.value === "CASH") ? "Cash" : ((account.value === "Others" || account.value === "Other") ? accountOther.value : account.value);
   if (!finalFromTo && trtype.value !== "CASH") { alert("Please select an account"); return; }
+  
   const params = new URLSearchParams();
   params.append("category", "monthly transactions"); params.append("date", date.value); params.append("narration", narration.value); 
   params.append("purpose", purpose.value === "Other" ? purposeOther.value : purpose.value); 
   params.append("spent_for", spentFor.value === "Other" ? spentForOther.value : spentFor.value); 
   params.append("trtype", trtype.value); params.append("from_to", finalFromTo); 
   params.append("withdrawn", withdrawn.value || 0); params.append("deposit", deposit.value || 0);
+  params.append("flow", flow.value);
+
   if (trtype.value === "CASH") document.querySelectorAll("#cashGrid input").forEach(i => params.append("d" + i.dataset.val, i.value || 0));
-  if (!navigator.onLine) { saveOffline(params.toString()); updatePendingCount(); alert("Saved offline."); fullReset(); return; }
+  
+  const body = params.toString();
+  localStorage.setItem("lastTxn", body);
+
+  if (!navigator.onLine) { saveOffline(body); updatePendingCount(); alert("Saved offline."); fullReset(); return; }
+  
   isSubmitting = true; submitBtn.disabled = true; submitBtn.textContent = "Syncing...";
-  fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: params })
+  fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body })
   .then(() => { alert("Saved!"); fullReset(); })
-  .catch(() => { saveOffline(params.toString()); updatePendingCount(); alert("Saved Offline."); fullReset(); })
+  .catch(() => { saveOffline(body); updatePendingCount(); alert("Saved Offline."); fullReset(); })
   .finally(() => { isSubmitting = false; submitBtn.disabled = false; submitBtn.textContent = "Save Transaction"; });
 };
 
