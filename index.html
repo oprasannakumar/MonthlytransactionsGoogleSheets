@@ -1,410 +1,381 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Monthly Transaction (Button Swap)</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
-
-:root{ 
-  --h:44px; --r:10px; --b:#d1d5db; --primary: #6366f1; --secondary: #10b981; --danger: #ef4444; 
-  --bg-body: linear-gradient(135deg,#eef2f7,#f9fafb);
-  --bg-card: #ffffff;
-  --text-main: #1f2937;
-  --text-label: #374151;
-  --border-color: #d1d5db;
-  --bg-input: #ffffff;
-}
-
-body.dark {
-  --bg-body: #020617;
-  --bg-card: #0f172a;
-  --text-main: #f8fafc;
-  --text-label: #94a3b8;
-  --border-color: #334155;
-  --bg-input: #1e293b;
-}
-
-body{ font-family:'Inter', sans-serif; background: var(--bg-body); color: var(--text-main); padding:20px; margin:0; min-height: 100vh; transition: background 0.3s; }
-form{ background: var(--bg-card); max-width:440px; margin:auto; padding:22px; border-radius:16px; box-shadow:0 18px 40px rgba(0,0,0,.15); border: 1px solid var(--border-color); }
-h3{ text-align:center; margin-bottom:16px; font-weight:600; margin-top:0; color: var(--text-main); }
-label{ font-size:13px; font-weight:600; margin-top:14px; display:block; color: var(--text-label); }
-
-input, select, button{ width:100%; height:var(--h); margin-top:6px; padding:0 12px; border-radius:var(--r); border:1px solid var(--border-color); box-sizing:border-box; font-size:14px; background: var(--bg-input); color: var(--text-main); }
-input:focus, select:focus{ outline:none; border-color:var(--primary); box-shadow:0 0 0 3px rgba(99,102,241,.15); }
-
-/* Button layout: Save Left, Repeat Right */
-.btn-group { display: grid; grid-template-columns: 1.5fr 1fr; gap: 10px; margin-top: 22px; }
-button[type="submit"] { background: var(--primary); color: #fff; border: none; font-weight: 600; cursor: pointer; transition: 0.2s; margin-top: 0; }
-#btnRepeat { background: var(--bg-input); color: var(--secondary); border: 1px solid var(--secondary); font-weight: 600; cursor: pointer; margin-top: 0; }
-
-button:hover{ filter:brightness(0.9) }
-button:disabled { opacity: 0.7; cursor: not-allowed; }
-.hidden{ display:none !important }
-
-.cash-wrapper{ border:1px solid var(--border-color); border-radius:16px; padding:16px; margin-top:16px; background: var(--bg-input); }
-.cash-title{ font-weight:600; color:#6366f1; margin-bottom:12px; font-size: 14px; }
-.cash-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
-.cash-card{ border:1px solid var(--border-color); border-radius:10px; padding:8px; text-align:center; background: var(--bg-card); }
-.cash-card span{ display:block; font-size: 12px; font-weight:600; margin-bottom:4px; color: var(--text-label); }
-.cash-card input{ width:100%; height:32px; text-align:center; margin-top: 0; }
-
-.sync-wrapper { display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 15px; }
-#syncIndicator { font-size: 13px; color: var(--text-label); font-weight: 500; background: var(--bg-card); padding: 4px 10px; border-radius: 20px; border: 1px solid var(--border-color); }
-#btnViewQueue { margin-top: 0; width: auto; height: 32px; font-size: 12px; background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-color); padding: 0 15px; }
-
-.modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); z-index: 1000; display: flex; justify-content: center; align-items: center; }
-.modal-content { background: var(--bg-card); color: var(--text-main); width: 95%; max-width: 850px; max-height: 85vh; border-radius: 14px; display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--border-color); }
-.modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding: 12px 20px; background: var(--bg-input); }
-.close-modal { font-size: 24px; cursor: pointer; color: #9ca3af; }
-
-.table-container { overflow-x: auto; flex-grow: 1; background: var(--bg-card); }
-table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 750px; table-layout: fixed; }
-th { background: var(--bg-input); color: var(--text-label); font-weight: 600; text-align: center; padding: 12px; border-bottom: 2px solid var(--border-color); text-transform: uppercase; font-size: 10px; }
-
-td { padding: 10px; border-bottom: 1px solid var(--border-color); color: var(--text-main); text-align: center; vertical-align: middle; }
-.col-act { width: 60px; padding: 0 !important; }
-.btn-del-mini { background: #fee2e2; color: #ef4444; border: none; width: 34px; height: 34px; border-radius: 10px; cursor: pointer; display: block; margin: 0 auto; padding: 0; line-height: 34px; }
-body.dark .btn-del-mini { background: #450a0a; color: #f87171; }
-
-.amt-withdraw { color: #f87171; font-weight: 700; }
-.amt-deposit { color: #4ade80; font-weight: 700; }
-.badge { display: inline-block; padding: 2px 8px; border-radius: 6px; background: var(--bg-input); color: var(--text-label); font-size: 10px; border: 1px solid var(--border-color); }
-.modal-footer { padding: 12px 20px; background: var(--bg-input); border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; font-weight: 700; font-size: 14px; }
-</style>
+  <meta charset="UTF-8">
+  <title>Monthly Transaction (Safety Fixed)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+    :root { 
+      --h:42px; --r:10px; --primary: #6366f1; --secondary: #10b981; --danger: #ef4444; 
+      --bg-body: linear-gradient(135deg,#eef2f7,#f9fafb);
+      --bg-card: #ffffff; --text-main: #1f2937; --text-label: #374151; --border-color: #d1d5db; --bg-input: #ffffff;
+    }
+    body.dark {
+      --bg-body: #020617; --bg-card: #0f172a; --text-main: #f8fafc; --text-label: #94a3b8; --border-color: #334155; --bg-input: #1e293b;
+    }
+    body { font-family:'Inter', sans-serif; background: var(--bg-body); color: var(--text-main); padding:15px; margin:0; min-height: 100vh; transition: background 0.3s; }
+    form { background: var(--bg-card); max-width:400px; margin:auto; padding:20px; border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,.1); border: 1px solid var(--border-color); position: relative; }
+    #statusDot { position: absolute; top: 20px; right: 20px; width: 10px; height: 10px; border-radius: 50%; background: #94a3b8; }
+    #statusDot.online { background: var(--secondary); box-shadow: 0 0 8px var(--secondary); }
+    #statusDot.offline { background: var(--danger); box-shadow: 0 0 8px var(--danger); }
+    h3 { text-align:center; margin: 0 0 15px 0; font-weight:600; }
+    label { font-size:12px; font-weight:600; margin-top:12px; display:block; color: var(--text-label); }
+    input, select, button { width:100%; height:var(--h); margin-top:5px; padding:0 10px; border-radius:var(--r); border:1px solid var(--border-color); box-sizing:border-box; font-size:13px; background: var(--bg-input); color: var(--text-main); }
+    input:focus, select:focus { outline:none; border-color:var(--primary); box-shadow:0 0 0 3px rgba(99,102,241,.1); }
+    
+    /* Inline Validation */
+    form.was-validated input:invalid, form.was-validated select:invalid { border-color: var(--danger) !important; background: rgba(239, 68, 68, 0.05); }
+    
+    .btn-group { display: grid; grid-template-columns: 1.2fr 1fr; gap: 8px; margin-top: 20px; }
+    button[type="submit"] { background: var(--primary); color: #fff; border: none; font-weight: 600; cursor: pointer; }
+    button[type="submit"]:disabled { opacity: 0.5; cursor: not-allowed; }
+    #btnRepeat { background: var(--bg-input); color: var(--secondary); border: 1px solid var(--secondary); font-weight: 600; cursor: pointer; }
+    .payment-row-wrapper { margin-bottom: 12px; border-bottom: 1px dashed var(--border-color); padding-bottom: 12px; }
+    .payment-row { display: grid; grid-template-columns: 0.7fr 1.1fr 75px 35px; gap: 6px; align-items: end; }
+    .payment-row select, .payment-row input { height: 36px; font-size: 11px; }
+    .other-input-row { margin-top: 6px; }
+    .btn-add-mode { background: #e0e7ff; color: #4338ca; border: none; font-size: 11px; height: 30px; margin-top: 8px; cursor: pointer; border-radius: 6px; width: auto; padding: 0 12px; }
+    .btn-del-mode { background: #fee2e2; color: #ef4444; border: none; cursor: pointer; height: 36px; border-radius: 8px; padding: 0; }
+    .cash-wrapper { border:1px solid var(--border-color); border-radius:12px; padding:12px; margin-top:12px; background: var(--bg-input); }
+    .cash-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+    .cash-card { border:1px solid var(--border-color); border-radius:8px; padding:5px; text-align:center; background: var(--bg-card); }
+    .cash-card span { display:block; font-size: 10px; font-weight:600; color: var(--text-label); }
+    .cash-card input { width:100%; height:28px; text-align:center; margin-top: 2px; font-size: 11px; }
+    .hidden { display:none !important }
+    .sync-wrapper { display: flex; flex-direction: column; align-items: center; gap: 8px; margin-top: 15px; }
+    #syncIndicator { font-size: 12px; color: var(--text-label); font-weight: 500; }
+    #btnViewQueue { width: auto; height: 28px; font-size: 11px; background: var(--bg-card); padding: 0 12px; cursor: pointer; }
+    .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); z-index: 1000; display: flex; justify-content: center; align-items: center; }
+    .modal-content { background: var(--bg-card); color: var(--text-main); width: 98%; max-width: 850px; max-height: 85vh; border-radius: 14px; display: flex; flex-direction: column; overflow: hidden; }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; background: var(--bg-input); border-bottom: 1px solid var(--border-color); }
+    .table-container { overflow-x: auto; padding: 10px; }
+    table { width: 100%; border-collapse: collapse; font-size: 11px; min-width: 700px; }
+    th { text-align: left; padding: 10px; border-bottom: 2px solid var(--border-color); color: var(--text-label); }
+    td { padding: 10px; border-bottom: 1px solid var(--border-color); }
+    #debugLog { font-size: 10px; color: #64748b; margin-top: 10px; text-align: center; display: block; }
+  </style>
 </head>
 
 <body>
-
-<form id="txnForm">
+<form id="txnForm" novalidate>
+  <div id="statusDot"></div>
   <h3>Monthly Transaction</h3>
+  
   <label>Date</label>
   <input type="date" id="date" required>
+  
   <label>Narration</label>
-  <input type="text" id="narration" required placeholder="Milk, Rent, Salary etc.">
-  <label>Purpose</label>
-  <select id="purpose">
-    <option value="">Select</option>
-    <option>Business</option><option>Donation</option><option>Entertainment</option><option>Food</option><option>Grocery</option><option>Hospital</option><option>House</option><option>Income</option><option>Insurance</option><option>Loan</option><option>Medicines</option><option>Miscellaneous</option><option>Puja</option><option>Tax</option><option>Travelling</option><option>Utility Bills</option><option>Water</option><option value="Other">Other</option>
-  </select>
-  <input id="purpose_other" class="hidden" placeholder="Specify purpose">
-  <label>Spent for / Earned by</label>
-  <select id="spent_for">
-    <option value="">Select</option>
-    <option>Self</option><option>House</option><option>Mother</option><option>Father</option><option>Family</option><option>Vasavi</option><option value="Other">Other</option>
-  </select>
-  <input id="spent_for_other" class="hidden" placeholder="Specify name">
-  <label>Transaction Flow</label>
+  <input type="text" id="narration" required placeholder="Description">
+  
+  <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+    <div>
+      <label>Purpose</label>
+      <select id="purpose" required onchange="toggleOtherField(this, 'purpose_other')">
+        <option value="">Select</option>
+        <option>Business</option><option>Donation</option><option>Entertainment</option><option>Food</option><option>Grocery</option><option>Hospital</option><option>House</option><option>Income</option><option>Insurance</option><option>Loan</option><option>Medicines</option><option>Puja</option><option>Travelling</option><option>Utility Bills</option><option value="Other">Other</option>
+      </select>
+      <input id="purpose_other" class="hidden other-input-row" placeholder="Specify Purpose" required disabled>
+    </div>
+    <div>
+      <label>Spent For</label>
+      <select id="spent_for" required onchange="toggleOtherField(this, 'spent_for_other')">
+        <option value="">Select</option>
+        <option>Self</option><option>House</option><option>Mother</option><option>Father</option><option>Family</option><option>Vasavi</option><option value="Other">Other</option>
+      </select>
+      <input id="spent_for_other" class="hidden other-input-row" placeholder="Specify Name" required disabled>
+    </div>
+  </div>
+
+  <label>Flow</label>
   <select id="flow" required>
     <option value="">Select</option>
     <option value="withdraw">Withdraw</option>
     <option value="deposit">Deposit</option>
   </select>
-  <label>Transaction Mode</label>
-  <select id="trtype" required>
-    <option value="">Select</option>
-    <option value="CASH">Cash</option><option value="DEBIT">Debit</option><option value="UPI">UPI</option><option value="NET">Net</option><option value="CREDIT">Credit Card</option><option value="REWARDS">Rewards</option>
-  </select>
-  <div id="accountBlock" class="hidden">
-    <label>Account / Card / Platform</label>
-    <select id="account"></select>
-    <input id="account_other" class="hidden" placeholder="Specify Platform" style="margin-top:8px">
-  </div>
+
+  <label>Payment Breakdown</label>
+  <div id="paymentContainer"></div>
+  <button type="button" class="btn-add-mode" id="btnAddMode">+ Add Mode</button>
+
   <div id="cashBlock" class="hidden cash-wrapper">
-    <div class="cash-title">Cash Denominations</div>
+    <div style="font-weight:600; color:#6366f1; margin-bottom:8px; font-size:12px;">Cash Denominations</div>
     <div class="cash-grid" id="cashGrid"></div>
-  </div>
-  <div id="withdrawBlock" class="hidden">
-    <label>Withdrawn Amount (₹)</label>
-    <input type="number" id="withdrawn" step="0.01" placeholder="0.00">
-  </div>
-  <div id="depositBlock" class="hidden">
-    <label>Deposit Amount (₹)</label>
-    <input type="number" id="deposit" step="0.01" placeholder="0.00">
   </div>
 
   <div class="btn-group">
-    <button type="submit">Save Transaction</button>
-    <button type="button" id="btnRepeat">↺ Repeat Last</button>
+    <button type="submit" id="submitBtn">Save Transaction</button>
+    <button type="button" id="btnRepeat">↺ Repeat</button>
   </div>
 
   <div class="sync-wrapper">
     <div id="syncIndicator" class="hidden"></div>
-    <button type="button" id="btnViewQueue" class="hidden">View Pending</button>
+    <button type="button" id="btnViewQueue" class="hidden">View Queue</button>
   </div>
+  <div id="debugLog">System Initializing...</div>
 </form>
 
 <div id="queueModal" class="modal hidden">
   <div class="modal-content">
     <div class="modal-header">
-      <h4>Pending Sync Queue</h4>
-      <span class="close-modal">&times;</span>
+      <h4 style="margin:0">Offline Queue</h4>
+      <span style="cursor:pointer; font-size: 20px;" onclick="document.getElementById('queueModal').classList.add('hidden')">✕</span>
     </div>
     <div class="table-container">
       <table>
         <thead>
           <tr>
-            <th class="col-date">Date</th>
-            <th class="col-nar">Narration</th>
-            <th class="col-pur">Purpose</th>
-            <th class="col-mode">Mode</th>
-            <th class="col-amt">Amount</th>
-            <th class="col-act">Del</th>
+            <th>Date</th><th>Narration</th><th>Purpose</th><th>Account</th><th>Flow</th><th>Amount</th><th>Action</th>
           </tr>
         </thead>
-        <tbody id="queueTableBody"></tbody>
+        <tbody id="queueBody"></tbody>
       </table>
-    </div>
-    <div class="modal-footer" id="modalFooter">
-      Net Total: ₹0.00
     </div>
   </div>
 </div>
 
 <script>
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbysvpY7m7Iw6CO6GPyrJFNR6hcs3bK3XVnEVIySYe-unbIc0kBh_c_TNaZ5mIiDRnRi/exec";
-let isSubmitting = false;
-const submitBtn = document.querySelector('button[type="submit"]');
-const repeatBtn = document.getElementById("btnRepeat");
-
-/* Elements */
-const date = document.getElementById("date"), narration = document.getElementById("narration"), purpose = document.getElementById("purpose"), purposeOther = document.getElementById("purpose_other"), spentFor = document.getElementById("spent_for"), spentForOther = document.getElementById("spent_for_other"), flow = document.getElementById("flow"), trtype = document.getElementById("trtype"), accountBlock = document.getElementById("accountBlock"), account = document.getElementById("account"), accountOther = document.getElementById("account_other"), withdrawBlock = document.getElementById("withdrawBlock"), depositBlock = document.getElementById("depositBlock"), withdrawn = document.getElementById("withdrawn"), deposit = document.getElementById("deposit"), cashBlock = document.getElementById("cashBlock"), cashGrid = document.getElementById("cashGrid");
-const syncIndicator = document.getElementById("syncIndicator"), btnViewQueue = document.getElementById("btnViewQueue"), queueModal = document.getElementById("queueModal"), queueTableBody = document.getElementById("queueTableBody"), closeModal = document.querySelector(".close-modal"), modalFooter = document.getElementById("modalFooter");
-
 const bankAccounts = ["FI","HDFC Old","HDFC New","ICICI","IndusInd","Kotak","RBL","SBI"];
-const creditCards = ["Axis Flipkart","Axis MyZone","Axis Neo","HDFC PhonePe","HDFC Tata Neu","HDFC Millennia","HSBC","IDFC First Millenia","ICICI Amazon","ICICI Coral","ICICI Expressions","Indusind Plat Aura EDGE","Indusind Legend","Yes Finbooster","Kotak League","Kotak Image","SBI BPCL","Standard Chartered"];
-const rewardPlatforms = ["Amazon", "Flipkart", "Supermoney", "Payzapp", "MobiKwik", "Tata Neu", "Others"];
+const creditCards = ["Axis Flipkart","Axis MyZone","Axis Neo","HDFC PhonePe","HDFC Tata Neu","HDFC Millennia","HSBC","IDFC First Millenia","ICICI Amazon","ICICI Coral","ICICI Expressions","Indusind Legend","SBI BPCL"];
+const rewardPlatforms = ["Amazon", "Flipkart", "Supermoney", "Payzapp", "MobiKwik", "Tata Neu"];
 const denoms = [500,200,100,50,20,10,5,2,1];
 
-const DB_NAME = "txnQueueDB", STORE_NAME = "queue";
 let db;
+const DB_NAME = "TransactionManagerDB_v3", STORE_NAME = "txn_queue";
+
+// --- Database Init ---
 (function initDB(){
-  const req = indexedDB.open(DB_NAME, 1);
-  req.onupgradeneeded = e => e.target.result.createObjectStore(STORE_NAME, { autoIncrement: true });
-  req.onsuccess = e => { db = e.target.result; updatePendingCount(); if(navigator.onLine) syncOffline(); };
+  try {
+    const req = indexedDB.open(DB_NAME, 1);
+    req.onupgradeneeded = e => {
+      e.target.result.createObjectStore(STORE_NAME, { autoIncrement: true });
+    };
+    req.onsuccess = e => { 
+      db = e.target.result; 
+      document.getElementById('debugLog').innerText = "Database Ready";
+      updatePendingCount(); 
+      checkStatus();
+    };
+    req.onerror = () => document.getElementById('debugLog').innerText = "Offline DB Error";
+  } catch(e) { document.getElementById('debugLog').innerText = "DB Not Supported"; }
 })();
+
+function checkStatus() {
+  const online = navigator.onLine;
+  document.getElementById('statusDot').className = online ? 'online' : 'offline';
+  if(online) syncOffline();
+}
+window.addEventListener('online', checkStatus);
+window.addEventListener('offline', checkStatus);
 
 function saveOffline(data){
   if (!db) return;
   const tx = db.transaction(STORE_NAME, "readwrite");
   tx.objectStore(STORE_NAME).add(data);
-  localStorage.setItem("lastTxn", data);
+  tx.oncomplete = () => updatePendingCount();
 }
-
-async function updatePendingCount(){
-  if(!db) return;
-  const tx = db.transaction(STORE_NAME, "readonly");
-  const req = tx.objectStore(STORE_NAME).getAll();
-  req.onsuccess = () => {
-    const items = req.result;
-    if (!items.length) { syncIndicator.classList.add("hidden"); btnViewQueue.classList.add("hidden"); return; }
-    syncIndicator.textContent = `⏳ ${items.length} pending`;
-    syncIndicator.classList.remove("hidden"); btnViewQueue.classList.remove("hidden");
-  };
-}
-
-function deleteOfflineItem(key) {
-  if(!confirm("Remove from queue?")) return;
-  const tx = db.transaction(STORE_NAME, "readwrite");
-  tx.objectStore(STORE_NAME).delete(key);
-  tx.oncomplete = () => { renderQueueTable(); updatePendingCount(); };
-}
-window.deleteOfflineItem = deleteOfflineItem;
-
-function buildTableHTML(items) {
-  if (items.length === 0) { 
-    queueTableBody.innerHTML = "<tr><td colspan='6' style='text-align:center; padding:40px; color:#9ca3af;'>Queue is empty</td></tr>"; 
-    modalFooter.textContent = "Net Total: ₹0.00";
-    return; 
-  }
-  queueTableBody.innerHTML = "";
-  let totalNet = 0;
-  items.forEach(item => {
-    const p = new URLSearchParams(item.val);
-    const wVal = parseFloat(p.get('withdrawn')) || 0;
-    const dVal = parseFloat(p.get('deposit')) || 0;
-    const isWithdraw = wVal > 0;
-    const amt = isWithdraw ? `-${wVal.toFixed(2)}` : `+${dVal.toFixed(2)}`;
-    const amtClass = isWithdraw ? 'amt-withdraw' : 'amt-deposit';
-    totalNet += (dVal - wVal);
-    
-    let cashInfo = "";
-    if(p.get('trtype') === "CASH") {
-      let dStr = [];
-      denoms.forEach(v => { if(p.get('d'+v) != 0) dStr.push(`${v}x${p.get('d'+v)}`); });
-      if(dStr.length) cashInfo = `<div style="font-size:9px; color:#94a3b8; font-style:italic; line-height:1.2;">${dStr.join(', ')}</div>`;
-    }
-
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${p.get('date')}</td>
-      <td style="font-weight:600">${p.get('narration')}</td>
-      <td><span class="badge">${p.get('purpose')}</span></td>
-      <td>
-        <div style="font-weight:600">${p.get('trtype')}</div>
-        <div style="font-size:10px; color:#94a3b8">(${p.get('from_to')})</div>
-      </td>
-      <td>
-        <span class="${amtClass}">${amt}</span>
-        ${cashInfo}
-      </td>
-      <td class="col-act">
-        <button type="button" class="btn-del-mini" onclick="deleteOfflineItem(${item.key})">🗑️</button>
-      </td>
-    `;
-    queueTableBody.appendChild(tr);
-  });
-  modalFooter.textContent = `Net Total: ₹${totalNet.toFixed(2)}`;
-  modalFooter.style.color = totalNet >= 0 ? "#4ade80" : "#f87171";
-}
-
-function renderQueueTable() {
-  queueTableBody.innerHTML = "<tr><td colspan='6' style='text-align:center; padding:20px;'>Refreshing...</td></tr>";
-  const tx = db.transaction(STORE_NAME, "readonly"), store = tx.objectStore(STORE_NAME), req = store.openCursor();
-  const items = [];
-  req.onsuccess = e => { 
-    const cursor = e.target.result; 
-    if (cursor) { items.push({ key: cursor.key, val: cursor.value }); cursor.continue(); } 
-    else { buildTableHTML(items); } 
-  };
-}
-
-btnViewQueue.onclick = () => { renderQueueTable(); queueModal.classList.remove("hidden"); };
-closeModal.onclick = () => queueModal.classList.add("hidden");
-
-date.value = new Date().toISOString().split("T")[0];
-
-purpose.onchange = () => purposeOther.classList.toggle("hidden", purpose.value !== "Other");
-spentFor.onchange = () => spentForOther.classList.toggle("hidden", spentFor.value !== "Other");
-account.onchange = () => accountOther.classList.toggle("hidden", account.value !== "Others" && account.value !== "Other");
-
-trtype.onchange = () => {
-  const currentAccount = account.value;
-  account.innerHTML = ""; cashGrid.innerHTML = ""; cashBlock.classList.add("hidden"); 
-  accountOther.classList.add("hidden"); 
-  if (trtype.value === "CASH") { 
-    accountBlock.classList.add("hidden"); cashBlock.classList.remove("hidden"); 
-    withdrawn.readOnly = deposit.readOnly = true; renderCash(); 
-  }
-  else { 
-    accountBlock.classList.remove("hidden"); withdrawn.readOnly = deposit.readOnly = false;
-    let list = (trtype.value === "CREDIT") ? creditCards : (trtype.value === "REWARDS" ? rewardPlatforms : bankAccounts);
-    account.add(new Option("Select Platform", ""));
-    list.forEach(a => account.add(new Option(a, a)));
-    if(list.includes(currentAccount)) account.value = currentAccount; 
-  }
-};
-
-flow.onchange = () => { 
-  withdrawBlock.classList.add("hidden"); 
-  depositBlock.classList.add("hidden"); 
-  if (flow.value === "withdraw") { withdrawBlock.classList.remove("hidden"); } 
-  if (flow.value === "deposit") { depositBlock.classList.remove("hidden"); } 
-};
-
-function renderCash(){
-  cashGrid.innerHTML = ""; denoms.forEach(v => {
-    const c = document.createElement("div"); c.className = "cash-card"; c.innerHTML = `<span>₹${v}</span><input type="number" data-val="${v}" class="denom-input">`;
-    c.querySelector("input").oninput = () => {
-      let total = 0; document.querySelectorAll("#cashGrid input").forEach(i => total += Number(i.value || 0) * Number(i.dataset.val));
-      if (flow.value === "withdraw") withdrawn.value = Math.abs(total); 
-      if (flow.value === "deposit") deposit.value = Math.abs(total);
-    };
-    cashGrid.appendChild(c);
-  });
-}
-
-function fullReset(){ 
-  document.getElementById("txnForm").reset(); 
-  account.innerHTML = ""; 
-  accountBlock.classList.add("hidden"); 
-  cashBlock.classList.add("hidden"); 
-  withdrawBlock.classList.add("hidden"); 
-  depositBlock.classList.add("hidden"); 
-  purposeOther.classList.add("hidden"); 
-  spentForOther.classList.add("hidden"); 
-  accountOther.classList.add("hidden"); 
-  date.value = new Date().toISOString().split("T")[0]; 
-}
-
-repeatBtn.onclick = () => {
-  const last = localStorage.getItem("lastTxn");
-  if(!last) { alert("No previous transaction found"); return; }
-  const p = new URLSearchParams(last);
-  
-  narration.value = p.get("narration");
-  
-  const pVal = p.get("purpose");
-  const isPOther = !Array.from(purpose.options).some(o => o.value === pVal);
-  if(isPOther) { purpose.value = "Other"; purposeOther.value = pVal; purposeOther.classList.remove("hidden"); }
-  else { purpose.value = pVal; purposeOther.classList.add("hidden"); }
-
-  const sVal = p.get("spent_for");
-  const isSOther = !Array.from(spentFor.options).some(o => o.value === sVal);
-  if(isSOther) { spentFor.value = "Other"; spentForOther.value = sVal; spentForOther.classList.remove("hidden"); }
-  else { spentFor.value = sVal; spentForOther.classList.add("hidden"); }
-
-  flow.value = p.get("flow") || (parseFloat(p.get("withdrawn")) > 0 ? "withdraw" : "deposit");
-  flow.onchange();
-
-  trtype.value = p.get("trtype");
-  trtype.onchange();
-
-  if(trtype.value !== "CASH") {
-    const accVal = p.get("from_to");
-    const isAccOther = !Array.from(account.options).some(o => o.value === accVal);
-    if(isAccOther) { account.value = "Others"; accountOther.value = accVal; accountOther.classList.remove("hidden"); }
-    else { account.value = accVal; }
-  }
-
-  withdrawn.value = "";
-  deposit.value = "";
-  document.querySelectorAll(".denom-input").forEach(i => i.value = "");
-};
-
-document.getElementById("txnForm").onsubmit = e => {
-  e.preventDefault(); if (isSubmitting) return;
-  let finalFromTo = (trtype.value === "CASH") ? "Cash" : ((account.value === "Others" || account.value === "Other") ? accountOther.value : account.value);
-  if (!finalFromTo && trtype.value !== "CASH") { alert("Please select an account"); return; }
-  
-  const params = new URLSearchParams();
-  params.append("category", "monthly transactions"); params.append("date", date.value); params.append("narration", narration.value); 
-  params.append("purpose", purpose.value === "Other" ? purposeOther.value : purpose.value); 
-  params.append("spent_for", spentFor.value === "Other" ? spentForOther.value : spentFor.value); 
-  params.append("trtype", trtype.value); params.append("from_to", finalFromTo); 
-  params.append("withdrawn", withdrawn.value || 0); params.append("deposit", deposit.value || 0);
-  params.append("flow", flow.value);
-
-  if (trtype.value === "CASH") document.querySelectorAll("#cashGrid input").forEach(i => params.append("d" + i.dataset.val, i.value || 0));
-  
-  const body = params.toString();
-  localStorage.setItem("lastTxn", body);
-
-  if (!navigator.onLine) { saveOffline(body); updatePendingCount(); alert("Saved offline."); fullReset(); return; }
-  
-  isSubmitting = true; submitBtn.disabled = true; submitBtn.textContent = "Syncing...";
-  fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body })
-  .then(() => { alert("Saved!"); fullReset(); })
-  .catch(() => { saveOffline(body); updatePendingCount(); alert("Saved Offline."); fullReset(); })
-  .finally(() => { isSubmitting = false; submitBtn.disabled = false; submitBtn.textContent = "Save Transaction"; });
-};
 
 async function syncOffline(){
   if (!navigator.onLine || !db) return;
   const tx = db.transaction(STORE_NAME, "readonly");
-  const req = tx.objectStore(STORE_NAME).getAll();
+  const store = tx.objectStore(STORE_NAME);
+  const req = store.getAll();
   req.onsuccess = async () => {
     const items = req.result; if (!items.length) return;
-    for (let body of items) { try { await fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body }); } catch { return; } }
-    db.transaction(STORE_NAME, "readwrite").objectStore(STORE_NAME).clear();
-    updatePendingCount();
+    for (let body of items) { 
+      try { await fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body }); } 
+      catch (err) { return; } 
+    }
+    const writeTx = db.transaction(STORE_NAME, "readwrite");
+    writeTx.objectStore(STORE_NAME).clear();
+    writeTx.oncomplete = () => updatePendingCount();
   };
 }
 
-window.addEventListener("online", syncOffline);
-document.body.ondblclick = () => document.body.classList.toggle("dark");
+function updatePendingCount(){
+  if(!db) return;
+  db.transaction(STORE_NAME, "readonly").objectStore(STORE_NAME).getAll().onsuccess = (e) => {
+    const items = e.target.result;
+    document.getElementById("syncIndicator").textContent = items.length ? `⏳ ${items.length} Pending Offline` : "";
+    document.getElementById("syncIndicator").classList.toggle("hidden", !items.length);
+    document.getElementById("btnViewQueue").classList.toggle("hidden", !items.length);
+    renderQueue(items);
+  };
+}
+
+// --- Dynamic Fields ---
+function toggleOtherField(selectObj, otherId) {
+  const otherInput = document.getElementById(otherId);
+  const isOther = selectObj.value === 'Other';
+  otherInput.classList.toggle('hidden', !isOther);
+  otherInput.disabled = !isOther;
+  if(!isOther) otherInput.value = '';
+}
+
+function createPaymentRow(initial = null) {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'payment-row-wrapper';
+  wrapper.innerHTML = `
+    <div class="payment-row">
+      <div><select class="row-type" required><option value="">Type</option><option value="CASH">Cash</option><option value="DEBIT">Debit</option><option value="UPI">UPI</option><option value="NET">Net</option><option value="CREDIT">CC</option><option value="REWARDS">Rew</option></select></div>
+      <div><select class="row-acc" required><option value="">Account</option></select></div>
+      <div><input type="number" class="row-amt" placeholder="Amt" step="0.01" required></div>
+      <button type="button" class="btn-del-mode">✕</button>
+    </div>
+    <input class="row-acc-other hidden other-input-row" placeholder="Specify Account" required disabled>
+  `;
+  
+  const tSel = wrapper.querySelector('.row-type'), aSel = wrapper.querySelector('.row-acc'), amtInp = wrapper.querySelector('.row-amt'), otherAccInp = wrapper.querySelector('.row-acc-other');
+  
+  tSel.onchange = () => {
+    const prevType = tSel.dataset.lastType;
+    if(prevType === 'CASH' && tSel.value !== 'CASH') amtInp.value = '';
+    aSel.innerHTML = '<option value="">Select</option>';
+    if(tSel.value === 'CASH') { aSel.add(new Option("Cash", "Cash")); aSel.value = "Cash"; amtInp.readOnly = true; recalcCash(); }
+    else {
+      amtInp.readOnly = false;
+      let list = (tSel.value === "CREDIT") ? creditCards : (tSel.value === "REWARDS" ? rewardPlatforms : bankAccounts);
+      list.forEach(a => aSel.add(new Option(a, a)));
+      aSel.add(new Option("Other", "Other"));
+    }
+    tSel.dataset.lastType = tSel.value;
+    aSel.dispatchEvent(new Event('change'));
+    toggleCashBlock();
+  };
+
+  aSel.onchange = () => {
+    const isOther = aSel.value === 'Other';
+    otherAccInp.classList.toggle('hidden', !isOther);
+    otherAccInp.disabled = !isOther;
+    if(!isOther) otherAccInp.value = '';
+  };
+
+  wrapper.querySelector('.btn-del-mode').onclick = () => { if(document.querySelectorAll('.payment-row-wrapper').length > 1) { wrapper.remove(); toggleCashBlock(); } };
+  document.getElementById('paymentContainer').appendChild(wrapper);
+  if(initial) { tSel.value = initial.type; tSel.onchange(); aSel.value = initial.acc; }
+}
+
+function recalcCash() {
+  let tot = 0; document.querySelectorAll('.denom-input').forEach(i => tot += (i.value || 0) * i.dataset.val);
+  document.querySelectorAll('.payment-row-wrapper').forEach(w => {
+    if(w.querySelector('.row-type').value === 'CASH') w.querySelector('.row-amt').value = tot || "";
+  });
+}
+
+function toggleCashBlock() {
+  const hasCash = Array.from(document.querySelectorAll('.row-type')).some(s => s.value === 'CASH');
+  document.getElementById('cashBlock').classList.toggle('hidden', !hasCash);
+}
+
+// --- Submit ---
+document.getElementById('txnForm').onsubmit = async (e) => {
+  e.preventDefault();
+  const form = e.target;
+  form.classList.add('was-validated');
+  if (!form.checkValidity()) return;
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true; btn.textContent = "Processing...";
+  
+  try {
+    const payloads = [];
+    document.querySelectorAll('.payment-row-wrapper').forEach(row => {
+      const pFinal = document.getElementById('purpose').value === 'Other' ? document.getElementById('purpose_other').value : document.getElementById('purpose').value;
+      const sFinal = document.getElementById('spent_for').value === 'Other' ? document.getElementById('spent_for_other').value : document.getElementById('spent_for').value;
+      const accSel = row.querySelector('.row-acc');
+      const aFinal = accSel.value === 'Other' ? row.querySelector('.row-acc-other').value : accSel.value;
+
+      const p = new URLSearchParams({
+        date: document.getElementById('date').value, narration: document.getElementById('narration').value,
+        purpose: pFinal, spent_for: sFinal, flow: document.getElementById('flow').value,
+        trtype: row.querySelector('.row-type').value, from_to: aFinal,
+        withdrawn: document.getElementById('flow').value === 'withdraw' ? row.querySelector('.row-amt').value : 0,
+        deposit: document.getElementById('flow').value === 'deposit' ? row.querySelector('.row-amt').value : 0,
+        category: "monthly transactions"
+      });
+      if(row.querySelector('.row-type').value === "CASH") {
+        document.querySelectorAll(".denom-input").forEach(i => p.append("d"+i.dataset.val, i.value || 0));
+      }
+      payloads.push(p.toString());
+    });
+
+    localStorage.setItem("lastPackage", JSON.stringify(payloads));
+
+    for(let body of payloads) {
+      if(!navigator.onLine) saveOffline(body);
+      else { 
+        try { await fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body }); } 
+        catch { saveOffline(body); } 
+      }
+    }
+    alert("Saved!");
+    fullReset();
+  } catch(err) { alert("An error occurred. Check input values."); }
+  finally { btn.disabled = false; btn.textContent = "Save Transaction"; }
+};
+
+function fullReset() {
+  const form = document.getElementById('txnForm');
+  form.reset(); form.classList.remove('was-validated');
+  document.querySelectorAll('.other-input-row').forEach(i => { i.classList.add('hidden'); i.disabled = true; });
+  document.getElementById('paymentContainer').innerHTML = ""; createPaymentRow();
+  document.getElementById('date').value = new Date().toISOString().split("T")[0];
+  document.querySelectorAll('.denom-input').forEach(i => i.value = "");
+  toggleCashBlock(); updatePendingCount();
+}
+
+// --- Utils ---
+function renderQueue(items) {
+  const body = document.getElementById('queueBody'); body.innerHTML = "";
+  items.forEach((item, idx) => {
+    const p = new URLSearchParams(item);
+    body.innerHTML += `<tr><td>${p.get('date')}</td><td>${p.get('narration')}</td><td>${p.get('purpose')}</td><td>${p.get('from_to')}</td><td>${p.get('flow')}</td><td>${p.get('withdrawn') > 0 ? p.get('withdrawn') : p.get('deposit')}</td><td><button type="button" onclick="deleteQueue(${idx})" style="padding:0; width:30px; height:25px;">🗑️</button></td></tr>`;
+  });
+}
+
+window.deleteQueue = (idx) => {
+  const tx = db.transaction(STORE_NAME, "readwrite");
+  const store = tx.objectStore(STORE_NAME);
+  store.getAll().onsuccess = (e) => {
+    const req = store.openCursor();
+    let count = 0;
+    req.onsuccess = (ev) => {
+      const cursor = ev.target.result;
+      if(cursor) { if(count === idx) cursor.delete(); else { count++; cursor.continue(); } }
+      updatePendingCount();
+    };
+  };
+};
+
+// Cash Init
+denoms.forEach(v => {
+  const c = document.createElement("div"); c.className = "cash-card";
+  c.innerHTML = `<span>₹${v}</span><input type="number" data-val="${v}" class="denom-input" placeholder="0">`;
+  c.querySelector('input').oninput = recalcCash;
+  document.getElementById('cashGrid').appendChild(c);
+});
+
+document.getElementById('btnAddMode').onclick = () => createPaymentRow();
+document.getElementById('btnViewQueue').onclick = () => document.getElementById('queueModal').classList.remove('hidden');
+document.getElementById('btnRepeat').onclick = () => {
+  const last = localStorage.getItem("lastPackage"); if(!last) return;
+  const list = JSON.parse(last); document.getElementById('paymentContainer').innerHTML = "";
+  list.forEach((s, idx) => {
+    const p = new URLSearchParams(s);
+    if(idx === 0) { document.getElementById('narration').value = p.get('narration'); document.getElementById('purpose').value = p.get('purpose'); document.getElementById('spent_for').value = p.get('spent_for'); document.getElementById('flow').value = p.get('flow'); }
+    createPaymentRow({ type: p.get('trtype'), acc: p.get('from_to') });
+  });
+};
+
+let lastTap = 0;
+document.body.addEventListener('touchend', (e) => {
+  const now = Date.now(); if(now - lastTap < 300) { document.body.classList.toggle('dark'); e.preventDefault(); }
+  lastTap = now;
+});
+document.body.addEventListener('dblclick', () => document.body.classList.toggle('dark'));
+document.getElementById('date').value = new Date().toISOString().split("T")[0];
+createPaymentRow();
 </script>
 </body>
 </html>
