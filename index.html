@@ -17,9 +17,12 @@
     body { font-family:'Inter', sans-serif; background: var(--bg-body); color: var(--text-main); padding:15px; margin:0; min-height: 100vh; transition: background 0.3s; }
     form { background: var(--bg-card); max-width:400px; margin:auto; padding:20px; border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,.1); border: 1px solid var(--border-color); position: relative; }
     
-    #statusDot { position: absolute; top: 20px; right: 20px; width: 10px; height: 10px; border-radius: 50%; background: #94a3b8; }
+    #statusDot { position: absolute; top: 20px; left: 20px; width: 10px; height: 10px; border-radius: 50%; background: #94a3b8; }
     #statusDot.online { background: var(--secondary); box-shadow: 0 0 8px var(--secondary); }
     #statusDot.offline { background: var(--danger); box-shadow: 0 0 8px var(--danger); }
+
+    /* Theme Toggle Button Style */
+    #themeToggle { position: absolute; top: 15px; right: 15px; width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-input); color: var(--text-main); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; padding: 0; transition: 0.2s; }
 
     h3 { text-align:center; margin: 0 0 15px 0; font-weight:600; }
     label { font-size:12px; font-weight:600; margin-top:12px; display:block; color: var(--text-label); }
@@ -27,25 +30,25 @@
     .header-row { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 14px; }
     .header-row label { margin-top: 0; }
 
-    input, select, button { width:100%; height:var(--h); margin-top:5px; padding:0 10px; border-radius:var(--r); border:1px solid var(--border-color); box-sizing:border-box; font-size:13px; background: var(--bg-input); color: var(--text-main); }
+    input, select, button { width:100%; height:var(--h); margin-top:5px; padding:0 10px; border-radius:var(--r); border:1px solid var(--border-color); box-sizing:border-box; font-size:13px; background: var(--bg-input); color: var(--text-main); transition: all 0.2s; }
     input:focus, select:focus { outline:none; border-color:var(--primary); box-shadow:0 0 0 3px rgba(99,102,241,.1); }
     
     form.was-validated input:invalid, form.was-validated select:invalid { border-color: var(--danger) !important; background: rgba(239, 68, 68, 0.05); }
     
     .btn-group { display: grid; grid-template-columns: 1.2fr 1fr; gap: 8px; margin-top: 20px; }
     button[type="submit"] { background: var(--primary); color: #fff; border: none; font-weight: 600; cursor: pointer; }
+    button[type="submit"]:disabled { background: #94a3b8; cursor: not-allowed; }
+    
     #btnRepeat { background: var(--bg-input); color: var(--secondary); border: 1px solid var(--secondary); font-weight: 600; cursor: pointer; }
 
     .payment-row-wrapper { margin-bottom: 12px; border-bottom: 1px dashed var(--border-color); padding-bottom: 12px; }
     .payment-row { display: grid; grid-template-columns: 0.7fr 1.1fr 75px 35px; gap: 6px; align-items: end; }
     
-    /* Ensuring delete button matches height */
     .payment-row select, .payment-row input, .btn-del-mode { height: 36px; font-size: 11px; margin-top: 4px; }
     .btn-del-mode { background: #fee2e2; color: #ef4444; border: 1px solid #fecaca; cursor: pointer; border-radius: 8px; padding: 0; display: flex; align-items: center; justify-content: center; }
 
     .btn-add-mode { background: var(--primary); color: #fff; border: none; font-size: 11px; height: 24px; cursor: pointer; border-radius: 6px; width: auto; padding: 0 10px; margin: 0; }
 
-    /* Total Amount Display */
     .total-wrapper { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding: 8px 12px; background: var(--bg-input); border-radius: 8px; border: 1px solid var(--border-color); }
     .total-label { font-size: 12px; font-weight: 700; color: var(--text-label); }
     .total-value { font-size: 14px; font-weight: 700; color: var(--primary); }
@@ -69,12 +72,16 @@
     table { width: 100%; border-collapse: collapse; font-size: 11px; min-width: 700px; }
     th { text-align: left; padding: 10px; border-bottom: 2px solid var(--border-color); color: var(--text-label); }
     td { padding: 10px; border-bottom: 1px solid var(--border-color); }
+
+    @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+    .saving-text { animation: blink 1s infinite; }
   </style>
 </head>
 
 <body>
 <form id="txnForm" novalidate>
   <div id="statusDot"></div>
+  <button type="button" id="themeToggle" title="Toggle Dark Mode">🌓</button>
   <h3>Monthly Transaction</h3>
   
   <label>Date</label>
@@ -219,9 +226,16 @@ function createPaymentRow(initial = null) {
   tSel.onchange = () => {
     const prevType = tSel.dataset.lastType;
     if(prevType === 'CASH' && tSel.value !== 'CASH') { amtInp.value = ''; updateGrandTotal(); }
+    
     aSel.innerHTML = '<option value="">Select</option>';
-    if(tSel.value === 'CASH') { aSel.add(new Option("Cash", "Cash")); aSel.value = "Cash"; amtInp.readOnly = true; recalcCash(); }
-    else {
+    if(tSel.value === 'CASH') { 
+      aSel.add(new Option("Cash", "Cash")); 
+      aSel.value = "Cash"; 
+      aSel.disabled = true;
+      amtInp.readOnly = true; 
+      recalcCash(); 
+    } else {
+      aSel.disabled = false;
       amtInp.readOnly = false;
       let list = (tSel.value === "CREDIT") ? creditCards : (tSel.value === "REWARDS" ? rewardPlatforms : bankAccounts);
       list.forEach(a => aSel.add(new Option(a, a)));
@@ -231,18 +245,28 @@ function createPaymentRow(initial = null) {
     aSel.dispatchEvent(new Event('change'));
     toggleCashBlock();
   };
+
   aSel.onchange = () => {
     const isOther = aSel.value === 'Other';
     otherAccInp.classList.toggle('hidden', !isOther);
     otherAccInp.disabled = !isOther;
   };
+
   wrapper.querySelector('.btn-del-mode').onclick = () => { 
     if(document.querySelectorAll('.payment-row-wrapper').length > 1) { 
       wrapper.remove(); toggleCashBlock(); updateGrandTotal(); 
     } 
   };
+
   document.getElementById('paymentContainer').appendChild(wrapper);
-  if(initial) { tSel.value = initial.type; tSel.onchange(); aSel.value = initial.acc; }
+
+  if(initial) { 
+    tSel.value = initial.type; 
+    tSel.dispatchEvent(new Event('change')); 
+    if(initial.acc) aSel.value = initial.acc;
+    if(initial.amt) amtInp.value = initial.amt;
+    aSel.dispatchEvent(new Event('change'));
+  }
 }
 
 function recalcCash() {
@@ -265,9 +289,15 @@ document.getElementById('txnForm').onsubmit = async (e) => {
   const form = e.target;
   form.classList.add('was-validated');
   if (!form.checkValidity()) return;
-  const btn = document.getElementById('submitBtn'); btn.disabled = true;
+
+  const btn = document.getElementById('submitBtn'); 
+  const originalText = btn.textContent;
+  btn.disabled = true;
+  btn.innerHTML = `<span class="saving-text">Saving...</span>`;
   
   const payloads = [];
+  const repeatData = []; 
+
   document.querySelectorAll('.payment-row-wrapper').forEach(row => {
     const pFinal = document.getElementById('purpose').value === 'Other' ? document.getElementById('purpose_other').value : document.getElementById('purpose').value;
     const sFinal = document.getElementById('spent_for').value === 'Other' ? document.getElementById('spent_for_other').value : document.getElementById('spent_for').value;
@@ -282,39 +312,55 @@ document.getElementById('txnForm').onsubmit = async (e) => {
       deposit: document.getElementById('flow').value === 'deposit' ? row.querySelector('.row-amt').value : 0,
       category: "monthly transactions"
     });
-    if(row.querySelector('.row-type').value === "CASH") document.querySelectorAll(".denom-input").forEach(i => p.append("d"+i.dataset.val, i.value || 0));
+    
+    if(row.querySelector('.row-type').value === "CASH") {
+        document.querySelectorAll(".denom-input").forEach(i => p.append("d"+i.dataset.val, i.value || 0));
+    }
+    
     payloads.push(p.toString());
+    repeatData.push(p.toString());
   });
 
-  for(let body of payloads) {
-    if(!navigator.onLine) {
-      const tx = db.transaction(STORE_NAME, "readwrite");
-      tx.objectStore(STORE_NAME).add(body);
-      tx.oncomplete = () => updatePendingCount();
-    } else {
-      try { await fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body }); } 
-      catch { 
+  localStorage.setItem("lastPackage", JSON.stringify(repeatData));
+
+  try {
+    for(let body of payloads) {
+      if(!navigator.onLine) {
         const tx = db.transaction(STORE_NAME, "readwrite");
         tx.objectStore(STORE_NAME).add(body);
         tx.oncomplete = () => updatePendingCount();
+      } else {
+        try { await fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body }); } 
+        catch { 
+          const tx = db.transaction(STORE_NAME, "readwrite");
+          tx.objectStore(STORE_NAME).add(body);
+          tx.oncomplete = () => updatePendingCount();
+        }
       }
     }
+    const msg = navigator.onLine ? "Saved Successfully!" : "Saved offline. Transaction will be synced when the network is connected.";
+    alert(msg);
+    fullReset();
+  } catch (err) {
+    alert("An error occurred while saving.");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = originalText;
   }
-
-  const msg = navigator.onLine ? "Saved Successfully!" : "Saved offline. Transaction will be synced when the network is connected.";
-  alert(msg);
-  fullReset();
-  btn.disabled = false;
 };
 
 function fullReset() {
   document.getElementById('txnForm').reset();
   document.getElementById('txnForm').classList.remove('was-validated');
-  document.querySelectorAll('.hidden').forEach(i => { if(!i.id.includes('sync')) i.classList.add('hidden'); });
-  document.getElementById('paymentContainer').innerHTML = ""; createPaymentRow();
+  document.getElementById('purpose_other').classList.add('hidden');
+  document.getElementById('spent_for_other').classList.add('hidden');
+  document.getElementById('paymentContainer').innerHTML = ""; 
+  createPaymentRow();
   document.getElementById('date').value = new Date().toISOString().split("T")[0];
   document.querySelectorAll('.denom-input').forEach(i => i.value = "");
-  toggleCashBlock(); updatePendingCount(); updateGrandTotal();
+  toggleCashBlock(); 
+  updatePendingCount(); 
+  updateGrandTotal();
 }
 
 async function syncOffline(){
@@ -335,7 +381,8 @@ function renderQueue(items) {
   const body = document.getElementById('queueBody'); body.innerHTML = "";
   items.forEach((item, idx) => {
     const p = new URLSearchParams(item);
-    body.innerHTML += `<tr><td>${p.get('date')}</td><td>${p.get('narration')}</td><td>${p.get('purpose')}</td><td>${p.get('from_to')}</td><td>${p.get('flow')}</td><td>${p.get('withdrawn') > 0 ? p.get('withdrawn') : p.get('deposit')}</td><td><button type="button" onclick="deleteQueue(${idx})" style="padding:0; width:30px; height:25px;">🗑️</button></td></tr>`;
+    const amt = parseFloat(p.get('withdrawn')) > 0 ? p.get('withdrawn') : p.get('deposit');
+    body.innerHTML += `<tr><td>${p.get('date')}</td><td>${p.get('narration')}</td><td>${p.get('purpose')}</td><td>${p.get('from_to')}</td><td>${p.get('flow')}</td><td>₹${amt}</td><td><button type="button" onclick="deleteQueue(${idx})" style="padding:0; width:30px; height:25px;">🗑️</button></td></tr>`;
   });
 }
 
@@ -369,22 +416,33 @@ denoms.forEach(v => {
 
 document.getElementById('btnAddMode').onclick = () => createPaymentRow();
 document.getElementById('btnViewQueue').onclick = () => document.getElementById('queueModal').classList.remove('hidden');
+
 document.getElementById('btnRepeat').onclick = () => {
-  const last = localStorage.getItem("lastPackage"); if(!last) return;
-  const list = JSON.parse(last); document.getElementById('paymentContainer').innerHTML = "";
+  const last = localStorage.getItem("lastPackage"); 
+  if(!last) { alert("No previous transaction found to repeat."); return; }
+  const list = JSON.parse(last); 
+  document.getElementById('paymentContainer').innerHTML = "";
   list.forEach((s, idx) => {
     const p = new URLSearchParams(s);
-    if(idx === 0) { document.getElementById('narration').value = p.get('narration'); document.getElementById('purpose').value = p.get('purpose'); document.getElementById('spent_for').value = p.get('spent_for'); document.getElementById('flow').value = p.get('flow'); }
-    createPaymentRow({ type: p.get('trtype'), acc: p.get('from_to') });
+    if(idx === 0) { 
+        document.getElementById('narration').value = p.get('narration'); 
+        document.getElementById('purpose').value = p.get('purpose'); 
+        document.getElementById('spent_for').value = p.get('spent_for'); 
+        document.getElementById('flow').value = p.get('flow'); 
+        toggleOtherField(document.getElementById('purpose'), 'purpose_other');
+        toggleOtherField(document.getElementById('spent_for'), 'spent_for_other');
+    }
+    const amt = p.get('flow') === 'withdraw' ? p.get('withdrawn') : p.get('deposit');
+    createPaymentRow({ type: p.get('trtype'), acc: p.get('from_to'), amt: amt });
   });
+  updateGrandTotal();
 };
 
-let lastTap = 0;
-document.body.addEventListener('touchend', (e) => {
-  const now = Date.now(); if(now - lastTap < 300) { document.body.classList.toggle('dark'); e.preventDefault(); }
-  lastTap = now;
-});
-document.body.addEventListener('dblclick', () => document.body.classList.toggle('dark'));
+/* New Theme Toggle Logic */
+document.getElementById('themeToggle').onclick = () => {
+  document.body.classList.toggle('dark');
+};
+
 document.getElementById('date').value = new Date().toISOString().split("T")[0];
 createPaymentRow();
 </script>
