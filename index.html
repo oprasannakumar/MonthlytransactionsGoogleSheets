@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Monthly Transaction (Instant Sync Fixed)</title>
+  <title>Monthly Transaction | Smart Row Sync</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
@@ -18,65 +18,46 @@
     
     form { background: var(--bg-card); max-width:400px; margin:auto; padding:20px; border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,.1); border: 1px solid var(--border-color); position: relative; }
     
-    /* Header Row Styling */
-    .header-row-top {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 20px;
-    }
-
+    .header-row-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
     h3 { margin: 0; font-weight:600; font-size: 18px; flex-grow: 1; text-align: center; }
 
-    #statusDot { 
-      width: 10px; height: 10px; 
-      border-radius: 50%; 
-      background: #94a3b8; 
-      flex-shrink: 0;
-    }
+    #statusDot { width: 10px; height: 10px; border-radius: 50%; background: #94a3b8; flex-shrink: 0; }
     #statusDot.online { background: var(--secondary); box-shadow: 0 0 8px var(--secondary); }
     #statusDot.offline { background: var(--danger); box-shadow: 0 0 8px var(--danger); }
 
     #themeToggle { 
-      width: 32px; height: 32px; 
-      border-radius: 50%; 
-      border: 1px solid var(--border-color); 
-      background: var(--bg-input); 
-      color: var(--text-main); 
-      cursor: pointer; 
-      display: flex; align-items: center; justify-content: center; 
-      font-size: 14px; padding: 0; transition: 0.2s; 
-      flex-shrink: 0;
+      width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--border-color); 
+      background: var(--bg-input); color: var(--text-main); cursor: pointer; 
+      display: flex; align-items: center; justify-content: center; font-size: 14px; transition: 0.2s; 
     }
 
+    .batch-control { display: flex; align-items: center; justify-content: space-between; background: rgba(99,102,241,0.1); padding: 8px 12px; border-radius: 10px; margin-bottom: 15px; border: 1px solid var(--primary); }
+    .switch { position: relative; display: inline-block; width: 40px; height: 20px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 20px; }
+    .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+    input:checked + .slider { background-color: var(--primary); }
+    input:checked + .slider:before { transform: translateX(20px); }
+
     label { font-size:12px; font-weight:600; margin-top:12px; display:block; color: var(--text-label); }
-
-    .header-row { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 14px; }
-    .header-row label { margin-top: 0; }
-
     input, select, button { width:100%; height:var(--h); margin-top:5px; padding:0 10px; border-radius:var(--r); border:1px solid var(--border-color); box-sizing:border-box; font-size:13px; background: var(--bg-input); color: var(--text-main); transition: all 0.2s; }
     input:focus, select:focus { outline:none; border-color:var(--primary); box-shadow:0 0 0 3px rgba(99,102,241,.1); }
     
-    form.was-validated input:invalid, form.was-validated select:invalid { border-color: var(--danger) !important; background: rgba(239, 68, 68, 0.05); }
-    
+    /* Logic for the Row-Sharing "Other" field */
+    .smart-row { display: block; width: 100%; }
+    .smart-row.has-other { display: grid; grid-template-columns: 1fr 1.2fr; gap: 10px; }
+
     .btn-group { display: grid; grid-template-columns: 1.2fr 1fr; gap: 8px; margin-top: 20px; }
     button[type="submit"] { background: var(--primary); color: #fff; border: none; font-weight: 600; cursor: pointer; }
-    button[type="submit"]:disabled { background: #94a3b8; cursor: not-allowed; }
-    
     #btnRepeat { background: var(--bg-input); color: var(--secondary); border: 1px solid var(--secondary); font-weight: 600; cursor: pointer; }
 
     .payment-row-wrapper { margin-bottom: 12px; border-bottom: 1px dashed var(--border-color); padding-bottom: 12px; }
-    .payment-row { display: grid; grid-template-columns: 0.7fr 1.1fr 75px 35px; gap: 6px; align-items: end; }
-    
-    .payment-row select, .payment-row input, .btn-del-mode { height: 36px; font-size: 11px; margin-top: 4px; }
-    .btn-del-mode { background: #fee2e2; color: #ef4444; border: 1px solid #fecaca; cursor: pointer; border-radius: 8px; padding: 0; display: flex; align-items: center; justify-content: center; }
+    .payment-row { display: grid; grid-template-columns: 1.1fr 0.7fr 75px 35px; gap: 6px; align-items: end; }
+    .btn-del-mode { background: #fee2e2; color: #ef4444; border: 1px solid #fecaca; cursor: pointer; border-radius: 8px; display: flex; align-items: center; justify-content: center; height: 36px; padding: 0; }
 
     .btn-add-mode { background: var(--primary); color: #fff; border: none; font-size: 11px; height: 24px; cursor: pointer; border-radius: 6px; width: auto; padding: 0 10px; margin: 0; }
-
     .total-wrapper { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding: 8px 12px; background: var(--bg-input); border-radius: 8px; border: 1px solid var(--border-color); }
-    .total-label { font-size: 12px; font-weight: 700; color: var(--text-label); }
-    .total-value { font-size: 14px; font-weight: 700; color: var(--primary); }
-
+    
     .cash-wrapper { border:1px solid var(--border-color); border-radius:12px; padding:12px; margin-top:12px; background: var(--bg-input); }
     .cash-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
     .cash-card { border:1px solid var(--border-color); border-radius:8px; padding:5px; text-align:center; background: var(--bg-card); }
@@ -84,20 +65,21 @@
     .cash-card input { width:100%; height:28px; text-align:center; margin-top: 2px; font-size: 11px; }
 
     .hidden { display:none !important }
-
-    .sync-wrapper { display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 15px; }
-    #syncIndicator { font-size: 11px; color: var(--text-label); font-weight: 600; }
-    #btnViewQueue { width: auto; height: 26px; font-size: 10px; background: var(--bg-card); padding: 0 10px; cursor: pointer; margin-top: 0; }
+    
+    .sync-wrapper { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; border-top: 1px solid var(--border-color); padding-top: 15px; }
+    #btnSyncAll { background: var(--secondary); color: white; border: none; font-weight: 700; cursor: pointer; height: 38px; display: flex; align-items: center; justify-content: center; gap: 5px; font-size: 11px; margin: 0; }
+    #btnViewQueue { background: var(--bg-input); color: var(--text-main); border: 1px solid var(--border-color); height: 38px; font-size: 11px; cursor: pointer; margin: 0; font-weight: 600; display: flex; align-items: center; justify-content: center; }
 
     .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); z-index: 1000; display: flex; justify-content: center; align-items: center; }
     .modal-content { background: var(--bg-card); color: var(--text-main); width: 98%; max-width: 850px; max-height: 85vh; border-radius: 14px; display: flex; flex-direction: column; overflow: hidden; }
-    .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; background: var(--bg-input); border-bottom: 1px solid var(--border-color); }
     .table-container { overflow-x: auto; padding: 10px; }
     table { width: 100%; border-collapse: collapse; font-size: 11px; min-width: 700px; }
     th { text-align: left; padding: 10px; border-bottom: 2px solid var(--border-color); color: var(--text-label); }
-    td { padding: 10px; border-bottom: 1px solid var(--border-color); }
+    td { padding: 10px; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
+    
+    .td-center { display: flex; justify-content: center; align-items: center; height: 100%; border-bottom: none !important; }
 
-    @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
     .saving-text { animation: blink 1s infinite; }
   </style>
 </head>
@@ -107,7 +89,15 @@
   <div class="header-row-top">
     <div id="statusDot" title="Network Status"></div>
     <h3>Monthly Transaction</h3>
-    <button type="button" id="themeToggle" title="Toggle Dark Mode">🌓</button>
+    <button type="button" id="themeToggle">🌓</button>
+  </div>
+
+  <div class="batch-control">
+    <span style="font-size: 12px; font-weight: 600;">Batch Mode</span>
+    <label class="switch">
+      <input type="checkbox" id="batchToggle">
+      <span class="slider"></span>
+    </label>
   </div>
   
   <label>Date</label>
@@ -116,23 +106,22 @@
   <label>Narration</label>
   <input type="text" id="narration" required placeholder="Description">
   
-  <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-    <div>
-      <label>Purpose</label>
-      <select id="purpose" required onchange="toggleOtherField(this, 'purpose_other')">
+  <label>Purpose</label>
+  <div id="purposeSmartRow" class="smart-row">
+      <select id="purpose" required onchange="toggleSmartOther(this, 'purpose_other', 'purposeSmartRow')">
         <option value="">Select</option>
         <option>Business</option><option>Donation</option><option>Entertainment</option><option>Food</option><option>Grocery</option><option>Hospital</option><option>House</option><option>Income</option><option>Insurance</option><option>Loan</option><option>Medicines</option><option>Puja</option><option>Travelling</option><option>Utility Bills</option><option value="Other">Other</option>
       </select>
-      <input id="purpose_other" class="hidden" style="margin-top:6px; height:36px;" placeholder="Specify Purpose" required disabled>
-    </div>
-    <div>
-      <label>Spent For</label>
-      <select id="spent_for" required onchange="toggleOtherField(this, 'spent_for_other')">
+      <input id="purpose_other" class="hidden" placeholder="Specify Purpose" required disabled>
+  </div>
+
+  <label>Spent For</label>
+  <div id="spentSmartRow" class="smart-row">
+      <select id="spent_for" required onchange="toggleSmartOther(this, 'spent_for_other', 'spentSmartRow')">
         <option value="">Select</option>
         <option>Self</option><option>House</option><option>Mother</option><option>Father</option><option>Family</option><option>Vasavi</option><option value="Other">Other</option>
       </select>
-      <input id="spent_for_other" class="hidden" style="margin-top:6px; height:36px;" placeholder="Specify Name" required disabled>
-    </div>
+      <input id="spent_for_other" class="hidden" placeholder="Specify Name" required disabled>
   </div>
 
   <label>Flow</label>
@@ -142,15 +131,15 @@
     <option value="deposit">Deposit</option>
   </select>
 
-  <div class="header-row">
-    <label>Payment Breakdown</label>
+  <div class="header-row" style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 14px;">
+    <label style="margin:0">Payment Breakdown</label>
     <button type="button" class="btn-add-mode" id="btnAddMode">+ Add Mode</button>
   </div>
   <div id="paymentContainer"></div>
 
   <div class="total-wrapper">
-    <span class="total-label">Total Amount:</span>
-    <span class="total-value" id="grandTotal">₹0.00</span>
+    <span style="font-size: 12px; font-weight: 700; color: var(--text-label);">Total Amount:</span>
+    <span style="font-size: 14px; font-weight: 700; color: var(--primary);" id="grandTotal">₹0.00</span>
   </div>
 
   <div id="cashBlock" class="hidden cash-wrapper">
@@ -163,24 +152,25 @@
     <button type="button" id="btnRepeat">↺ Repeat</button>
   </div>
 
-  <div class="sync-wrapper">
-    <div id="syncIndicator" class="hidden"></div>
-    <button type="button" id="btnViewQueue" class="hidden">View Queue</button>
+  <div id="footerSync" class="sync-wrapper hidden">
+    <button type="button" id="btnSyncAll">
+      <span id="syncText">Sync All</span>
+      <small id="syncCount">(0)</small>
+    </button>
+    <button type="button" id="btnViewQueue">View Queue</button>
   </div>
 </form>
 
 <div id="queueModal" class="modal hidden">
   <div class="modal-content">
-    <div class="modal-header">
-      <h4 style="margin:0">Offline Queue</h4>
+    <div class="modal-header" style="display: flex; justify-content: space-between; padding: 15px; background: var(--bg-input); border-bottom: 1px solid var(--border-color);">
+      <h4 style="margin:0">Offline / Batch Queue</h4>
       <span style="cursor:pointer; font-size: 20px;" onclick="document.getElementById('queueModal').classList.add('hidden')">✕</span>
     </div>
     <div class="table-container">
       <table>
         <thead>
-          <tr>
-            <th>Date</th><th>Narration</th><th>Purpose</th><th>Account</th><th>Flow</th><th>Amount</th><th>Action</th>
-          </tr>
+          <tr><th>Date</th><th>Narration</th><th>Purpose</th><th>Account</th><th>Flow</th><th>Amount</th><th style="text-align:center;">Action</th></tr>
         </thead>
         <tbody id="queueBody"></tbody>
       </table>
@@ -209,7 +199,6 @@ const DB_NAME = "TransactionManagerDB_v4", STORE_NAME = "txn_queue";
 function checkStatus() {
   const online = navigator.onLine;
   document.getElementById('statusDot').className = online ? 'online' : 'offline';
-  if(online) syncOffline();
 }
 window.addEventListener('online', checkStatus);
 window.addEventListener('offline', checkStatus);
@@ -219,18 +208,15 @@ async function updatePendingCount(){
   const tx = db.transaction(STORE_NAME, "readonly").objectStore(STORE_NAME).getAll();
   tx.onsuccess = (e) => {
     const items = e.target.result;
-    document.getElementById("syncIndicator").textContent = items.length ? `⏳ ${items.length} Pending` : "";
-    document.getElementById("syncIndicator").classList.toggle("hidden", !items.length);
-    document.getElementById("btnViewQueue").classList.toggle("hidden", !items.length);
+    document.getElementById("syncCount").textContent = `(${items.length})`;
+    document.getElementById("footerSync").classList.toggle("hidden", items.length === 0);
     renderQueue(items);
   };
 }
 
 function updateGrandTotal() {
   let total = 0;
-  document.querySelectorAll('.row-amt').forEach(input => {
-    total += parseFloat(input.value) || 0;
-  });
+  document.querySelectorAll('.row-amt').forEach(input => { total += parseFloat(input.value) || 0; });
   document.getElementById('grandTotal').textContent = `₹${Math.abs(total).toFixed(2)}`;
 }
 
@@ -239,7 +225,7 @@ function createPaymentRow(initial = null) {
   wrapper.className = 'payment-row-wrapper';
   wrapper.innerHTML = `
     <div class="payment-row">
-      <div><select class="row-type" required><option value="">Type</option><option value="CASH">Cash</option><option value="DEBIT">Debit</option><option value="UPI">UPI</option><option value="NET">Net</option><option value="CREDIT">CC</option><option value="REWARDS">Rew</option></select></div>
+      <div><select class="row-type" required><option value="">Type</option><option value="CASH">Cash</option><option value="DEBIT">Debit</option><option value="UPI">UPI</option><option value="NET">Net</option><option value="CREDIT">Credit Card</option><option value="REWARDS">Rewards</option></select></div>
       <div><select class="row-acc" required><option value="">Account</option></select></div>
       <div><input type="number" class="row-amt" placeholder="Amt" step="0.01" required></div>
       <button type="button" class="btn-del-mode">✕</button>
@@ -247,49 +233,30 @@ function createPaymentRow(initial = null) {
     <input class="row-acc-other hidden" style="margin-top:6px; height:36px; width:100%;" placeholder="Specify Account" required disabled>
   `;
   const tSel = wrapper.querySelector('.row-type'), aSel = wrapper.querySelector('.row-acc'), amtInp = wrapper.querySelector('.row-amt'), otherAccInp = wrapper.querySelector('.row-acc-other');
-  
   amtInp.oninput = updateGrandTotal;
-
+  
   tSel.onchange = () => {
-    const prevType = tSel.dataset.lastType;
-    if(prevType === 'CASH' && tSel.value !== 'CASH') { amtInp.value = ''; updateGrandTotal(); }
-    
     aSel.innerHTML = '<option value="">Select</option>';
     if(tSel.value === 'CASH') { 
-      aSel.add(new Option("Cash", "Cash")); 
-      aSel.value = "Cash"; 
-      aSel.disabled = true;
-      amtInp.readOnly = true; 
-      recalcCash(); 
+      aSel.add(new Option("Cash", "Cash")); aSel.value = "Cash"; aSel.disabled = true; amtInp.readOnly = true; recalcCash(); 
     } else {
-      aSel.disabled = false;
-      amtInp.readOnly = false;
+      aSel.disabled = false; amtInp.readOnly = false;
       let list = (tSel.value === "CREDIT") ? creditCards : (tSel.value === "REWARDS" ? rewardPlatforms : bankAccounts);
       list.forEach(a => aSel.add(new Option(a, a)));
       aSel.add(new Option("Other", "Other"));
     }
-    tSel.dataset.lastType = tSel.value;
-    aSel.dispatchEvent(new Event('change'));
-    toggleCashBlock();
+    aSel.dispatchEvent(new Event('change')); toggleCashBlock();
   };
-
   aSel.onchange = () => {
     const isOther = aSel.value === 'Other';
-    otherAccInp.classList.toggle('hidden', !isOther);
-    otherAccInp.disabled = !isOther;
+    otherAccInp.classList.toggle('hidden', !isOther); otherAccInp.disabled = !isOther;
   };
-
   wrapper.querySelector('.btn-del-mode').onclick = () => { 
-    if(document.querySelectorAll('.payment-row-wrapper').length > 1) { 
-      wrapper.remove(); toggleCashBlock(); updateGrandTotal(); 
-    } 
+    if(document.querySelectorAll('.payment-row-wrapper').length > 1) { wrapper.remove(); toggleCashBlock(); updateGrandTotal(); } 
   };
-
   document.getElementById('paymentContainer').appendChild(wrapper);
-
   if(initial) { 
-    tSel.value = initial.type; 
-    tSel.dispatchEvent(new Event('change')); 
+    tSel.value = initial.type; tSel.dispatchEvent(new Event('change')); 
     if(initial.acc) aSel.value = initial.acc;
     if(initial.amt) amtInp.value = initial.amt;
     aSel.dispatchEvent(new Event('change'));
@@ -298,11 +265,7 @@ function createPaymentRow(initial = null) {
 
 function recalcCash() {
   let tot = 0; document.querySelectorAll('.denom-input').forEach(i => tot += (i.value || 0) * i.dataset.val);
-  document.querySelectorAll('.payment-row-wrapper').forEach(w => { 
-    if(w.querySelector('.row-type').value === 'CASH') {
-      w.querySelector('.row-amt').value = tot || ""; 
-    }
-  });
+  document.querySelectorAll('.payment-row-wrapper').forEach(w => { if(w.querySelector('.row-type').value === 'CASH') w.querySelector('.row-amt').value = tot || ""; });
   updateGrandTotal();
 }
 
@@ -319,13 +282,12 @@ document.getElementById('txnForm').onsubmit = async (e) => {
 
   const payloads = [];
   const repeatData = []; 
+  const pFinal = document.getElementById('purpose').value === 'Other' ? document.getElementById('purpose_other').value : document.getElementById('purpose').value;
+  const sFinal = document.getElementById('spent_for').value === 'Other' ? document.getElementById('spent_for_other').value : document.getElementById('spent_for').value;
 
   document.querySelectorAll('.payment-row-wrapper').forEach(row => {
-    const pFinal = document.getElementById('purpose').value === 'Other' ? document.getElementById('purpose_other').value : document.getElementById('purpose').value;
-    const sFinal = document.getElementById('spent_for').value === 'Other' ? document.getElementById('spent_for_other').value : document.getElementById('spent_for').value;
     const accSel = row.querySelector('.row-acc');
     const aFinal = accSel.value === 'Other' ? row.querySelector('.row-acc-other').value : accSel.value;
-
     const p = new URLSearchParams({
       date: document.getElementById('date').value, narration: document.getElementById('narration').value,
       purpose: pFinal, spent_for: sFinal, flow: document.getElementById('flow').value,
@@ -334,94 +296,80 @@ document.getElementById('txnForm').onsubmit = async (e) => {
       deposit: document.getElementById('flow').value === 'deposit' ? row.querySelector('.row-amt').value : 0,
       category: "monthly transactions"
     });
-    
     if(row.querySelector('.row-type').value === "CASH") {
         document.querySelectorAll(".denom-input").forEach(i => p.append("d"+i.dataset.val, i.value || 0));
     }
-    
     payloads.push(p.toString());
     repeatData.push(p.toString());
   });
 
   localStorage.setItem("lastPackage", JSON.stringify(repeatData));
+  const isBatch = document.getElementById('batchToggle').checked;
 
-  // INSTANT OFFLINE CHECK
-  if (!navigator.onLine) {
+  if (isBatch || !navigator.onLine) {
     const tx = db.transaction(STORE_NAME, "readwrite");
-    const store = tx.objectStore(STORE_NAME);
-    payloads.forEach(body => store.add(body));
-    tx.oncomplete = () => {
-      alert("Saved offline. Will sync when network is connected.");
-      fullReset();
-      updatePendingCount();
-    };
+    payloads.forEach(body => tx.objectStore(STORE_NAME).add(body));
+    tx.oncomplete = () => { updatePendingCount(); fullReset(); };
     return;
   }
 
   const btn = document.getElementById('submitBtn'); 
   const originalText = btn.textContent;
-  btn.disabled = true;
-  btn.innerHTML = `<span class="saving-text">Saving...</span>`;
+  btn.disabled = true; btn.innerHTML = `<span class="saving-text">Saving...</span>`;
 
   try {
-    for(let body of payloads) {
-      try {
-        await fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body });
-      } catch (err) {
-        // Fallback to queue if individual request fails
-        const tx = db.transaction(STORE_NAME, "readwrite");
-        tx.objectStore(STORE_NAME).add(body);
-        tx.oncomplete = () => updatePendingCount();
-      }
-    }
-    alert("Saved Successfully!");
-    fullReset();
+    for(let body of payloads) { await fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body }); }
+    alert("Saved Successfully!"); fullReset();
   } catch (err) {
-    alert("An error occurred while saving.");
-  } finally {
-    btn.disabled = false;
-    btn.textContent = originalText;
-  }
+    const tx = db.transaction(STORE_NAME, "readwrite");
+    payloads.forEach(body => tx.objectStore(STORE_NAME).add(body));
+    tx.oncomplete = () => { updatePendingCount(); fullReset(); };
+  } finally { btn.disabled = false; btn.textContent = originalText; }
 };
 
 function fullReset() {
+  const batchState = document.getElementById('batchToggle').checked;
   document.getElementById('txnForm').reset();
+  document.getElementById('batchToggle').checked = batchState;
+  
   document.getElementById('txnForm').classList.remove('was-validated');
   document.getElementById('purpose_other').classList.add('hidden');
   document.getElementById('spent_for_other').classList.add('hidden');
+  document.getElementById('purposeSmartRow').classList.remove('has-other');
+  document.getElementById('spentSmartRow').classList.remove('has-other');
+  
   document.getElementById('paymentContainer').innerHTML = ""; 
   createPaymentRow();
   document.getElementById('date').value = new Date().toISOString().split("T")[0];
   document.querySelectorAll('.denom-input').forEach(i => i.value = "");
-  toggleCashBlock(); 
-  updatePendingCount(); 
-  updateGrandTotal();
+  toggleCashBlock(); updateGrandTotal();
 }
 
-async function syncOffline(){
-  if (!navigator.onLine || !db) return;
+async function syncAllData(){
+  if (!navigator.onLine) { alert("Internet needed to sync."); return; }
+  const btn = document.getElementById('btnSyncAll');
+  const syncLabel = document.getElementById('syncText');
+  
+  btn.disabled = true;
+
   const tx = db.transaction(STORE_NAME, "readonly");
   const store = tx.objectStore(STORE_NAME);
-  const req = store.getAll();
-  const keysReq = store.getAllKeys();
+  const items = await new Promise(r => { store.getAll().onsuccess = (e) => r(e.target.result); });
+  const keys = await new Promise(r => { store.getAllKeys().onsuccess = (e) => r(e.target.result); });
 
-  req.onsuccess = async () => {
-    const items = req.result; if (!items.length) return;
-    const keys = (await new Promise(resolve => {
-        const kTx = db.transaction(STORE_NAME, "readonly").objectStore(STORE_NAME).getAllKeys();
-        kTx.onsuccess = () => resolve(kTx.result);
-    }));
-
-    for (let i = 0; i < items.length; i++) {
-      try {
-        await fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: items[i] });
-        // Delete item immediately after successful sync
-        db.transaction(STORE_NAME, "readwrite").objectStore(STORE_NAME).delete(keys[i]).onsuccess = () => {
-            updatePendingCount();
-        };
-      } catch (err) { break; }
+  const total = items.length;
+  for (let i = 0; i < total; i++) {
+    syncLabel.innerHTML = `<span class="saving-text">Syncing ${i+1}/${total}</span>`;
+    try {
+      await fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: items[i] });
+      db.transaction(STORE_NAME, "readwrite").objectStore(STORE_NAME).delete(keys[i]).onsuccess = () => updatePendingCount();
+    } catch (err) { 
+        alert("Sync interrupted at item " + (i+1));
+        break; 
     }
-  };
+  }
+  btn.disabled = false; 
+  syncLabel.textContent = "Sync All";
 }
 
 function renderQueue(items) {
@@ -429,24 +377,39 @@ function renderQueue(items) {
   items.forEach((item, idx) => {
     const p = new URLSearchParams(item);
     const amt = parseFloat(p.get('withdrawn')) > 0 ? p.get('withdrawn') : p.get('deposit');
-    body.innerHTML += `<tr><td>${p.get('date')}</td><td>${p.get('narration')}</td><td>${p.get('purpose')}</td><td>${p.get('from_to')}</td><td>${p.get('flow')}</td><td>₹${amt}</td><td><button type="button" onclick="deleteQueue(${idx})" style="padding:0; width:30px; height:25px;">🗑️</button></td></tr>`;
+    body.innerHTML += `
+      <tr>
+        <td>${p.get('date')}</td>
+        <td>${p.get('narration')}</td>
+        <td>${p.get('purpose')}</td>
+        <td>${p.get('from_to')}</td>
+        <td>${p.get('flow')}</td>
+        <td>₹${amt}</td>
+        <td>
+          <div class="td-center">
+            <button type="button" onclick="deleteQueue(${idx})" style="height:25px; width:30px; background:transparent; border:none; cursor:pointer; font-size:14px; padding:0;">🗑️</button>
+          </div>
+        </td>
+      </tr>`;
   });
 }
 
 window.deleteQueue = (idx) => {
   const tx = db.transaction(STORE_NAME, "readwrite");
   const store = tx.objectStore(STORE_NAME);
-  store.getAllKeys().onsuccess = (e) => {
-    const key = e.target.result[idx];
-    store.delete(key).onsuccess = () => updatePendingCount();
-  };
+  store.getAllKeys().onsuccess = (e) => { store.delete(e.target.result[idx]).onsuccess = () => updatePendingCount(); };
 };
 
-function toggleOtherField(selectObj, otherId) {
+function toggleSmartOther(selectObj, otherId, parentId) {
   const otherInput = document.getElementById(otherId);
+  const parent = document.getElementById(parentId);
   const isOther = selectObj.value === 'Other';
+  
   otherInput.classList.toggle('hidden', !isOther);
   otherInput.disabled = !isOther;
+  parent.classList.toggle('has-other', isOther);
+  
+  if(isOther) otherInput.focus();
 }
 
 denoms.forEach(v => {
@@ -458,12 +421,12 @@ denoms.forEach(v => {
 
 document.getElementById('btnAddMode').onclick = () => createPaymentRow();
 document.getElementById('btnViewQueue').onclick = () => document.getElementById('queueModal').classList.remove('hidden');
-
+document.getElementById('btnSyncAll').onclick = syncAllData;
+document.getElementById('themeToggle').onclick = () => document.body.classList.toggle('dark');
 document.getElementById('btnRepeat').onclick = () => {
   const last = localStorage.getItem("lastPackage"); 
-  if(!last) { alert("No previous transaction found to repeat."); return; }
-  const list = JSON.parse(last); 
-  document.getElementById('paymentContainer').innerHTML = "";
+  if(!last) return;
+  const list = JSON.parse(last); document.getElementById('paymentContainer').innerHTML = "";
   list.forEach((s, idx) => {
     const p = new URLSearchParams(s);
     if(idx === 0) { 
@@ -471,19 +434,13 @@ document.getElementById('btnRepeat').onclick = () => {
         document.getElementById('purpose').value = p.get('purpose'); 
         document.getElementById('spent_for').value = p.get('spent_for'); 
         document.getElementById('flow').value = p.get('flow'); 
-        toggleOtherField(document.getElementById('purpose'), 'purpose_other');
-        toggleOtherField(document.getElementById('spent_for'), 'spent_for_other');
+        toggleSmartOther(document.getElementById('purpose'), 'purpose_other', 'purposeSmartRow');
+        toggleSmartOther(document.getElementById('spent_for'), 'spent_for_other', 'spentSmartRow');
     }
-    const amt = p.get('flow') === 'withdraw' ? p.get('withdrawn') : p.get('deposit');
-    createPaymentRow({ type: p.get('trtype'), acc: p.get('from_to'), amt: amt });
+    createPaymentRow({ type: p.get('trtype'), acc: p.get('from_to'), amt: p.get('flow') === 'withdraw' ? p.get('withdrawn') : p.get('deposit') });
   });
   updateGrandTotal();
 };
-
-document.getElementById('themeToggle').onclick = () => {
-  document.body.classList.toggle('dark');
-};
-
 document.getElementById('date').value = new Date().toISOString().split("T")[0];
 createPaymentRow();
 </script>
