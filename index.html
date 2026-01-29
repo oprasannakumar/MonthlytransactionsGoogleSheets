@@ -43,16 +43,24 @@
     input, select, button { width:100%; height:var(--h); margin-top:5px; padding:0 10px; border-radius:var(--r); border:1px solid var(--border-color); box-sizing:border-box; font-size:13px; background: var(--bg-input); color: var(--text-main); transition: all 0.2s; }
     input:focus, select:focus { outline:none; border-color:var(--primary); box-shadow:0 0 0 3px rgba(99,102,241,.1); }
     
-    /* Logic for the Row-Sharing "Other" field */
     .smart-row { display: block; width: 100%; }
     .smart-row.has-other { display: grid; grid-template-columns: 1fr 1.2fr; gap: 10px; }
 
-    .btn-group { display: grid; grid-template-columns: 1.2fr 1fr; gap: 8px; margin-top: 20px; }
-    button[type="submit"] { background: var(--primary); color: #fff; border: none; font-weight: 600; cursor: pointer; }
-    #btnRepeat { background: var(--bg-input); color: var(--secondary); border: 1px solid var(--secondary); font-weight: 600; cursor: pointer; }
+    /* Redesigned Bottom Buttons */
+    .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 25px; }
+    button[type="submit"] { background: var(--primary); color: #fff; border: none; font-weight: 700; cursor: pointer; letter-spacing: 0.3px; }
+    button[type="submit"]:hover { filter: brightness(1.1); }
+    
+    #btnRepeat { background: var(--bg-input); color: var(--text-main); border: 1.5px solid var(--border-color); font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
+    #btnRepeat:hover { background: var(--border-color); }
+
+    .sync-wrapper { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; border-top: 1px dashed var(--border-color); padding-top: 15px; }
+    #btnSyncAll { background: var(--secondary); color: white; border: none; font-weight: 700; cursor: pointer; height: 38px; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 11px; margin: 0; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2); }
+    #btnViewQueue { background: #94a3b8; color: white; border: none; height: 38px; font-size: 11px; cursor: pointer; margin: 0; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px; }
+    body.dark #btnViewQueue { background: #475569; }
 
     .payment-row-wrapper { margin-bottom: 12px; border-bottom: 1px dashed var(--border-color); padding-bottom: 12px; }
-    .payment-row { display: grid; grid-template-columns: 1.1fr 0.7fr 75px 35px; gap: 6px; align-items: end; }
+    .payment-row { display: grid; grid-template-columns: 0.9fr 1.1fr 75px 35px; gap: 6px; align-items: end; }
     .btn-del-mode { background: #fee2e2; color: #ef4444; border: 1px solid #fecaca; cursor: pointer; border-radius: 8px; display: flex; align-items: center; justify-content: center; height: 36px; padding: 0; }
 
     .btn-add-mode { background: var(--primary); color: #fff; border: none; font-size: 11px; height: 24px; cursor: pointer; border-radius: 6px; width: auto; padding: 0 10px; margin: 0; }
@@ -65,10 +73,6 @@
     .cash-card input { width:100%; height:28px; text-align:center; margin-top: 2px; font-size: 11px; }
 
     .hidden { display:none !important }
-    
-    .sync-wrapper { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; border-top: 1px solid var(--border-color); padding-top: 15px; }
-    #btnSyncAll { background: var(--secondary); color: white; border: none; font-weight: 700; cursor: pointer; height: 38px; display: flex; align-items: center; justify-content: center; gap: 5px; font-size: 11px; margin: 0; }
-    #btnViewQueue { background: var(--bg-input); color: var(--text-main); border: 1px solid var(--border-color); height: 38px; font-size: 11px; cursor: pointer; margin: 0; font-weight: 600; display: flex; align-items: center; justify-content: center; }
 
     .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); z-index: 1000; display: flex; justify-content: center; align-items: center; }
     .modal-content { background: var(--bg-card); color: var(--text-main); width: 98%; max-width: 850px; max-height: 85vh; border-radius: 14px; display: flex; flex-direction: column; overflow: hidden; }
@@ -154,10 +158,10 @@
 
   <div id="footerSync" class="sync-wrapper hidden">
     <button type="button" id="btnSyncAll">
-      <span id="syncText">Sync All</span>
+      <span id="syncText">☁️ Sync All</span>
       <small id="syncCount">(0)</small>
     </button>
-    <button type="button" id="btnViewQueue">View Queue</button>
+    <button type="button" id="btnViewQueue">📋 View Queue</button>
   </div>
 </form>
 
@@ -369,7 +373,7 @@ async function syncAllData(){
     }
   }
   btn.disabled = false; 
-  syncLabel.textContent = "Sync All";
+  syncLabel.textContent = "☁️ Sync All";
 }
 
 function renderQueue(items) {
