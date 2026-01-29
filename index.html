@@ -32,21 +32,31 @@
     }
 
     .batch-control { display: flex; align-items: center; justify-content: space-between; background: rgba(99,102,241,0.1); padding: 8px 12px; border-radius: 10px; margin-bottom: 15px; border: 1px solid var(--primary); }
-    .switch { position: relative; display: inline-block; width: 40px; height: 20px; }
+    
+    /* Fixed Switch Container */
+    .switch { position: relative; display: inline-block; width: 40px; height: 22px; }
     .switch input { opacity: 0; width: 0; height: 0; }
-    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 20px; }
-    .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 22px; }
+    
+    /* Fixed Switch Dot Alignment */
+    .slider:before { 
+      position: absolute; content: ""; 
+      height: 16px; width: 16px; 
+      left: 3px; bottom: 3px; /* Centered based on 22px height (3+16+3=22) */
+      background-color: white; transition: .4s; border-radius: 50%; 
+    }
     input:checked + .slider { background-color: var(--primary); }
-    input:checked + .slider:before { transform: translateX(20px); }
+    input:checked + .slider:before { transform: translateX(18px); }
 
     label { font-size:12px; font-weight:600; margin-top:12px; display:block; color: var(--text-label); }
     input, select, button { width:100%; height:var(--h); margin-top:5px; padding:0 10px; border-radius:var(--r); border:1px solid var(--border-color); box-sizing:border-box; font-size:13px; background: var(--bg-input); color: var(--text-main); transition: all 0.2s; }
     input:focus, select:focus { outline:none; border-color:var(--primary); box-shadow:0 0 0 3px rgba(99,102,241,.1); }
     
-    /* Inline Validation Styles */
     .err-msg { color: var(--danger); font-size: 10px; margin-top: 4px; display: none; font-weight: 600; }
-    form.was-validated :invalid ~ .err-msg { display: block; }
-    form.was-validated input:invalid, form.was-validated select:invalid { border-color: var(--danger) !important; background: rgba(239, 68, 68, 0.03); }
+    form.was-validated :invalid ~ .err-msg, 
+    .is-invalid ~ .err-msg { display: block; }
+    form.was-validated input:invalid, form.was-validated select:invalid,
+    .is-invalid { border-color: var(--danger) !important; background: rgba(239, 68, 68, 0.03); }
 
     .smart-row { display: block; width: 100%; }
     .smart-row.has-other { display: grid; grid-template-columns: 1fr 1.2fr; gap: 10px; }
@@ -157,6 +167,7 @@
   <div id="cashBlock" class="hidden cash-wrapper">
     <div style="font-weight:600; color:#6366f1; margin-bottom:8px; font-size:12px;">Cash Denominations</div>
     <div class="cash-grid" id="cashGrid"></div>
+    <div class="err-msg">Please enter denominations</div>
   </div>
 
   <div class="btn-group">
@@ -280,6 +291,7 @@ function createPaymentRow(initial = null) {
 function recalcCash() {
   let tot = 0; document.querySelectorAll('.denom-input').forEach(i => tot += (i.value || 0) * i.dataset.val);
   document.querySelectorAll('.payment-row-wrapper').forEach(w => { if(w.querySelector('.row-type').value === 'CASH') w.querySelector('.row-amt').value = tot || ""; });
+  if(tot > 0) document.getElementById('cashBlock').classList.remove('is-invalid');
   updateGrandTotal();
 }
 
@@ -291,11 +303,20 @@ function toggleCashBlock() {
 document.getElementById('txnForm').onsubmit = async (e) => {
   e.preventDefault();
   const form = e.target;
+  
+  const hasCashMode = Array.from(document.querySelectorAll('.row-type')).some(s => s.value === 'CASH');
+  const cashTotal = Array.from(document.querySelectorAll('.denom-input')).reduce((sum, i) => sum + (i.value * i.dataset.val), 0);
+  
+  if(hasCashMode && cashTotal <= 0) {
+    document.getElementById('cashBlock').classList.add('is-invalid');
+  } else {
+    document.getElementById('cashBlock').classList.remove('is-invalid');
+  }
+
   form.classList.add('was-validated');
-  
   if (!form.checkValidity()) return;
+  if(hasCashMode && cashTotal <= 0) return;
   
-  // Custom check for Grand Total
   const grandTotal = parseFloat(document.getElementById('grandTotal').textContent.replace('₹', ''));
   if(grandTotal <= 0) {
     alert("Transaction amount must be greater than zero.");
@@ -359,6 +380,7 @@ function fullReset() {
   document.getElementById('spent_for_other').classList.add('hidden');
   document.getElementById('purposeSmartRow').classList.remove('has-other');
   document.getElementById('spentSmartRow').classList.remove('has-other');
+  document.getElementById('cashBlock').classList.remove('is-invalid');
   
   document.getElementById('paymentContainer').innerHTML = ""; 
   createPaymentRow();
