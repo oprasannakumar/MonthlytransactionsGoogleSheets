@@ -81,7 +81,8 @@
     th { text-align: left; padding: 10px; border-bottom: 2px solid var(--border-color); color: var(--text-label); }
     td { padding: 10px; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
     
-    .td-center { display: flex; justify-content: center; align-items: center; height: 100%; border-bottom: none !important; }
+    .td-center { display: flex; justify-content: center; align-items: center; height: 100%; border-bottom: none !important; gap: 8px; }
+    .btn-action { height:25px; width:30px; background:transparent; border:none; cursor:pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; }
 
     @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
     .saving-text { animation: blink 1s infinite; }
@@ -391,7 +392,8 @@ function renderQueue(items) {
         <td>₹${amt}</td>
         <td>
           <div class="td-center">
-            <button type="button" onclick="deleteQueue(${idx})" style="height:25px; width:30px; background:transparent; border:none; cursor:pointer; font-size:14px; padding:0;">🗑️</button>
+            <button type="button" class="btn-action" title="Edit" onclick="editQueue(${idx})">✏️</button>
+            <button type="button" class="btn-action" title="Delete" onclick="deleteQueue(${idx})">🗑️</button>
           </div>
         </td>
       </tr>`;
@@ -402,6 +404,70 @@ window.deleteQueue = (idx) => {
   const tx = db.transaction(STORE_NAME, "readwrite");
   const store = tx.objectStore(STORE_NAME);
   store.getAllKeys().onsuccess = (e) => { store.delete(e.target.result[idx]).onsuccess = () => updatePendingCount(); };
+};
+
+window.editQueue = (idx) => {
+  const tx = db.transaction(STORE_NAME, "readwrite");
+  const store = tx.objectStore(STORE_NAME);
+  store.getAll().onsuccess = (e) => {
+    const item = e.target.result[idx];
+    const p = new URLSearchParams(item);
+    
+    // Reset Form First
+    document.getElementById('paymentContainer').innerHTML = "";
+    
+    // Map Main Fields
+    document.getElementById('date').value = p.get('date');
+    document.getElementById('narration').value = p.get('narration');
+    
+    // Logic for Purpose/Spent For (Check if value exists in standard list or is 'Other')
+    const purpVal = p.get('purpose');
+    const purpSel = document.getElementById('purpose');
+    const purpOptions = Array.from(purpSel.options).map(o => o.value);
+    if(purpOptions.includes(purpVal)) {
+        purpSel.value = purpVal;
+    } else {
+        purpSel.value = "Other";
+        document.getElementById('purpose_other').value = purpVal;
+    }
+    toggleSmartOther(purpSel, 'purpose_other', 'purposeSmartRow');
+
+    const spentVal = p.get('spent_for');
+    const spentSel = document.getElementById('spent_for');
+    const spentOptions = Array.from(spentSel.options).map(o => o.value);
+    if(spentOptions.includes(spentVal)) {
+        spentSel.value = spentVal;
+    } else {
+        spentSel.value = "Other";
+        document.getElementById('spent_for_other').value = spentVal;
+    }
+    toggleSmartOther(spentSel, 'spent_for_other', 'spentSmartRow');
+
+    document.getElementById('flow').value = p.get('flow');
+    
+    // Recreate Payment Row
+    const amt = p.get('flow') === 'withdraw' ? p.get('withdrawn') : p.get('deposit');
+    createPaymentRow({ type: p.get('trtype'), acc: p.get('from_to'), amt: amt });
+    
+    // Handle Cash Denoms if applicable
+    if(p.get('trtype') === "CASH") {
+        document.querySelectorAll(".denom-input").forEach(i => {
+            const val = p.get("d"+i.dataset.val);
+            if(val) i.value = val;
+        });
+        toggleCashBlock();
+    }
+
+    updateGrandTotal();
+    
+    // Delete from queue and close modal
+    store.getAllKeys().onsuccess = (ev) => {
+        store.delete(ev.target.result[idx]).onsuccess = () => {
+            updatePendingCount();
+            document.getElementById('queueModal').classList.add('hidden');
+        };
+    };
+  };
 };
 
 function toggleSmartOther(selectObj, otherId, parentId) {
@@ -427,6 +493,7 @@ document.getElementById('btnAddMode').onclick = () => createPaymentRow();
 document.getElementById('btnViewQueue').onclick = () => document.getElementById('queueModal').classList.remove('hidden');
 document.getElementById('btnSyncAll').onclick = syncAllData;
 document.getElementById('themeToggle').onclick = () => document.body.classList.toggle('dark');
+
 document.getElementById('btnRepeat').onclick = () => {
   const last = localStorage.getItem("lastPackage"); 
   if(!last) return;
@@ -445,6 +512,7 @@ document.getElementById('btnRepeat').onclick = () => {
   });
   updateGrandTotal();
 };
+
 document.getElementById('date').value = new Date().toISOString().split("T")[0];
 createPaymentRow();
 </script>
