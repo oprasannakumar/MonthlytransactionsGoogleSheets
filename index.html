@@ -152,6 +152,9 @@
   <label>Narration</label>
   <input type="text" id="narration" required placeholder="Description">
   <div class="err-msg">Description required</div>
+
+  <label>Invoice No. (Optional)</label>
+  <input type="text" id="invoice_no" placeholder="Enter Invoice Number">
   
   <label>Purpose</label>
   <div id="purposeSmartRow" class="smart-row">
@@ -233,7 +236,7 @@
     <div class="table-container">
       <table>
         <thead>
-          <tr><th>Date</th><th>Narration</th><th>Purpose</th><th>Account</th><th>Flow</th><th>Amount</th><th style="text-align:center;">Action</th></tr>
+          <tr><th>Date</th><th>Narration</th><th>Invoice</th><th>Purpose</th><th>Account</th><th>Flow</th><th>Amount</th><th style="text-align:center;">Action</th></tr>
         </thead>
         <tbody id="queueBody"></tbody>
       </table>
@@ -367,10 +370,12 @@ document.getElementById('txnForm').onsubmit = function(e) {
   // --- PREPARE CONFIRMATION UI ---
   const pFinal = document.getElementById('purpose').value === 'Other' ? document.getElementById('purpose_other').value : document.getElementById('purpose').value;
   const sFinal = document.getElementById('spent_for').value === 'Other' ? document.getElementById('spent_for_other').value : document.getElementById('spent_for').value;
+  const invoiceVal = document.getElementById('invoice_no').value || "N/A";
   
   const detailsHtml = `
     <div class="confirm-item"><span class="confirm-label">Date</span><span class="confirm-val">${document.getElementById('date').value}</span></div>
     <div class="confirm-item"><span class="confirm-label">Narration</span><span class="confirm-val">${document.getElementById('narration').value}</span></div>
+    <div class="confirm-item"><span class="confirm-label">Invoice No.</span><span class="confirm-val">${invoiceVal}</span></div>
     <div class="confirm-item"><span class="confirm-label">Purpose</span><span class="confirm-val">${pFinal}</span></div>
     <div class="confirm-item"><span class="confirm-label">Spent For</span><span class="confirm-val">${sFinal}</span></div>
     <div class="confirm-item"><span class="confirm-label">Flow</span><span class="confirm-val">${document.getElementById('flow').value}</span></div>
@@ -406,7 +411,9 @@ document.getElementById('txnForm').onsubmit = function(e) {
     const accSel = row.querySelector('.row-acc');
     const aFinal = accSel.value === 'Other' ? row.querySelector('.row-acc-other').value : accSel.value;
     const p = new URLSearchParams({
-      date: document.getElementById('date').value, narration: document.getElementById('narration').value,
+      date: document.getElementById('date').value, 
+      narration: document.getElementById('narration').value,
+      invoice_no: document.getElementById('invoice_no').value,
       purpose: pFinal, spent_for: sFinal, flow: document.getElementById('flow').value,
       trtype: row.querySelector('.row-type').value, from_to: aFinal,
       withdrawn: document.getElementById('flow').value === 'withdraw' ? row.querySelector('.row-amt').value : 0,
@@ -506,7 +513,8 @@ function renderQueue(items) {
   items.forEach((item, idx) => {
     const p = new URLSearchParams(item);
     const amt = parseFloat(p.get('withdrawn')) > 0 ? p.get('withdrawn') : p.get('deposit');
-    body.innerHTML += `<tr><td>${p.get('date')}</td><td>${p.get('narration')}</td><td>${p.get('purpose')}</td><td>${p.get('from_to')}</td><td>${p.get('flow')}</td><td>₹${amt}</td><td><div class="td-center"><button type="button" class="btn-action" onclick="editQueue(${idx})">✏️</button><button type="button" class="btn-action" onclick="deleteQueue(${idx})">🗑️</button></div></td></tr>`;
+    const invoice = p.get('invoice_no') || "-";
+    body.innerHTML += `<tr><td>${p.get('date')}</td><td>${p.get('narration')}</td><td>${invoice}</td><td>${p.get('purpose')}</td><td>${p.get('from_to')}</td><td>${p.get('flow')}</td><td>₹${amt}</td><td><div class="td-center"><button type="button" class="btn-action" onclick="editQueue(${idx})">✏️</button><button type="button" class="btn-action" onclick="deleteQueue(${idx})">🗑️</button></div></td></tr>`;
   });
 }
 
@@ -526,6 +534,7 @@ window.editQueue = (idx) => {
     document.getElementById('paymentContainer').innerHTML = "";
     document.getElementById('date').value = p.get('date');
     document.getElementById('narration').value = p.get('narration');
+    document.getElementById('invoice_no').value = p.get('invoice_no') || "";
     const purpVal = p.get('purpose'); const purpSel = document.getElementById('purpose');
     if(Array.from(purpSel.options).some(o => o.value === purpVal)) purpSel.value = purpVal;
     else { purpSel.value = "Other"; document.getElementById('purpose_other').value = purpVal; }
@@ -580,6 +589,7 @@ document.getElementById('btnRepeat').onclick = () => {
     const p = new URLSearchParams(s);
     if(idx === 0) { 
         document.getElementById('narration').value = p.get('narration'); 
+        document.getElementById('invoice_no').value = p.get('invoice_no') || "";
         document.getElementById('purpose').value = p.get('purpose'); 
         document.getElementById('spent_for').value = p.get('spent_for'); 
         document.getElementById('flow').value = p.get('flow'); 
