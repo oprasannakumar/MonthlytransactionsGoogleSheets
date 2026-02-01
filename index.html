@@ -195,8 +195,7 @@
   <option>Travelling</option>
   <option>Utility Bills</option>
   <option>Water</option>
-  <option>Other</option>
-
+  <option value="Other">Other</option>
       </select>
       <input id="purpose_other" class="hidden" placeholder="Specify Purpose" required disabled>
       <div class="err-msg">Category required</div>
@@ -206,7 +205,7 @@
   <div id="spentSmartRow" class="smart-row">
       <select id="spent_for" required onchange="toggleSmartOther(this, 'spent_for_other', 'spentSmartRow')">
         <option value="">Select</option>
-        <option>Self</option><option>House</option><option>Mother</option><option>Father</option><option>Family</option><option>Vasavi</option><option value="Other">Other</option>
+        <option>Self</option><option>House</option><option>Mother</option><option>Grand Father</option><option>Family</option><option>Pedhamma</option><option>Vasavi</option><option value="Other">Other</option>
       </select>
       <input id="spent_for_other" class="hidden" placeholder="Specify Name" required disabled>
       <div class="err-msg">Entity required</div>
@@ -442,7 +441,6 @@ document.getElementById('btnApplyPaste').onclick = () => {
     }
   }
 
-  // Handle Reference
   if (ref) {
     document.getElementById('referenceWrapper').classList.remove('hidden');
     document.getElementById('reference').value = ref;
@@ -577,6 +575,7 @@ async function syncAllData(){
   const btnSync = document.getElementById('btnSyncAll');
   const btnStop = document.getElementById('btnStopSync');
   const syncLabel = document.getElementById('syncText');
+  const syncCountDisplay = document.getElementById('syncCount');
   
   syncAborted = false;
   btnSync.classList.add('hidden');
@@ -589,7 +588,11 @@ async function syncAllData(){
 
   for (let i = 0; i < items.length; i++) {
     if(syncAborted) break;
-    syncLabel.innerHTML = `<span class="saving-text">Syncing ${i+1}/${items.length}</span>`;
+    
+    // Updated display logic to show current progress on the stop button too
+    const progressText = `🛑 Stop Syncing (${i+1}/${items.length})`;
+    btnStop.textContent = progressText;
+    
     try {
       await fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: items[i] });
       await new Promise(res => {
@@ -597,9 +600,10 @@ async function syncAllData(){
       });
     } catch (err) { alert("Sync interrupted."); break; }
   }
+  
   btnStop.classList.add('hidden');
+  btnStop.textContent = "🛑 Stop Sync";
   btnSync.classList.remove('hidden');
-  syncLabel.textContent = "☁️ Sync All";
   if(syncAborted) alert("Sync stopped.");
 }
 
