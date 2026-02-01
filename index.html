@@ -14,25 +14,60 @@
     body.dark {
       --bg-body: #020617; --bg-card: #0f172a; --text-main: #f8fafc; --text-label: #94a3b8; --border-color: #334155; --bg-input: #1e293b;
     }
-    body { font-family:'Inter', sans-serif; background: var(--bg-body); color: var(--text-main); padding:15px; margin:0; min-height: 100vh; transition: background 0.3s; }
+    /* Smooth transition for background and colors */
+    body { 
+      font-family:'Inter', sans-serif; 
+      background: var(--bg-body); 
+      color: var(--text-main); 
+      padding:15px; margin:0; 
+      min-height: 100vh; 
+      transition: background 0.5s ease, color 0.5s ease; 
+    }
     
-    form, .confirm-card { background: var(--bg-card); max-width:400px; margin:auto; padding:20px; border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,.1); border: 1px solid var(--border-color); position: relative; }
+    form, .confirm-card { 
+      background: var(--bg-card); 
+      max-width:400px; margin:auto; padding:20px; border-radius:16px; 
+      box-shadow:0 10px 30px rgba(0,0,0,.1); border: 1px solid var(--border-color); 
+      position: relative; 
+      transition: background 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease;
+    }
     
     .confirm-card { max-width: 550px; width: 95%; } 
 
-    .header-row-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 15px; margin-top: -5px; }
+    .header-row-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 15px; margin-top: -5px; gap: 8px; }
     h3 { margin: 0; font-weight:600; font-size: 18px; flex-grow: 1; text-align: center; padding-top: 5px; }
 
     #statusDot { width: 10px; height: 10px; border-radius: 50%; background: #94a3b8; flex-shrink: 0; margin-top: 10px; }
     #statusDot.online { background: var(--secondary); box-shadow: 0 0 8px var(--secondary); }
     #statusDot.offline { background: var(--danger); box-shadow: 0 0 8px var(--danger); }
 
-    #themeToggle { 
+    #themeToggle, #fabToggle { 
       width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--border-color); 
       background: var(--bg-input); color: var(--text-main); cursor: pointer; 
-      display: flex; align-items: center; justify-content: center; font-size: 14px; transition: 0.2s; 
-      margin-top: 0px; 
+      display: flex; align-items: center; justify-content: center; font-size: 14px; 
+      transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); 
+      margin-top: 0px; flex-shrink: 0;
     }
+
+    /* Rotation effect for the theme button */
+    .theme-rotate { transform: rotate(360deg); }
+
+    .nav-fab-container { position: relative; }
+    .nav-options { 
+      position: absolute; right: 0; top: 40px; 
+      display: flex; flex-direction: column; gap: 8px; 
+      opacity: 0; transform: translateY(-10px); pointer-events: none; 
+      transition: 0.2s ease-out; z-index: 10001; 
+    }
+    .nav-fab-container.active .nav-options { opacity: 1; transform: translateY(0); pointer-events: auto; }
+    .nav-item { 
+      background: var(--bg-card); color: var(--text-main); padding: 8px 14px; 
+      border-radius: 10px; font-size: 12px; font-weight: 600; text-decoration: none; 
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15); border: 1px solid var(--border-color); 
+      white-space: nowrap; text-align: right;
+      transition: background 0.5s ease, color 0.5s ease;
+    }
+    .nav-item:hover { background: var(--primary); color: white; border-color: var(--primary); }
 
     #btnShowAutofill { 
       background: rgba(16, 185, 129, 0.1); color: var(--secondary); border: 1px dashed var(--secondary);
@@ -40,7 +75,7 @@
     }
 
     .autofill-section { background: rgba(16, 185, 129, 0.05); padding: 12px; border-radius: 12px; margin-bottom: 15px; border: 1px solid var(--secondary); }
-    .autofill-section textarea { width: 100%; height: 60px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 11px; padding: 8px; box-sizing: border-box; resize: none; background: var(--bg-input); color: var(--text-main); }
+    .autofill-section textarea { width: 100%; height: 60px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 11px; padding: 8px; box-sizing: border-box; resize: none; background: var(--bg-input); color: var(--text-main); transition: background 0.5s ease; }
     .btn-autofill { background: var(--secondary); color: white; border: none; font-size: 11px; font-weight: 700; height: 30px; border-radius: 6px; cursor: pointer; margin-top: 8px; width: 100%; }
 
     .batch-control { display: flex; align-items: center; justify-content: space-between; background: rgba(99,102,241,0.1); padding: 8px 12px; border-radius: 10px; margin-bottom: 10px; border: 1px solid var(--primary); }
@@ -58,8 +93,8 @@
     input:checked + .slider { background-color: var(--primary); }
     input:checked + .slider:before { transform: translateX(18px); }
 
-    label { font-size:12px; font-weight:600; margin-top:12px; display:block; color: var(--text-label); }
-    input, select, button { width:100%; height:var(--h); margin-top:5px; padding:0 10px; border-radius:var(--r); border:1px solid var(--border-color); box-sizing:border-box; font-size:13px; background: var(--bg-input); color: var(--text-main); transition: all 0.2s; }
+    label { font-size:12px; font-weight:600; margin-top:12px; display:block; color: var(--text-label); transition: color 0.5s ease; }
+    input, select, button { width:100%; height:var(--h); margin-top:5px; padding:0 10px; border-radius:var(--r); border:1px solid var(--border-color); box-sizing:border-box; font-size:13px; background: var(--bg-input); color: var(--text-main); transition: all 0.5s ease; }
     input:focus, select:focus { outline:none; border-color:var(--primary); box-shadow:0 0 0 3px rgba(99,102,241,.1); }
     
     .err-msg { color: var(--danger); font-size: 10px; margin-top: 4px; display: none; font-weight: 600; }
@@ -72,7 +107,7 @@
     .smart-row.has-other { display: grid; grid-template-columns: 1fr 1.2fr; gap: 10px; }
 
     .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 25px; }
-    button[type="submit"], .btn-confirm { background: var(--primary); color: #fff; border: none; font-weight: 700; cursor: pointer; letter-spacing: 0.3px; }
+    button[type="submit"], .btn-confirm { background: var(--primary); color: #fff; border: none; font-weight: 700; cursor: pointer; letter-spacing: 0.3px; transition: filter 0.2s; }
     button[type="submit"]:hover, .btn-confirm:hover { filter: brightness(1.1); }
     
     #btnRepeat, .btn-cancel { background: var(--bg-input); color: var(--text-main); border: 1.5px solid var(--border-color); font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
@@ -102,32 +137,34 @@
     .btn-del-mode { background: #fee2e2; color: #ef4444; border: 1px solid #fecaca; cursor: pointer; border-radius: 8px; display: flex; align-items: center; justify-content: center; height:var(--h); padding: 0; }
 
     .btn-add-mode { background: var(--primary); color: #fff; border: none; font-size: 11px; height: 24px; cursor: pointer; border-radius: 6px; width: auto; padding: 0 10px; margin: 0; }
-    .total-wrapper { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding: 8px 12px; background: var(--bg-input); border-radius: 8px; border: 1px solid var(--border-color); }
+    .total-wrapper { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding: 8px 12px; background: var(--bg-input); border-radius: 8px; border: 1px solid var(--border-color); transition: background 0.5s ease; }
     
-    .cash-wrapper { border:1px solid var(--border-color); border-radius:12px; padding:12px; margin-top:12px; background: var(--bg-input); }
+    .cash-wrapper { border:1px solid var(--border-color); border-radius:12px; padding:12px; margin-top:12px; background: var(--bg-input); transition: background 0.5s ease; }
     .cash-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
-    .cash-card { border:1px solid var(--border-color); border-radius:8px; padding:5px; text-align:center; background: var(--bg-card); }
-    .cash-card span { display:block; font-size: 10px; font-weight:600; color: var(--text-label); }
+    .cash-card { border:1px solid var(--border-color); border-radius:8px; padding:5px; text-align:center; background: var(--bg-card); transition: background 0.5s ease; }
+    .cash-card span { display:block; font-size: 10px; font-weight:600; color: var(--text-label); transition: color 0.5s ease; }
     .cash-card input { width:50%; height:28px; text-align:center; margin-top: 2px; font-size: 11px; }
 
     .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); z-index: 1000; display: flex; justify-content: center; align-items: center; padding: 10px; box-sizing: border-box; }
-    .modal-content { background: var(--bg-card); color: var(--text-main); width: 98%; max-width: 850px; max-height: 85vh; border-radius: 14px; display: flex; flex-direction: column; overflow: hidden; }
+    .modal-content { background: var(--bg-card); color: var(--text-main); width: 98%; max-width: 850px; max-height: 85vh; border-radius: 14px; display: flex; flex-direction: column; overflow: hidden; transition: background 0.5s ease; }
     .table-container { overflow-x: auto; padding: 10px; }
     table { width: 100%; border-collapse: collapse; font-size: 11px; min-width: 700px; }
-    th { text-align: left; padding: 10px; border-bottom: 2px solid var(--border-color); color: var(--text-label); }
-    td { padding: 10px; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
+    
+    th { text-align: center; padding: 10px; border-bottom: 2px solid var(--border-color); color: var(--text-label); transition: color 0.5s ease; }
+    td { padding: 10px; border-bottom: 1px solid var(--border-color); vertical-align: middle; text-align: center; transition: border-color 0.5s ease; }
     
     .td-center { display: flex; justify-content: center; align-items: center; height: 100%; border-bottom: none !important; gap: 8px; }
     .btn-action { height:25px; width:30px; background:transparent; border:none; cursor:pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; }
 
-    .confirm-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border-color); font-size: 13px; }
-    .confirm-label { font-weight: 600; color: var(--text-label); }
-    .confirm-val { color: var(--text-main); text-align: right; max-width: 60%; }
+    .confirm-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border-color); font-size: 13px; transition: border-color 0.5s ease; }
+    .confirm-label { font-weight: 600; color: var(--text-label); transition: color 0.5s ease; }
+    .confirm-val { color: var(--text-main); text-align: right; max-width: 60%; transition: color 0.5s ease; }
     .confirm-section-title { font-size: 12px; font-weight: 700; color: var(--primary); margin: 15px 0 5px 0; border-bottom: 2px solid var(--primary); width: fit-content; padding-right: 10px; }
 
-    .confirm-matrix-card { border:1px solid var(--border-color); border-radius:6px; padding:4px; text-align:center; background: var(--bg-input); }
-    .confirm-matrix-card span { display:block; font-size: 9px; font-weight:700; color: var(--text-label); }
-    .confirm-matrix-card strong { font-size: 11px; color: var(--text-main); }
+    .confirm-matrix-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-top: 10px; background: var(--bg-input); padding: 8px; border-radius: 8px; border: 1px solid var(--border-color); transition: background 0.5s ease; }
+    .confirm-matrix-card { border:1px solid var(--border-color); border-radius:6px; padding:4px; text-align:center; background: var(--bg-card); display: flex; flex-direction: column; align-items: center; transition: background 0.5s ease; }
+    .confirm-matrix-card span { display:block; font-size: 9px; font-weight:700; color: var(--text-label); line-height: 1; transition: color 0.5s ease; }
+    .confirm-matrix-card strong { font-size: 11px; color: var(--text-main); margin-top: 2px; transition: color 0.5s ease; }
 
     @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
     .saving-text { animation: blink 1s infinite; }
@@ -140,7 +177,16 @@
   <div class="header-row-top">
     <div id="statusDot" title="Network Status"></div>
     <h3>Monthly Transaction</h3>
-    <button type="button" id="themeToggle">🌓</button>
+    
+    <div class="nav-fab-container" id="navFab">
+      <button type="button" id="fabToggle" title="Navigation">🔗</button>
+      <div class="nav-options">
+        <a href="https://oprasannakumar.github.io/Self-TransferGoogleScripts/" class="nav-item">🔄 Self Transfer</a>
+        <a href="https://oprasannakumar.github.io/LoanTransferGoogleSheets/" class="nav-item">🏦 Loan Entry</a>
+      </div>
+    </div>
+    
+    <button type="button" id="themeToggle">🌙</button>
   </div>
 
   <button type="button" id="btnShowAutofill">✨ Use Receipt Auto-Fill</button>
@@ -298,6 +344,36 @@ let db;
 let syncAborted = false;
 let currentPayloads = [];
 const DB_NAME = "TransactionManagerDB_v4", STORE_NAME = "txn_queue";
+
+// FAB Menu Logic
+const navFab = document.getElementById('navFab');
+const fabBtn = document.getElementById('fabToggle');
+
+fabBtn.onclick = (e) => {
+  e.stopPropagation();
+  navFab.classList.toggle('active');
+};
+document.addEventListener('click', () => navFab.classList.remove('active'));
+
+// Smooth Theme Toggle Logic
+const themeToggle = document.getElementById('themeToggle');
+themeToggle.onclick = () => {
+  // Add rotation class
+  themeToggle.classList.add('theme-rotate');
+  
+  // Toggle the theme class on body
+  const isDark = document.body.classList.toggle('dark');
+  
+  // Update icon with a slight delay for the rotation feel
+  setTimeout(() => {
+    themeToggle.textContent = isDark ? '☀️' : '🌙';
+  }, 150);
+
+  // Remove rotation class after animation completes
+  setTimeout(() => {
+    themeToggle.classList.remove('theme-rotate');
+  }, 500);
+};
 
 (function initDB(){
   try {
@@ -458,6 +534,22 @@ document.getElementById('btnApplyPaste').onclick = () => {
   document.getElementById('autofillBlock').classList.add('hidden');
 };
 
+// Helper: Format ALL Cash Denominations (even zeros) for Confirmation Grid
+function getCashSummaryHtml(p) {
+  let html = '<div class="confirm-matrix-grid">';
+  denoms.forEach(v => {
+    const val = p.get("d"+v) || 0;
+    html += `<div class="confirm-matrix-card"><span>₹${v}</span><strong>${val}</strong></div>`;
+  });
+  html += '</div>';
+  return html;
+}
+
+// Helper: Format ALL Cash Denominations (even zeros) for Queue Text
+function getCashTextSummary(p) {
+    return denoms.map(v => `${v}x${p.get("d"+v) || 0}`).join(", ");
+}
+
 document.getElementById('txnForm').onsubmit = function(e) {
   e.preventDefault();
   const form = e.target;
@@ -484,30 +576,10 @@ document.getElementById('txnForm').onsubmit = function(e) {
   const sFinal = document.getElementById('spent_for').value === 'Other' ? document.getElementById('spent_for_other').value : document.getElementById('spent_for').value;
   const invoiceVal = document.getElementById('invoice_no').value || "N/A";
   const refVal = document.getElementById('reference').value || "";
-  
-  const detailsHtml = `
-    <div class="confirm-item"><span class="confirm-label">Date</span><span class="confirm-val">${document.getElementById('date').value}</span></div>
-    <div class="confirm-item"><span class="confirm-label">Narration</span><span class="confirm-val">${document.getElementById('narration').value}</span></div>
-    <div class="confirm-item"><span class="confirm-label">Invoice No.</span><span class="confirm-val">${invoiceVal}</span></div>
-    ${refVal ? `<div class="confirm-item"><span class="confirm-label">Ref</span><span class="confirm-val">${refVal}</span></div>` : ''}
-    <div class="confirm-item"><span class="confirm-label">Purpose</span><span class="confirm-val">${pFinal}</span></div>
-    <div class="confirm-item"><span class="confirm-label">Spent For</span><span class="confirm-val">${sFinal}</span></div>
-    <div class="confirm-item"><span class="confirm-label">Flow</span><span class="confirm-val">${document.getElementById('flow').value}</span></div>
-    <div class="confirm-item" style="border:none"><span class="confirm-label" style="color:var(--primary)">Total Amount</span><span class="confirm-val" style="color:var(--primary); font-weight:bold">${gTotalStr}</span></div>
-    <br>
-    <div class="confirm-section-title">Payments</div>
-    ${Array.from(document.querySelectorAll('.payment-row-wrapper')).map(row => {
-      const type = row.querySelector('.row-type').value;
-      const acc = row.querySelector('.row-acc').value === 'Other' ? row.querySelector('.row-acc-other').value : row.querySelector('.row-acc').value;
-      const amt = row.querySelector('.row-amt').value;
-      return `<div class="confirm-item"><span class="confirm-label">${type} (${acc})</span><span class="confirm-val">₹${amt}</span></div>`;
-    }).join('')}
-  `;
-
-  document.getElementById('confirmDetails').innerHTML = detailsHtml;
 
   currentPayloads = [];
   const repeatData = [];
+  
   document.querySelectorAll('.payment-row-wrapper').forEach(row => {
     const accSel = row.querySelector('.row-acc');
     const aFinal = accSel.value === 'Other' ? row.querySelector('.row-acc-other').value : accSel.value;
@@ -528,6 +600,29 @@ document.getElementById('txnForm').onsubmit = function(e) {
     currentPayloads.push(p.toString());
     repeatData.push(p.toString());
   });
+
+  // PREPARE CONFIRMATION HTML
+  let detailsHtml = `
+    <div class="confirm-item"><span class="confirm-label">Date</span><span class="confirm-val">${document.getElementById('date').value}</span></div>
+    <div class="confirm-item"><span class="confirm-label">Narration</span><span class="confirm-val">${document.getElementById('narration').value}</span></div>
+    <div class="confirm-item"><span class="confirm-label">Invoice No.</span><span class="confirm-val">${invoiceVal}</span></div>
+    ${refVal ? `<div class="confirm-item"><span class="confirm-label">Ref</span><span class="confirm-val">${refVal}</span></div>` : ''}
+    <div class="confirm-item"><span class="confirm-label">Purpose</span><span class="confirm-val">${pFinal}</span></div>
+    <div class="confirm-item"><span class="confirm-label">Spent For</span><span class="confirm-val">${sFinal}</span></div>
+    <div class="confirm-item"><span class="confirm-label">Flow</span><span class="confirm-val">${document.getElementById('flow').value}</span></div>
+    <div class="confirm-item" style="border:none"><span class="confirm-label" style="color:var(--primary)">Total Amount</span><span class="confirm-val" style="color:var(--primary); font-weight:bold">${gTotalStr}</span></div>
+    <br>
+    <div class="confirm-section-title">Payments</div>
+  `;
+
+  currentPayloads.forEach(payloadStr => {
+      const p = new URLSearchParams(payloadStr);
+      const amt = p.get('flow') === 'withdraw' ? p.get('withdrawn') : p.get('deposit');
+      detailsHtml += `<div class="confirm-item" style="border-bottom:none"><span class="confirm-label">${p.get('trtype')} (${p.get('from_to')})</span><span class="confirm-val">₹${amt}</span></div>`;
+      if(p.get('trtype') === 'CASH') detailsHtml += getCashSummaryHtml(p);
+  });
+
+  document.getElementById('confirmDetails').innerHTML = detailsHtml;
   localStorage.setItem("lastPackage", JSON.stringify(repeatData));
 
   if (!isOnline || isBatch) {
@@ -582,8 +677,6 @@ async function syncAllData(){
 
   const btnSync = document.getElementById('btnSyncAll');
   const btnStop = document.getElementById('btnStopSync');
-  const syncLabel = document.getElementById('syncText');
-  const syncCountDisplay = document.getElementById('syncCount');
   
   syncAborted = false;
   btnSync.classList.add('hidden');
@@ -596,11 +689,7 @@ async function syncAllData(){
 
   for (let i = 0; i < items.length; i++) {
     if(syncAborted) break;
-    
-    // Updated display logic to show current progress on the stop button too
-    const progressText = `🛑 Stop Syncing (${i+1}/${items.length})`;
-    btnStop.textContent = progressText;
-    
+    btnStop.textContent = `🛑 Stop Syncing (${i+1}/${items.length})`;
     try {
       await fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: items[i] });
       await new Promise(res => {
@@ -621,7 +710,24 @@ function renderQueue(items) {
     const p = new URLSearchParams(item);
     const amt = parseFloat(p.get('withdrawn')) > 0 ? p.get('withdrawn') : p.get('deposit');
     const invoice = p.get('invoice_no') || "-";
-    body.innerHTML += `<tr><td>${p.get('date')}</td><td>${p.get('narration')}</td><td>${invoice}</td><td>${p.get('purpose')}</td><td>${p.get('from_to')}</td><td>${p.get('flow')}</td><td>₹${amt}</td><td><div class="td-center"><button type="button" class="btn-action" onclick="editQueue(${idx})">✏️</button><button type="button" class="btn-action" onclick="deleteQueue(${idx})">🗑️</button></div></td></tr>`;
+    
+    let cashInfo = '';
+    if(p.get('trtype') === 'CASH') {
+        cashInfo = `<div style="font-size:10px; color:var(--primary); font-family:monospace; margin-top:4px; text-align: center;">
+                      Denoms: ${getCashTextSummary(p)}
+                    </div>`;
+    }
+    
+    body.innerHTML += `<tr>
+      <td>${p.get('date')}</td>
+      <td>${p.get('narration')}</td>
+      <td>${invoice}</td>
+      <td>${p.get('purpose')}</td>
+      <td><strong>${p.get('from_to')}</strong> ${cashInfo}</td>
+      <td>${p.get('flow')}</td>
+      <td>₹${amt}</td>
+      <td><div class="td-center"><button type="button" class="btn-action" onclick="editQueue(${idx})">✏️</button><button type="button" class="btn-action" onclick="deleteQueue(${idx})">🗑️</button></div></td>
+    </tr>`;
   });
 }
 
@@ -657,6 +763,15 @@ window.editQueue = (idx) => {
     document.getElementById('flow').value = p.get('flow');
     const amt = p.get('flow') === 'withdraw' ? p.get('withdrawn') : p.get('deposit');
     createPaymentRow({ type: p.get('trtype'), acc: p.get('from_to'), amt: amt });
+    
+    if(p.get('trtype') === 'CASH') {
+        denoms.forEach(v => {
+            const val = p.get('d'+v);
+            document.querySelector(`.denom-input[data-val="${v}"]`).value = val || "";
+        });
+        recalcCash();
+    }
+    
     updateGrandTotal();
     store.getAllKeys().onsuccess = (ev) => { store.delete(ev.target.result[idx]).onsuccess = () => { updatePendingCount(); document.getElementById('queueModal').classList.add('hidden'); }; };
   };
@@ -674,7 +789,6 @@ function toggleSmartOther(selectObj, otherId, parentId) {
 }
 
 denoms.forEach(v => {
-  const v_num = Number(v);
   const c = document.createElement("div"); c.className = "cash-card";
   c.innerHTML = `<span>₹${v}</span><input type="number" data-val="${v}" class="denom-input" placeholder="0">`;
   c.querySelector('input').oninput = recalcCash;
@@ -685,7 +799,12 @@ document.getElementById('btnAddMode').onclick = () => createPaymentRow();
 document.getElementById('btnViewQueue').onclick = () => document.getElementById('queueModal').classList.remove('hidden');
 document.getElementById('btnSyncAll').onclick = syncAllData;
 document.getElementById('btnStopSync').onclick = () => { syncAborted = true; };
-document.getElementById('themeToggle').onclick = () => document.body.classList.toggle('dark');
+
+// Initial Theme Check to set icon correctly
+if (document.body.classList.contains('dark')) {
+    themeToggle.textContent = '☀️';
+}
+
 document.getElementById('btnConfirmFinal').onclick = processSave;
 document.getElementById('btnConfirmCancel').onclick = () => document.getElementById('confirmModal').classList.add('hidden');
 
@@ -704,6 +823,12 @@ document.getElementById('btnRepeat').onclick = () => {
         toggleSmartOther(document.getElementById('spent_for'), 'spent_for_other', 'spentSmartRow');
     }
     createPaymentRow({ type: p.get('trtype'), acc: p.get('from_to'), amt: p.get('flow') === 'withdraw' ? p.get('withdrawn') : p.get('deposit') });
+    if(p.get('trtype') === 'CASH') {
+        denoms.forEach(v => {
+            document.querySelector(`.denom-input[data-val="${v}"]`).value = p.get('d'+v) || "";
+        });
+        recalcCash();
+    }
   });
   updateGrandTotal();
 };
