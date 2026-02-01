@@ -168,12 +168,35 @@
 
   <label>Invoice No. (Optional)</label>
   <input type="text" id="invoice_no" placeholder="Enter Invoice Number">
+
+  <div id="referenceWrapper" class="hidden">
+    <label>Reference</label>
+    <input type="text" id="reference" placeholder="Auto-filled Reference">
+  </div>
   
   <label>Purpose</label>
   <div id="purposeSmartRow" class="smart-row">
       <select id="purpose" required onchange="toggleSmartOther(this, 'purpose_other', 'purposeSmartRow')">
         <option value="">Select</option>
-        <option>Business</option><option>Donation</option><option>Entertainment</option><option>Food</option><option>Grocery</option><option>Hospital</option><option>House</option><option>Income</option><option>Insurance</option><option>Loan</option><option>Medicines</option><option>Puja</option><option>Travelling</option><option>Utility Bills</option><option value="Other">Other</option>
+          <option>Business</option>
+  <option>Donation</option>
+  <option>Entertainment</option>
+  <option>Food</option>
+  <option>Grocery</option>
+  <option>Hospital</option>
+  <option>House</option>
+  <option>Income</option>
+  <option>Insurance</option>
+  <option>Loan</option>
+  <option>Medicines</option>
+  <option>Miscellaneous</option>
+  <option>Puja</option>
+  <option>Tax</option>
+  <option>Travelling</option>
+  <option>Utility Bills</option>
+  <option>Water</option>
+  <option>Other</option>
+
       </select>
       <input id="purpose_other" class="hidden" placeholder="Specify Purpose" required disabled>
       <div class="err-msg">Category required</div>
@@ -362,7 +385,6 @@ document.getElementById('btnShowAutofill').onclick = () => {
   document.getElementById('autofillBlock').classList.toggle('hidden');
 };
 
-// UPDATED AUTO-FILL LOGIC: MSG -> PURPOSE | NARRATION -> PAID TO NAME
 document.getElementById('btnApplyPaste').onclick = () => {
   const text = document.getElementById('pasteArea').value;
   if (!text.trim()) return;
@@ -377,6 +399,7 @@ document.getElementById('btnApplyPaste').onclick = () => {
   const name = getVal('👤 Name');
   const msg = getVal('📝 Msg');
   const amountStr = getVal('💰 Amount');
+  const ref = getVal('🔗 Ref');
 
   if (rawDate) {
     const parts = rawDate.split('-');
@@ -386,20 +409,16 @@ document.getElementById('btnApplyPaste').onclick = () => {
     }
   }
 
-  // UPDATED NARRATION (Only Paid to Name)
   if (name) {
     document.getElementById('narration').value = `Paid to ${name}`.trim();
   }
 
-  // Set Flow to withdraw (Standard for payment receipts)
   document.getElementById('flow').value = "withdraw";
 
-  // Match Msg in Purpose Block
   if (msg) {
     const purpSel = document.getElementById('purpose');
     const purpOther = document.getElementById('purpose_other');
     let found = false;
-    
     for (let i = 0; i < purpSel.options.length; i++) {
         if (purpSel.options[i].text.toLowerCase() === msg.toLowerCase()) {
             purpSel.value = purpSel.options[i].value;
@@ -407,7 +426,6 @@ document.getElementById('btnApplyPaste').onclick = () => {
             break;
         }
     }
-    
     if (!found) {
         purpSel.value = "Other";
         purpOther.value = msg;
@@ -422,6 +440,12 @@ document.getElementById('btnApplyPaste').onclick = () => {
       rows[0].value = numericAmt;
       updateGrandTotal();
     }
+  }
+
+  // Handle Reference
+  if (ref) {
+    document.getElementById('referenceWrapper').classList.remove('hidden');
+    document.getElementById('reference').value = ref;
   }
 
   document.getElementById('pasteArea').value = "";
@@ -453,11 +477,13 @@ document.getElementById('txnForm').onsubmit = function(e) {
   const pFinal = document.getElementById('purpose').value === 'Other' ? document.getElementById('purpose_other').value : document.getElementById('purpose').value;
   const sFinal = document.getElementById('spent_for').value === 'Other' ? document.getElementById('spent_for_other').value : document.getElementById('spent_for').value;
   const invoiceVal = document.getElementById('invoice_no').value || "N/A";
+  const refVal = document.getElementById('reference').value || "";
   
   const detailsHtml = `
     <div class="confirm-item"><span class="confirm-label">Date</span><span class="confirm-val">${document.getElementById('date').value}</span></div>
     <div class="confirm-item"><span class="confirm-label">Narration</span><span class="confirm-val">${document.getElementById('narration').value}</span></div>
     <div class="confirm-item"><span class="confirm-label">Invoice No.</span><span class="confirm-val">${invoiceVal}</span></div>
+    ${refVal ? `<div class="confirm-item"><span class="confirm-label">Ref</span><span class="confirm-val">${refVal}</span></div>` : ''}
     <div class="confirm-item"><span class="confirm-label">Purpose</span><span class="confirm-val">${pFinal}</span></div>
     <div class="confirm-item"><span class="confirm-label">Spent For</span><span class="confirm-val">${sFinal}</span></div>
     <div class="confirm-item"><span class="confirm-label">Flow</span><span class="confirm-val">${document.getElementById('flow').value}</span></div>
@@ -470,18 +496,6 @@ document.getElementById('txnForm').onsubmit = function(e) {
       const amt = row.querySelector('.row-amt').value;
       return `<div class="confirm-item"><span class="confirm-label">${type} (${acc})</span><span class="confirm-val">₹${amt}</span></div>`;
     }).join('')}
-
-    ${hasCashMode ? `
-      <div class="confirm-section-title">Cash Denominations</div>
-      <div class="cash-grid" style="margin-top: 8px;">
-        ${Array.from(document.querySelectorAll('.denom-input')).map(i => `
-          <div class="confirm-matrix-card">
-            <span>₹${i.dataset.val}</span>
-            <strong>${i.value || 0}</strong>
-          </div>
-        `).join('')}
-      </div>
-    ` : ''}
   `;
 
   document.getElementById('confirmDetails').innerHTML = detailsHtml;
@@ -495,6 +509,7 @@ document.getElementById('txnForm').onsubmit = function(e) {
       date: document.getElementById('date').value, 
       narration: document.getElementById('narration').value,
       invoice_no: document.getElementById('invoice_no').value,
+      reference: refVal,
       purpose: pFinal, spent_for: sFinal, flow: document.getElementById('flow').value,
       trtype: row.querySelector('.row-type').value, from_to: aFinal,
       withdrawn: document.getElementById('flow').value === 'withdraw' ? row.querySelector('.row-amt').value : 0,
@@ -510,7 +525,6 @@ document.getElementById('txnForm').onsubmit = function(e) {
   localStorage.setItem("lastPackage", JSON.stringify(repeatData));
 
   if (!isOnline || isBatch) {
-    alert(!isOnline ? "No network connection. Saving to local storage (Queue)." : "Batch mode active. Transaction added to queue.");
     saveToDB();
   } else {
     document.getElementById('confirmModal').classList.remove('hidden');
@@ -548,6 +562,7 @@ function fullReset() {
   document.getElementById('purposeSmartRow').classList.remove('has-other');
   document.getElementById('spentSmartRow').classList.remove('has-other');
   document.getElementById('cashBlock').classList.remove('is-invalid');
+  document.getElementById('referenceWrapper').classList.add('hidden');
   document.getElementById('paymentContainer').innerHTML = ""; 
   createPaymentRow();
   document.getElementById('date').value = new Date().toISOString().split("T")[0];
@@ -615,6 +630,10 @@ window.editQueue = (idx) => {
     document.getElementById('date').value = p.get('date');
     document.getElementById('narration').value = p.get('narration');
     document.getElementById('invoice_no').value = p.get('invoice_no') || "";
+    if(p.get('reference')) {
+        document.getElementById('referenceWrapper').classList.remove('hidden');
+        document.getElementById('reference').value = p.get('reference');
+    }
     const purpVal = p.get('purpose'); const purpSel = document.getElementById('purpose');
     if(Array.from(purpSel.options).some(o => o.value === purpVal)) purpSel.value = purpVal;
     else { purpSel.value = "Other"; document.getElementById('purpose_other').value = purpVal; }
@@ -626,10 +645,6 @@ window.editQueue = (idx) => {
     document.getElementById('flow').value = p.get('flow');
     const amt = p.get('flow') === 'withdraw' ? p.get('withdrawn') : p.get('deposit');
     createPaymentRow({ type: p.get('trtype'), acc: p.get('from_to'), amt: amt });
-    if(p.get('trtype') === "CASH") {
-        document.querySelectorAll(".denom-input").forEach(i => { const val = p.get("d"+i.dataset.val); if(val) i.value = val; });
-        toggleCashBlock();
-    }
     updateGrandTotal();
     store.getAllKeys().onsuccess = (ev) => { store.delete(ev.target.result[idx]).onsuccess = () => { updatePendingCount(); document.getElementById('queueModal').classList.add('hidden'); }; };
   };
