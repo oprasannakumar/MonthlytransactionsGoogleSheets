@@ -494,7 +494,7 @@ document.getElementById('txnForm').onsubmit = function(e) {
     <div class="confirm-item"><span class="confirm-label">Spent For</span><span class="confirm-val">${sFinal}</span></div>
     <div class="confirm-item"><span class="confirm-label">Flow</span><span class="confirm-val">${document.getElementById('flow').value}</span></div>
     <div class="confirm-item" style="border:none"><span class="confirm-label" style="color:var(--primary)">Total Amount</span><span class="confirm-val" style="color:var(--primary); font-weight:bold">${gTotalStr}</span></div>
-    
+    <br>
     <div class="confirm-section-title">Payments</div>
     ${Array.from(document.querySelectorAll('.payment-row-wrapper')).map(row => {
       const type = row.querySelector('.row-type').value;
