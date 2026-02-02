@@ -663,7 +663,7 @@ document.getElementById('txnForm').onsubmit = function(e) {
   currentPayloads.forEach(payloadStr => {
       const p = new URLSearchParams(payloadStr);
       const amt = p.get('flow') === 'withdraw' ? p.get('withdrawn') : p.get('deposit');
-      detailsHtml += `<div class="confirm-item" style="border-bottom:none"><span class="confirm-label">${p.get('trtype')} (${p.get('from_to')})</span><span class="confirm-val">₹${amt}</span></div>`;
+      detailsHtml += `<div class="confirm-item" style="border-bottom:none"><span class="confirm-label">${p.get('from_to')} (${p.get('trtype')})</span><span class="confirm-val">₹${amt}</span></div>`;
       if(p.get('trtype') === 'CASH') detailsHtml += getCashSummaryHtml(p);
   });
 
