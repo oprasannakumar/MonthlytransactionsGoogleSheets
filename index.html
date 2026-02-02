@@ -761,7 +761,7 @@ function renderQueue(items) {
 if (p.get('trtype') === 'CASH') {
     accountDisplay += cashInfo;
 } else {
-    accountDisplay += `<div style="font-size:10px; color:#94a3b8; margin-top:2px;">${p.get('trtype')}</div>`;
+    accountDisplay += `<div style="font-size:10px; color:#94a3b8; margin-top:2px;">(${p.get('trtype')})</div>`;
 }
 
     body.innerHTML += `<tr>
