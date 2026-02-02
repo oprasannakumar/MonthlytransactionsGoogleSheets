@@ -726,8 +726,8 @@ function renderQueue(items) {
     
     let cashInfo = '';
     if(p.get('trtype') === 'CASH') {
-        cashInfo = `<div style="font-size:10px; color:var(--primary); font-family:monospace; margin-top:4px; text-align: center;">
-                      Denoms: ${getCashTextSummary(p)}
+        cashInfo = `<div style="font-size:10px; color:var(--primary); font-family:monospace; margin-top:4px; text-align: center; width:170px;" >
+                      ${getCashTextSummary(p)}
                     </div>`;
     }
     
