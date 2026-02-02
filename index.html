@@ -7,7 +7,7 @@
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
     :root { 
-      --h:42px; --r:10px; --primary: #6366f1; --secondary: #10b981; --danger: #ef4444; 
+      --h:42px; --r:10px; --primary: #22c55e; --secondary: #3b82f6; --danger: #ef4444; 
       --bg-body: linear-gradient(135deg,#eef2f7,#f9fafb);
       --bg-card: #ffffff; --text-main: #1f2937; --text-label: #374151; --border-color: #d1d5db; --bg-input: #ffffff;
     }
@@ -150,7 +150,20 @@
     }
     
     #btnSyncAll { background: var(--secondary); color: white; }
-    #btnStopSync { background: var(--danger); color: white; }
+   #btnStopSync { 
+  background: #ffffff; /* White background to contrast primary sync */
+  color: #ef4444;      /* Red text to indicate a stop/danger action */
+  border: 1.5px solid #ef4444; /* Red border */
+  height: 42px;
+  border-radius: 12px; /* Slightly more rounded for a modern feel */
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
     #btnViewQueue { background: #94a3b8; color: white; }
     body.dark #btnViewQueue { background: #475569; }
 
@@ -158,7 +171,7 @@
     .payment-row { display: grid; grid-template-columns: 0.9fr 1.1fr 75px 35px; gap: 6px; align-items: end; }
     .btn-del-mode { background: #fee2e2; color: #ef4444; border: 1px solid #fecaca; cursor: pointer; border-radius: 8px; display: flex; align-items: center; justify-content: center; height:var(--h); padding: 0; }
 
-    .btn-add-mode { background: var(--primary); color: #fff; border: none; font-size: 11px; height: 24px; cursor: pointer; border-radius: 6px; width: auto; padding: 0 10px; margin: 0; }
+    .btn-add-mode { background: var(--secondary); color: #fff; border: none; font-size: 11px; height: 24px; cursor: pointer; border-radius: 6px; width: auto; padding: 0 10px; margin: 0; }
     .total-wrapper { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding: 8px 12px; background: var(--bg-input); border-radius: 8px; border: 1px solid var(--border-color); transition: background 0.5s ease; }
     
     .cash-wrapper { border:1px solid var(--border-color); border-radius:12px; padding:12px; margin-top:12px; background: var(--bg-input); transition: background 0.5s ease; }
