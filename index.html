@@ -170,11 +170,33 @@
     .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); z-index: 1000; display: flex; justify-content: center; align-items: center; padding: 10px; box-sizing: border-box; }
     .modal-content { background: var(--bg-card); color: var(--text-main); width: 98%; max-width: 850px; max-height: 85vh; border-radius: 14px; display: flex; flex-direction: column; overflow: hidden; transition: background 0.5s ease; }
     .table-container { overflow-x: auto; padding: 10px; }
-    table { width: 100%; border-collapse: collapse; font-size: 11px; min-width: 700px; }
+    table { width: 100%; border-collapse: collapse; font-size: 11px; min-width: 900px; }
     
     th { text-align: center; padding: 10px; border-bottom: 2px solid var(--border-color); color: var(--text-label); transition: color 0.5s ease; }
     td { padding: 10px; border-bottom: 1px solid var(--border-color); vertical-align: middle; text-align: center; transition: border-color 0.5s ease; }
     
+    /* Target the first column (Date) in every table row */
+    table td:first-child, table th:first-child {
+      text-align: center; /* Aligned left for date reading */
+      padding-left: 5px; 
+      width: 70px; /* Width for format 1-Jan-2026 */
+    }
+/* Target the second column (Narration) in the table */
+table td:nth-child(2), table th:nth-child(2) {
+  text-align: center;width:200px; /* Options: left, center, right */
+  padding-left: 0px;/* Optional: adds a small gap from the border */
+}
+/* Target the fifth column (Narration) in the table */
+table td:nth-child(5), table th:nth-child(5) {
+  text-align: center;width:160px; /* Options: left, center, right */
+  padding-left: 0px;/* Optional: adds a small gap from the border */
+}
+/* Target the third column (Narration) in the table */
+table td:nth-child(3), table th:nth-child(5) {
+  text-align: center;width:120px; /* Options: left, center, right */
+  padding-left: 0px;/* Optional: adds a small gap from the border */
+}
+
     .td-center { display: flex; justify-content: center; align-items: center; height: 100%; border-bottom: none !important; gap: 8px; }
     .btn-action { height:25px; width:30px; background:transparent; border:none; cursor:pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; }
 
@@ -191,6 +213,8 @@
     @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
     .saving-text { animation: blink 1s infinite; }
     .hidden { display:none !important }
+    
+    .queue-denoms { display: block; font-size: 10px; color: #6366f1; margin-top: 4px; line-height: 1.4; text-align: center; width:160px;}
   </style>
 </head>
 
@@ -349,6 +373,14 @@
 </div>
 
 <script>
+// DATE FORMATTER HELPER
+function formatDisplayDate(dateStr) {
+  if (!dateStr) return "";
+  const d = new Date(dateStr);
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  return `${d.getDate()}-${months[d.getMonth()]}-${d.getFullYear()}`;
+}
+
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbysvpY7m7Iw6CO6GPyrJFNR6hcs3bK3XVnEVIySYe-unbIc0kBh_c_TNaZ5mIiDRnRi/exec";
 const bankAccounts = ["FI","HDFC Old","HDFC New","ICICI","IndusInd","Kotak","RBL","SBI"];
 const creditCards = [
@@ -433,7 +465,7 @@ function createPaymentRow(initial = null) {
       <div><input type="number" class="row-amt" placeholder="Amt" step="0.01" required min="0.01"></div>
       <button type="button" class="btn-del-mode">✕</button>
     </div>
-    <input class="row-acc-other hidden" style="margin-top:6px; height:36px; width:100%;" placeholder="Specify Account" required disabled>
+    <input class="row-acc-other hidden" style="margin-top:6px; height:36px; width:100%; border-radius:10px; border:1px solid var(--border-color); padding:0 10px;" placeholder="Specify Account" required disabled>
     <div class="err-msg">Payment details incomplete</div>
   `;
   const tSel = wrapper.querySelector('.row-type'), aSel = wrapper.querySelector('.row-acc'), amtInp = wrapper.querySelector('.row-amt'), otherAccInp = wrapper.querySelector('.row-acc-other');
@@ -616,7 +648,7 @@ document.getElementById('txnForm').onsubmit = function(e) {
   });
 
   let detailsHtml = `
-    <div class="confirm-item"><span class="confirm-label">Date</span><span class="confirm-val">${document.getElementById('date').value}</span></div>
+    <div class="confirm-item"><span class="confirm-label">Date</span><span class="confirm-val">${formatDisplayDate(document.getElementById('date').value)}</span></div>
     <div class="confirm-item"><span class="confirm-label">Narration</span><span class="confirm-val">${document.getElementById('narration').value}</span></div>
     <div class="confirm-item"><span class="confirm-label">Invoice No.</span><span class="confirm-val">${invoiceVal}</span></div>
     ${refVal ? `<div class="confirm-item"><span class="confirm-label">Ref</span><span class="confirm-val">${refVal}</span></div>` : ''}
@@ -673,9 +705,6 @@ function fullReset() {
   document.getElementById('txnForm').classList.remove('was-validated');
   document.getElementById('purpose_other').classList.add('hidden');
   document.getElementById('spent_for_other').classList.add('hidden');
-  document.getElementById('purposeSmartRow').classList.remove('has-other');
-  document.getElementById('spentSmartRow').classList.remove('has-other');
-  document.getElementById('cashBlock').classList.remove('is-invalid');
   document.getElementById('referenceWrapper').classList.add('hidden');
   document.getElementById('paymentContainer').innerHTML = ""; 
   createPaymentRow();
@@ -726,20 +755,21 @@ function renderQueue(items) {
     
     let cashInfo = '';
     if(p.get('trtype') === 'CASH') {
-        cashInfo = `<div style="font-size:10px; color:var(--primary); font-family:monospace; margin-top:4px; text-align: center; width:170px;" >
-                      ${getCashTextSummary(p)}
-                    </div>`;
+        cashInfo = `<div class="queue-denoms">${getCashTextSummary(p)}</div>`;
     }
     
     body.innerHTML += `<tr>
-      <td>${p.get('date')}</td>
+      <td>${formatDisplayDate(p.get('date'))}</td>
       <td>${p.get('narration')}</td>
       <td>${invoice}</td>
       <td>${p.get('purpose')}</td>
       <td><strong>${p.get('from_to')}</strong> ${cashInfo}</td>
       <td>${p.get('flow')}</td>
       <td>₹${amt}</td>
-      <td><div class="td-center"><button type="button" class="btn-action" onclick="editQueue(${idx})">✏️</button><button type="button" class="btn-action" onclick="deleteQueue(${idx})">🗑️</button></div></td>
+      <td><div style="display: flex; justify-content: center; gap: 10px;">
+        <span style="cursor:pointer; font-size:16px;" onclick="editQueue(${idx})">✏️</span>
+        <span style="cursor:pointer; font-size:16px;" onclick="deleteQueue(${idx})">🗑️</span>
+      </div></td>
     </tr>`;
   });
 }
