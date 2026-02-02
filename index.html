@@ -31,7 +31,7 @@
       transition: background 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease;
     }
     
-    .confirm-card { max-width: 550px; width: 95%; } 
+    .confirm-card { max-width: 550px; width: 70%; } 
 
     /* HEADER CENTERING LOGIC */
     .header-row-top { 
@@ -757,21 +757,27 @@ function renderQueue(items) {
     if(p.get('trtype') === 'CASH') {
         cashInfo = `<div class="queue-denoms">${getCashTextSummary(p)}</div>`;
     }
-    
+    let accountDisplay = `<strong>${p.get('from_to')}</strong>`;
+if (p.get('trtype') === 'CASH') {
+    accountDisplay += cashInfo;
+} else {
+    accountDisplay += `<div style="font-size:10px; color:#94a3b8; margin-top:2px;">${p.get('trtype')}</div>`;
+}
+
     body.innerHTML += `<tr>
-      <td>${formatDisplayDate(p.get('date'))}</td>
-      <td>${p.get('narration')}</td>
-      <td>${invoice}</td>
-      <td>${p.get('purpose')}</td>
-      <td><strong>${p.get('from_to')}</strong> ${cashInfo}</td>
-      <td>${p.get('flow')}</td>
-      <td>₹${amt}</td>
-      <td><div style="display: flex; justify-content: center; gap: 10px;">
-        <span style="cursor:pointer; font-size:16px;" onclick="editQueue(${idx})">✏️</span>
-        <span style="cursor:pointer; font-size:16px;" onclick="deleteQueue(${idx})">🗑️</span>
-      </div></td>
-    </tr>`;
-  });
+  <td>${formatDisplayDate(p.get('date'))}</td>
+  <td>${p.get('narration')}</td>
+  <td>${invoice}</td>
+  <td>${p.get('purpose')}</td>
+  <td>${accountDisplay}</td>
+  <td>${p.get('flow')}</td>
+  <td>₹${amt}</td>
+  <td><div class="td-center">
+    <span style="cursor:pointer; font-size:16px;" onclick="editQueue(${idx})">✏️</span>
+    <span style="cursor:pointer; font-size:16px;" onclick="deleteQueue(${idx})">🗑️</span>
+  </div></td>
+</tr>`; 
+ });
 }
 
 window.deleteQueue = (idx) => {
