@@ -562,7 +562,7 @@ document.getElementById('btnApplyPaste').onclick = () => {
   const flowField = document.getElementById('flow');
   if (rawType.toLowerCase().includes('debit')) {
     flowField.value = "withdraw";
-  } else if (rawType.toLowerCase().includes('credit') || rawType.toLowerCase().includes('deposit')) {
+  } else if (rawType.toLowerCase().includes('credit')) {
     flowField.value = "deposit";
   }
 
