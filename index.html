@@ -543,7 +543,10 @@ document.getElementById('btnApplyPaste').onclick = () => {
   const msg = getVal('📝 Msg');
   const amountStr = getVal('💰 Amount');
   const ref = getVal('🔗 Ref');
+  const rawType = getVal('⇄ Type'); // New: Capture Type
+  const rawAcc = getVal('🏢 Account'); // New: Capture Account
 
+  // 1. Date Logic
   if (rawDate) {
     const parts = rawDate.split('-');
     if (parts.length === 3) {
@@ -552,12 +555,18 @@ document.getElementById('btnApplyPaste').onclick = () => {
     }
   }
 
-  if (name) {
-    document.getElementById('narration').value = `Paid to ${name}`.trim();
+  // 2. Narration
+  if (name) document.getElementById('narration').value = `Paid to ${name}`.trim();
+
+  // 3. Flow Logic (Debit -> Withdraw, others -> Deposit)
+  const flowField = document.getElementById('flow');
+  if (rawType.toLowerCase().includes('debit')) {
+    flowField.value = "withdraw";
+  } else if (rawType.toLowerCase().includes('credit') || rawType.toLowerCase().includes('deposit')) {
+    flowField.value = "deposit";
   }
 
-  document.getElementById('flow').value = "withdraw";
-
+  // 4. Purpose Logic
   if (msg) {
     const purpSel = document.getElementById('purpose');
     const purpOther = document.getElementById('purpose_other');
@@ -576,6 +585,7 @@ document.getElementById('btnApplyPaste').onclick = () => {
     toggleSmartOther(purpSel, 'purpose_other', 'purposeSmartRow');
   }
 
+  // 5. Amount Logic
   if (amountStr) {
     const numericAmt = amountStr.replace(/[^\d.]/g, '');
     const rows = document.querySelectorAll('.row-amt');
@@ -585,9 +595,16 @@ document.getElementById('btnApplyPaste').onclick = () => {
     }
   }
 
+  // 6. Reference Logic
   if (ref) {
     document.getElementById('referenceWrapper').classList.remove('hidden');
     document.getElementById('reference').value = ref;
+  }
+
+  // 7. Account Display Logic
+  if (rawAcc) {
+      const headerLabel = document.querySelector('label[style*="margin:0"]');
+      headerLabel.innerHTML = `Payment Breakdown <span style="color:var(--secondary); font-size:10px;">(Detected: ${rawAcc})</span>`;
   }
 
   document.getElementById('pasteArea').value = "";
