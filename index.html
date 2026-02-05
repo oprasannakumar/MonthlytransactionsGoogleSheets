@@ -650,8 +650,13 @@ document.getElementById('txnForm').onsubmit = function(e) {
   const pFinal = document.getElementById('purpose').value === 'Other' ? document.getElementById('purpose_other').value : document.getElementById('purpose').value;
   const sFinal = document.getElementById('spent_for').value === 'Other' ? document.getElementById('spent_for_other').value : document.getElementById('spent_for').value;
   const invoiceVal = document.getElementById('invoice_no').value || "N/A";
-  const refVal = document.getElementById('reference').value || "";
-
+ let refVal = document.getElementById('reference').value.trim();
+if (!refVal) {
+    const now = new Date();
+    const datePart = now.toISOString().split('T')[0].replace(/-/g, ''); // e.g., 20260205
+    const randomPart = Math.random().toString(36).substring(2, 6).toUpperCase(); // 4 random chars
+    refVal = `REF-${datePart}-${randomPart}`;
+}
   currentPayloads = [];
   const repeatData = [];
   
