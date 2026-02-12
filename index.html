@@ -103,7 +103,7 @@
     .nav-item:hover { background: var(--primary); color: white; border-color: var(--primary); }
 
      .autofill-section { background: rgba(16, 185, 129, 0.05); padding: 12px; border-radius: 12px; margin-bottom: 15px; border: 1px solid var(--secondary); }
-    .autofill-section textarea { width: 100%; height: 60px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 11px; padding: 8px; box-sizing: border-box; resize: none; background: var(--bg-input); color: var(--text-main); transition: background 0.5s ease; }
+    .autofill-section textarea { width: 100%; height: 130px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 11px; padding: 8px; box-sizing: border-box; resize: none; background: var(--bg-input); color: var(--text-main); transition: background 0.5s ease; }
     .btn-autofill { background: var(--secondary); color: white; border: none; font-size: 11px; font-weight: 700; height: 30px; border-radius: 6px; cursor: pointer; margin-top: 0px; width: 100%; }
 
     .batch-control { display: flex; align-items: center; justify-content: space-between; background: rgba(99,102,241,0.1); padding: 8px 12px; border-radius: 10px; margin-bottom: 10px; border: 1px solid var(--primary); margin-top:5px;}
@@ -230,10 +230,8 @@ table td:nth-child(3), table th:nth-child(5) {
   margin: 10px 0;
 }
 
-.receipt-flex button,
-.receipt-flex label {
+.receipt-flex button  {
   flex: 1;
-  width: auto !important; /* override global width */
   margin: 0 !important;   /* remove global margin-top */
   height: 42px;
   border-radius: 12px;
@@ -244,6 +242,18 @@ table td:nth-child(3), table th:nth-child(5) {
   justify-content: center;
   cursor: pointer;
 }
+.receipt-flex label {
+  flex: 0 0 42px;
+  margin: 0 !important;   /* remove global margin-top */
+  height: 42px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}                      
 
 /* Autofill */
 #btnShowAutofill {
@@ -286,7 +296,7 @@ table td:nth-child(3), table th:nth-child(5) {
   </button>
 
   <label class="receipt-btn upload-btn">
-    📷 Upload Receipt
+    📷
     <input type="file" id="receiptUpload" accept="image/*" hidden>
   </label>
 </div>
