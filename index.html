@@ -102,11 +102,7 @@
     }
     .nav-item:hover { background: var(--primary); color: white; border-color: var(--primary); }
 
-    #btnShowAutofill { 
-      background: rgba(16, 185, 129, 0.1); color: var(--primary); border: 1px dashed var(--primary);
-      font-size: 11px; font-weight: 700; height: 32px; margin-bottom: 10px; cursor: pointer;margin-top:-10px;}
-
-    .autofill-section { background: rgba(16, 185, 129, 0.05); padding: 12px; border-radius: 12px; margin-bottom: 15px; border: 1px solid var(--secondary); }
+     .autofill-section { background: rgba(16, 185, 129, 0.05); padding: 12px; border-radius: 12px; margin-bottom: 15px; border: 1px solid var(--secondary); }
     .autofill-section textarea { width: 100%; height: 60px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 11px; padding: 8px; box-sizing: border-box; resize: none; background: var(--bg-input); color: var(--text-main); transition: background 0.5s ease; }
     .btn-autofill { background: var(--secondary); color: white; border: none; font-size: 11px; font-weight: 700; height: 30px; border-radius: 6px; cursor: pointer; margin-top: 0px; width: 100%; }
 
@@ -227,7 +223,43 @@ table td:nth-child(3), table th:nth-child(5) {
     .hidden { display:none !important }
     
     .queue-denoms { display: block; font-size: 10px; color: #6366f1; margin-top: 4px; line-height: 1.4; text-align: center; width:160px;}
-  </style>
+.receipt-flex {
+  display: flex;
+  align-items: stretch; /* makes same height */
+  gap: 10px;
+  margin: 10px 0;
+}
+
+.receipt-flex button,
+.receipt-flex label {
+  flex: 1;
+  width: auto !important; /* override global width */
+  margin: 0 !important;   /* remove global margin-top */
+  height: 42px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+/* Autofill */
+#btnShowAutofill {
+  background: rgba(16,185,129,0.1);
+  color: var(--primary);
+  border: 1px dashed var(--primary);
+}
+
+/* Upload */
+.upload-btn {
+  background: rgba(59,130,246,0.1);
+  color: var(--secondary);
+  border: 1px dashed var(--secondary);
+}
+
+ </style>
 </head>
 
 <body>
@@ -248,7 +280,16 @@ table td:nth-child(3), table th:nth-child(5) {
     </div>
   </div>
 
-  <button type="button" id="btnShowAutofill">✨ Use Receipt Auto-Fill</button>
+<div class="receipt-flex">
+  <button type="button" id="btnShowAutofill" class="receipt-btn">
+    ✨ Use Receipt Auto-Fill
+  </button>
+
+  <label class="receipt-btn upload-btn">
+    📷 Upload Receipt
+    <input type="file" id="receiptUpload" accept="image/*" hidden>
+  </label>
+</div>
 
   <div id="autofillBlock" class="autofill-section hidden">
     <textarea id="pasteArea" placeholder="Paste saved confirmation text here..."></textarea>
@@ -394,6 +435,7 @@ function formatDisplayDate(dateStr) {
 }
 
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbysvpY7m7Iw6CO6GPyrJFNR6hcs3bK3XVnEVIySYe-unbIc0kBh_c_TNaZ5mIiDRnRi/exec";
+const IMAGE_PROCESS_URL = "https://script.google.com/macros/s/AKfycbx7CrlFktwGnHXRvdcovoXrZAjEGlg5axKnK5a7udfT-NdRwLcQ1xyqOsJ7vW7PUyPj3A/exec";
 const bankAccounts = ["FI","HDFC Old","HDFC New","ICICI","IndusInd","Kotak","RBL","SBI"];
 const creditCards = [
   "Axis Flipkart","Axis MyZone","Axis Neo",
@@ -721,6 +763,61 @@ if (rawType || rawAcc) {
   document.getElementById('pasteArea').value = "";
   document.getElementById('autofillBlock').classList.add('hidden');
 };
+document.getElementById('receiptUpload').addEventListener('change', function(e) {
+
+  const file = e.target.files[0];
+  if (!file) return;
+
+  document.getElementById('btnShowAutofill').textContent = "🔍 Processing...";
+
+  const reader = new FileReader();
+
+  reader.onload = function () {
+    const base64 = reader.result.split(",")[1];
+
+    fetch(IMAGE_PROCESS_URL, {
+      method: "POST",
+      body: JSON.stringify({ image: base64 })
+    })
+    .then(res => res.json())
+    .then(response => {
+
+      document.getElementById('btnShowAutofill').textContent = "✨ Use Receipt Auto-Fill";
+
+      if (response.status !== "success") {
+        alert("Extraction failed");
+        return;
+      }
+
+      const d = response.data;
+
+      // Convert JSON into your Telegram-style paste format
+      const formattedText =
+`📅 Date: ${d.date}
+👤 Name: ${d.name}
+🆔 ID: ${d.txnId}
+📝 Msg: ${d.imageMessage}
+💰 Amount: ${d.amount}
+📊 Direction: ${d.direction === "IN" ? "🟢 IN" : "🔴 OUT"}
+⇄ Type: ${d.type}
+🏢 Account: ${d.account}
+🔗 Ref: ${d.refId}`;
+
+      document.getElementById('pasteArea').value = formattedText;
+
+      // Automatically open autofill section
+      document.getElementById('autofillBlock').classList.remove('hidden');
+
+    })
+    .catch(err => {
+      document.getElementById('btnShowAutofill').textContent = "✨ Use Receipt Auto-Fill";
+      alert("Upload failed");
+    });
+  };
+
+  reader.readAsDataURL(file);
+});
+
 
 function getCashSummaryHtml(p) {
   let html = '<div class="confirm-matrix-grid">';
