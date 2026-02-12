@@ -545,6 +545,7 @@ document.getElementById('btnApplyPaste').onclick = () => {
   const ref = getVal('🔗 Ref');
   const rawType = getVal('⇄ Type'); // New: Capture Type
   const rawAcc = getVal('🏢 Account'); // New: Capture Account
+  const rawDirection = getVal('📊 Direction');
 
   // 1. Date Logic
   if (rawDate) {
@@ -556,34 +557,88 @@ document.getElementById('btnApplyPaste').onclick = () => {
   }
 
   // 2. Narration
-  if (name) document.getElementById('narration').value = `Paid to ${name}`.trim();
+  // 2. Smart Narration Logic (Based on Direction)
+if (name) {
+  let narrationPrefix = "";
+
+  if (rawDirection) {
+    const dirLower = rawDirection.toLowerCase();
+
+    if (dirLower.includes("in")) {
+      narrationPrefix = "Received from ";
+    } 
+    else if (dirLower.includes("out")) {
+      narrationPrefix = "Paid to ";
+    }
+  }
+
+  // Fallback if direction missing → use type
+  if (!narrationPrefix && rawType) {
+    const typeLower = rawType.toLowerCase();
+
+    if (typeLower.includes("debit")) {
+      narrationPrefix = "Paid to ";
+    } 
+    else if (
+      typeLower.includes("credit") ||
+      typeLower.includes("upi")
+    ) {
+      narrationPrefix = "Received from ";
+    }
+  }
+
+  document.getElementById('narration').value = `${narrationPrefix}${name}`.trim();
+}
+
 
   // 3. Flow Logic (Debit -> Withdraw, others -> Deposit)
-  const flowField = document.getElementById('flow');
-  if (rawType.toLowerCase().includes('debit')) {
+ // 3. Smart Flow Logic (Direction First → Then Type)
+const flowField = document.getElementById('flow');
+
+if (rawDirection) {
+  const dirLower = rawDirection.toLowerCase();
+
+  if (dirLower.includes("in")) {
+    flowField.value = "deposit";
+  } else if (dirLower.includes("out")) {
     flowField.value = "withdraw";
-  } else if (rawType.toLowerCase().includes('credit')) {
+  }
+}
+else if (rawType) {
+  const typeLower = rawType.toLowerCase();
+
+  if (typeLower.includes("debit")) {
+    flowField.value = "withdraw";
+  }
+  else if (
+    typeLower.includes("credit") ||
+    typeLower.includes("upi")
+  ) {
     flowField.value = "deposit";
   }
+}
 
-  // 4. Purpose Logic
-  if (msg) {
-    const purpSel = document.getElementById('purpose');
-    const purpOther = document.getElementById('purpose_other');
-    let found = false;
-    for (let i = 0; i < purpSel.options.length; i++) {
-        if (purpSel.options[i].text.toLowerCase() === msg.toLowerCase()) {
-            purpSel.value = purpSel.options[i].value;
-            found = true;
-            break;
-        }
-    }
-    if (!found) {
-        purpSel.value = "Other";
-        purpOther.value = msg;
-    }
-    toggleSmartOther(purpSel, 'purpose_other', 'purposeSmartRow');
+
+// 4. Purpose = Message (Direct Fill)
+if (msg) {
+  const purpSel = document.getElementById('purpose');
+  const purpOther = document.getElementById('purpose_other');
+
+  const options = Array.from(purpSel.options);
+  const match = options.find(opt =>
+    opt.text.toLowerCase() === msg.toLowerCase()
+  );
+
+  if (match) {
+    purpSel.value = match.value;
+  } else {
+    purpSel.value = "Other";
+    purpOther.value = msg;
   }
+
+  toggleSmartOther(purpSel, 'purpose_other', 'purposeSmartRow');
+}
+
 
   // 5. Amount Logic
   if (amountStr) {
@@ -602,10 +657,66 @@ document.getElementById('btnApplyPaste').onclick = () => {
   }
 
   // 7. Account Display Logic
-  if (rawAcc) {
-      const headerLabel = document.querySelector('label[style*="margin:0"]');
-      headerLabel.innerHTML = `Payment Breakdown <span style="color:var(--secondary); font-size:10px;">(Detected: ${rawAcc})</span>`;
-  }
+// 7. Auto Fill Payment Mode & Account
+if (rawType || rawAcc) {
+
+    // Ensure at least one payment row exists
+    let firstRow = document.querySelector('.payment-row-wrapper');
+    if (!firstRow) {
+        createPaymentRow();
+        firstRow = document.querySelector('.payment-row-wrapper');
+    }
+
+    const typeSelect = firstRow.querySelector('.row-type');
+    const accSelect  = firstRow.querySelector('.row-acc');
+    const amtInput   = firstRow.querySelector('.row-amt');
+
+    // 🔹 TYPE MAPPING
+    if (rawType) {
+        const typeLower = rawType.toLowerCase();
+
+        if (typeLower.includes("credit")) typeSelect.value = "CREDIT";
+        else if (typeLower.includes("debit")) typeSelect.value = "DEBIT";
+        else if (typeLower.includes("upi")) typeSelect.value = "UPI";
+        else if (typeLower.includes("net")) typeSelect.value = "NET";
+        else if (typeLower.includes("reward")) typeSelect.value = "REWARDS";
+    }
+
+    typeSelect.dispatchEvent(new Event('change'));
+
+    // 🔹 ACCOUNT MATCHING (Smart Partial Match)
+    if (rawAcc) {
+        const options = Array.from(accSelect.options);
+        const match = options.find(opt =>
+            opt.value.toLowerCase() === rawAcc.toLowerCase()
+        );
+
+        if (match) {
+            accSelect.value = match.value;
+        } else {
+            // Try partial match
+            const partial = options.find(opt =>
+                rawAcc.toLowerCase().includes(opt.value.toLowerCase())
+            );
+
+            if (partial) {
+                accSelect.value = partial.value;
+            } else {
+                accSelect.value = "Other";
+                accSelect.dispatchEvent(new Event('change'));
+                const otherInput = firstRow.querySelector('.row-acc-other');
+                otherInput.value = rawAcc;
+            }
+        }
+    }
+
+    // 🔹 Update amount if exists
+    if (amountStr) {
+        const numericAmt = amountStr.replace(/[^\d.]/g, '');
+        amtInput.value = numericAmt;
+        updateGrandTotal();
+    }
+}
 
   document.getElementById('pasteArea').value = "";
   document.getElementById('autofillBlock').classList.add('hidden');
