@@ -3,8 +3,8 @@
   "short_name": "SmartRow",
   "start_url": "./index.html",
   "display": "fullscreen",
-  "background_color": "#eef2f7",
-  "theme_color": "#eef2f7",
+  "background_color": "#fcfcfc",
+  "theme_color": "#fcfcfc",
   "orientation": "portrait",
   "icons": [
     {
