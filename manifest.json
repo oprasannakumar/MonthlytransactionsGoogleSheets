@@ -1,10 +1,10 @@
 {
   "name": "Smart Row Sync",
-  "short_name": "Monthly Expences",
+  "short_name": "SmartRow",
   "start_url": "./index.html",
-  "display": "standalone",
+  "display": "fullscreen",
   "background_color": "#eef2f7",
-  "theme_color": "#22c55e",
+  "theme_color": "#eef2f7",
   "orientation": "portrait",
   "icons": [
     {
