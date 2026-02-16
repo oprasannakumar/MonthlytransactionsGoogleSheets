@@ -1,6 +1,6 @@
 {
   "name": "Monthly Expences",
-  "short_name": "SmartRow",
+  "short_name": "Monthly_Expences",
   "start_url": "./index.html",
   "display": "fullscreen",
   "background_color": "#fcfcfc",
