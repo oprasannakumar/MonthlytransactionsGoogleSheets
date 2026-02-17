@@ -2,17 +2,18 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Monthly Transaction | Smart Row Sync</title>
- <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Monthly Transaction | Smart Row Sync</title> <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#fcfcfc">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Monthly Expences">
   <link rel="apple-touch-icon" href="icon-192.png">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-   :root { 
+    :root { 
       --h:42px; --r:10px; --primary: #22c55e; --secondary: #3b82f6; --danger: #ef4444; 
       --bg-body: linear-gradient(135deg,#eef2f7,#f9fafb);
       --bg-card: #ffffff; --text-main: #1f2937; --text-label: #374151; --border-color: #d1d5db; --bg-input: #ffffff;
@@ -24,9 +25,7 @@
       font-family:'Inter', sans-serif; 
       background: var(--bg-body); 
       color: var(--text-main); 
-      /* UPDATED: Add padding-top to ensure safe area if using transparent status bar */
-      padding: env(safe-area-inset-top) 15px 15px 15px; 
-      margin-top:20px; 
+      padding:15px; margin:0; 
       min-height: 100vh; 
       transition: background 0.5s ease, color 0.5s ease; 
     }
@@ -276,6 +275,22 @@ table td:nth-child(3), table th:nth-child(5) {
   color: var(--secondary);
   border: 1px dashed var(--secondary);
 }
+/* Toast Notification Style */
+#toast {
+  position: fixed;
+  bottom:50%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--primary);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 50px;
+  font-size: 14px;
+  font-weight: 700;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+  z-index: 10001;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
 
  </style>
 </head>
@@ -308,11 +323,6 @@ table td:nth-child(3), table th:nth-child(5) {
     <input type="file" id="receiptUpload" accept="image/*" hidden>
   </label>
 </div>
-
-  <div id="autofillBlock" class="autofill-section hidden">
-    <textarea id="pasteArea" placeholder="Paste saved confirmation text here..."></textarea>
-    <button type="button" class="btn-autofill" id="btnApplyPaste">Apply Data & Close</button>
-  </div>
 
   <div class="batch-control">
     <span style="font-size: 12px; font-weight: 600;">Batch Mode</span>
@@ -442,6 +452,7 @@ table td:nth-child(3), table th:nth-child(5) {
     </div>
   </div>
 </div>
+<div id="toast" class="hidden">Auto-Fill Applied ✅</div>
 
 <script>
 // DATE FORMATTER HELPER
@@ -580,206 +591,27 @@ function recalcCash() {
 }
 
 function toggleCashBlock() {
-  const hasCash = Array.from(document.querySelectorAll('.row-type')).some(s => s.value === 'CASH');
-  document.getElementById('cashBlock').classList.toggle('hidden', !hasCash);
+  const hasCash = Array.from(document.querySelectorAll('.row-type'))
+    .some(s => s.value === 'CASH');
+
+  document.getElementById('cashBlock')
+    .classList.toggle('hidden', !hasCash);
 }
 
-document.getElementById('btnShowAutofill').onclick = () => {
-  document.getElementById('autofillBlock').classList.toggle('hidden');
-};
+  document.getElementById('btnShowAutofill').onclick = async () => {
+  try {
+    const text = await navigator.clipboard.readText();
 
-document.getElementById('btnApplyPaste').onclick = () => {
-  const text = document.getElementById('pasteArea').value;
-  if (!text.trim()) return;
-
-  const getVal = (key) => {
-    const regex = new RegExp(`${key}:\\s*(.*)`, 'i');
-    const match = text.match(regex);
-    return match ? match[1].trim() : "";
-  };
-
-  const rawDate = getVal('📅 Date'); 
-  const name = getVal('👤 Name');
-  const msg = getVal('📝 Msg');
-  const amountStr = getVal('💰 Amount');
-  const ref = getVal('🔗 Ref');
-  const rawType = getVal('⇄ Type'); // New: Capture Type
-  const rawAcc = getVal('🏢 Account'); // New: Capture Account
-  const rawDirection = getVal('📊 Direction');
-
-  // 1. Date Logic
-  if (rawDate) {
-    const parts = rawDate.split('-');
-    if (parts.length === 3) {
-      const formattedDate = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
-      document.getElementById('date').value = formattedDate;
-    }
-  }
-
-  // 2. Narration
-  // 2. Smart Narration Logic (Based on Direction)
-if (name) {
-  let narrationPrefix = "";
-
-  if (rawDirection) {
-    const dirLower = rawDirection.toLowerCase();
-
-    if (dirLower.includes("in")) {
-      narrationPrefix = "Received from ";
-    } 
-    else if (dirLower.includes("out")) {
-      narrationPrefix = "Paid to ";
-    }
-  }
-
-  // Fallback if direction missing → use type
-  if (!narrationPrefix && rawType) {
-    const typeLower = rawType.toLowerCase();
-
-    if (typeLower.includes("debit")) {
-      narrationPrefix = "Paid to ";
-    } 
-    else if (
-      typeLower.includes("credit") ||
-      typeLower.includes("upi")
-    ) {
-      narrationPrefix = "Received from ";
-    }
-  }
-
-  document.getElementById('narration').value = `${narrationPrefix}${name}`.trim();
-}
-
-
-  // 3. Flow Logic (Debit -> Withdraw, others -> Deposit)
- // 3. Smart Flow Logic (Direction First → Then Type)
-const flowField = document.getElementById('flow');
-
-if (rawDirection) {
-  const dirLower = rawDirection.toLowerCase();
-
-  if (dirLower.includes("in")) {
-    flowField.value = "deposit";
-  } else if (dirLower.includes("out")) {
-    flowField.value = "withdraw";
-  }
-}
-else if (rawType) {
-  const typeLower = rawType.toLowerCase();
-
-  if (typeLower.includes("debit")) {
-    flowField.value = "withdraw";
-  }
-  else if (
-    typeLower.includes("credit") ||
-    typeLower.includes("upi")
-  ) {
-    flowField.value = "deposit";
-  }
-}
-
-
-// 4. Purpose = Message (Direct Fill)
-if (msg) {
-  const purpSel = document.getElementById('purpose');
-  const purpOther = document.getElementById('purpose_other');
-
-  const options = Array.from(purpSel.options);
-  const match = options.find(opt =>
-    opt.text.toLowerCase() === msg.toLowerCase()
-  );
-
-  if (match) {
-    purpSel.value = match.value;
-  } else {
-    purpSel.value = "Other";
-    purpOther.value = msg;
-  }
-
-  toggleSmartOther(purpSel, 'purpose_other', 'purposeSmartRow');
-}
-
-
-  // 5. Amount Logic
-  if (amountStr) {
-    const numericAmt = amountStr.replace(/[^\d.]/g, '');
-    const rows = document.querySelectorAll('.row-amt');
-    if (rows.length > 0) {
-      rows[0].value = numericAmt;
-      updateGrandTotal();
-    }
-  }
-
-  // 6. Reference Logic
-  if (ref) {
-    document.getElementById('referenceWrapper').classList.remove('hidden');
-    document.getElementById('reference').value = ref;
-  }
-
-  // 7. Account Display Logic
-// 7. Auto Fill Payment Mode & Account
-if (rawType || rawAcc) {
-
-    // Ensure at least one payment row exists
-    let firstRow = document.querySelector('.payment-row-wrapper');
-    if (!firstRow) {
-        createPaymentRow();
-        firstRow = document.querySelector('.payment-row-wrapper');
+    if (!text.trim()) {
+      alert("Clipboard is empty.");
+      return;
     }
 
-    const typeSelect = firstRow.querySelector('.row-type');
-    const accSelect  = firstRow.querySelector('.row-acc');
-    const amtInput   = firstRow.querySelector('.row-amt');
+    applyAutoFill(text);
 
-    // 🔹 TYPE MAPPING
-    if (rawType) {
-        const typeLower = rawType.toLowerCase();
-
-        if (typeLower.includes("credit")) typeSelect.value = "CREDIT";
-        else if (typeLower.includes("debit")) typeSelect.value = "DEBIT";
-        else if (typeLower.includes("upi")) typeSelect.value = "UPI";
-        else if (typeLower.includes("net")) typeSelect.value = "NET";
-        else if (typeLower.includes("reward")) typeSelect.value = "REWARDS";
-    }
-
-    typeSelect.dispatchEvent(new Event('change'));
-
-    // 🔹 ACCOUNT MATCHING (Smart Partial Match)
-    if (rawAcc) {
-        const options = Array.from(accSelect.options);
-        const match = options.find(opt =>
-            opt.value.toLowerCase() === rawAcc.toLowerCase()
-        );
-
-        if (match) {
-            accSelect.value = match.value;
-        } else {
-            // Try partial match
-            const partial = options.find(opt =>
-                rawAcc.toLowerCase().includes(opt.value.toLowerCase())
-            );
-
-            if (partial) {
-                accSelect.value = partial.value;
-            } else {
-                accSelect.value = "Other";
-                accSelect.dispatchEvent(new Event('change'));
-                const otherInput = firstRow.querySelector('.row-acc-other');
-                otherInput.value = rawAcc;
-            }
-        }
-    }
-
-    // 🔹 Update amount if exists
-    if (amountStr) {
-        const numericAmt = amountStr.replace(/[^\d.]/g, '');
-        amtInput.value = numericAmt;
-        updateGrandTotal();
-    }
-}
-
-  document.getElementById('pasteArea').value = "";
-  document.getElementById('autofillBlock').classList.add('hidden');
+  } catch (err) {
+    alert("Clipboard permission denied.");
+  }
 };
 document.getElementById('receiptUpload').addEventListener('change', function(e) {
 
@@ -798,22 +630,20 @@ document.getElementById('receiptUpload').addEventListener('change', function(e) 
       body: JSON.stringify({ image: base64 })
     })
     .then(res => res.json())
-    .then(response => {
+.then(response => {
 
-      document.getElementById('btnShowAutofill').textContent = "✨ Use Receipt Auto-Fill";
+  document.getElementById('btnShowAutofill').textContent = "✨ Use Receipt Auto-Fill";
 
-      if (response.status !== "success") {
-        alert("Extraction failed");
-        return;
-      }
+  if (response.status !== "success") {
+    alert("Extraction failed");
+    return;
+  }
 
-      const d = response.data;
+  const d = response.data;
 
-      // Convert JSON into your Telegram-style paste format
-      const formattedText =
+  const formattedText =
 `📅 Date: ${d.date}
 👤 Name: ${d.name}
-🆔 ID: ${d.txnId}
 📝 Msg: ${d.imageMessage}
 💰 Amount: ${d.amount}
 📊 Direction: ${d.direction === "IN" ? "🟢 IN" : "🔴 OUT"}
@@ -821,12 +651,8 @@ document.getElementById('receiptUpload').addEventListener('change', function(e) 
 🏢 Account: ${d.account}
 🔗 Ref: ${d.refId}`;
 
-      document.getElementById('pasteArea').value = formattedText;
-
-      // Automatically open autofill section
-      document.getElementById('autofillBlock').classList.remove('hidden');
-
-    })
+  applyAutoFill(formattedText);
+})
     .catch(err => {
       document.getElementById('btnShowAutofill').textContent = "✨ Use Receipt Auto-Fill";
       alert("Upload failed");
@@ -957,7 +783,121 @@ function saveToDB() {
     currentPayloads.forEach(body => tx.objectStore(STORE_NAME).add(body));
     tx.oncomplete = () => { updatePendingCount(); fullReset(); };
 }
+function applyAutoFill(text) {
 
+  const getVal = (key) => {
+    const regex = new RegExp(`${key}:\\s*(.*)`, 'i');
+    const match = text.match(regex);
+    return match ? match[1].trim() : "";
+  };
+
+  const rawDate = getVal('📅 Date');
+  const name = getVal('👤 Name');
+  const msg = getVal('📝 Msg');
+  const amountStr = getVal('💰 Amount');
+  const ref = getVal('🔗 Ref');
+  const rawType = getVal('⇄ Type');
+  const rawAcc = getVal('🏢 Account');
+  const rawDirection = getVal('📊 Direction');
+
+  // DATE
+  if (rawDate) {
+    const parts = rawDate.split('-');
+    if (parts.length === 3) {
+      document.getElementById('date').value =
+        `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+    }
+  }
+
+  // NARRATION
+  if (name) {
+    let prefix = "";
+    if (rawDirection?.toLowerCase().includes("in")) prefix = "Received from ";
+    else if (rawDirection?.toLowerCase().includes("out")) prefix = "Paid to ";
+    
+    // Append the message if it exists
+    let fullNarration = prefix + name;
+    if (msg) {
+      fullNarration += " - " + msg;
+    }
+    
+    document.getElementById('narration').value = fullNarration;
+  }
+
+  // FLOW
+  const flowField = document.getElementById('flow');
+  if (rawDirection?.toLowerCase().includes("in")) flowField.value = "deposit";
+  if (rawDirection?.toLowerCase().includes("out")) flowField.value = "withdraw";
+
+  
+  // PAYMENT ROW
+  let firstRow = document.querySelector('.payment-row-wrapper');
+  if (!firstRow) {
+    createPaymentRow();
+    firstRow = document.querySelector('.payment-row-wrapper');
+  }
+
+  const typeSelect = firstRow.querySelector('.row-type');
+  const accSelect = firstRow.querySelector('.row-acc');
+  const amtInput = firstRow.querySelector('.row-amt');
+
+if (rawType) {
+  const typeLower = rawType.toLowerCase();
+
+  if (typeLower.includes("credit")) typeSelect.value = "CREDIT";
+  else if (typeLower.includes("debit")) typeSelect.value = "DEBIT";
+  else if (typeLower.includes("upi")) typeSelect.value = "UPI";
+  else if (typeLower.includes("net")) typeSelect.value = "NET";
+}
+
+// 🔥 Force dropdown rebuild FIRST
+typeSelect.dispatchEvent(new Event('change'));
+
+// 🔥 Delay account matching slightly to ensure options loaded
+setTimeout(() => {
+
+  if (!rawAcc) return;
+
+  const raw = rawAcc.toLowerCase().trim();
+  const options = Array.from(accSelect.options);
+
+  let match = options.find(opt =>
+    opt.value.toLowerCase() === raw
+  );
+
+  if (!match) {
+    match = options.find(opt =>
+      raw.includes(opt.value.toLowerCase())
+    );
+  }
+
+  if (match) {
+    accSelect.value = match.value;
+  } else {
+    accSelect.value = "Other";
+    accSelect.dispatchEvent(new Event('change'));
+    firstRow.querySelector('.row-acc-other').value = rawAcc;
+  }
+
+}, 50);   // 👈 critical delay
+  if (amountStr) {
+    const numericAmt = amountStr.replace(/[^\d.]/g, '');
+    amtInput.value = numericAmt;
+    updateGrandTotal();
+  }
+
+  // REFERENCE
+  if (ref) {
+    document.getElementById('referenceWrapper').classList.remove('hidden');
+    document.getElementById('reference').value = ref;
+  }
+
+  const toast = document.getElementById('toast');
+  toast.classList.remove('hidden');
+  setTimeout(() => {
+    toast.classList.add('hidden');
+  }, 2500);
+}
 function fullReset() {
   const batchState = document.getElementById('batchToggle').checked;
   document.getElementById('txnForm').reset();
@@ -1143,7 +1083,7 @@ document.getElementById('btnRepeat').onclick = () => {
 document.getElementById('date').value = new Date().toISOString().split("T")[0];
 createPaymentRow();
 </script>
-  <script>
+<script>
   // Register the Service Worker
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
@@ -1153,5 +1093,6 @@ createPaymentRow();
     });
   }
 </script>
+
 </body>
 </html>
