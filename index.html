@@ -1085,12 +1085,11 @@ document.getElementById('date').value = new Date().toISOString().split("T")[0];
 createPaymentRow();
 </script>
 <script>
-  // Register the Service Worker
-  if ('serviceWorker' in navigator) {
+if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js', { scope: './' })
-        .then(reg => console.log('Service Worker registered!', reg))
-        .catch(err => console.log('Service Worker failed:', err));
+      navigator.serviceWorker.register('./sw.js')
+        .then(reg => console.log('SW Registered'))
+        .catch(err => console.log('SW Registration Failed', err));
     });
   }
 </script>
