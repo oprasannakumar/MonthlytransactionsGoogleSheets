@@ -1,6 +1,6 @@
 {
   "name": "Monthly Expenses",
-  "short_name": "Expenses",
+  "short_name": "Monthly Expenses",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
