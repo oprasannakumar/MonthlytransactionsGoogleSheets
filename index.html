@@ -151,7 +151,16 @@
     #btnSyncAll, #btnStopSync, #btnViewQueue { 
         height: 42px; margin: 0; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 4px; cursor: pointer; border: none;
     }
-    
+    /* Swipe Delete */
+.swipe-wrapper {
+  position: relative;
+  overflow: hidden;
+}
+
+.swipe-content {
+  transition: transform 0.25s ease, opacity 0.2s ease;
+  touch-action: pan-y;
+}
     #btnSyncAll { background: var(--secondary); color: white; }
    #btnStopSync { 
   background: #ffffff; /* White background to contrast primary sync */
@@ -171,8 +180,12 @@
     body.dark #btnViewQueue { background: #475569; }
 
     .payment-row-wrapper { margin-bottom: 12px; border-bottom: 1px dashed var(--border-color); padding-bottom: 12px; }
-    .payment-row { display: grid; grid-template-columns: 0.9fr 1.1fr 75px 35px; gap: 6px; align-items: end; }
-    .btn-del-mode { background: #fee2e2; color: #ef4444; border: 1px solid #fecaca; cursor: pointer; border-radius: 8px; display: flex; align-items: center; justify-content: center; height:var(--h); padding: 0; }
+    .payment-row { 
+  display: grid; 
+  grid-template-columns: 1fr 1.2fr 80px; 
+  gap: 6px; 
+  align-items: end; 
+}
 
     .btn-add-mode { background: var(--secondary); color: #fff; border: none; font-size: 11px; height: 24px; cursor: pointer; border-radius: 6px; width: auto; padding: 0 10px; margin: 0; }
     .total-wrapper { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding: 8px 12px; background: var(--bg-input); border-radius: 8px; border: 1px solid var(--border-color); transition: background 0.5s ease; }
@@ -541,13 +554,14 @@ function updateGrandTotal() {
 
 function createPaymentRow(initial = null) {
   const wrapper = document.createElement('div');
-  wrapper.className = 'payment-row-wrapper';
+  wrapper.className = 'payment-row-wrapper swipe-wrapper';
   wrapper.innerHTML = `
+  <div class="swipe-content">
     <div class="payment-row">
       <div><select class="row-type" required><option value="">Type</option><option value="CASH">Cash</option><option value="DEBIT">Debit</option><option value="UPI">UPI</option><option value="NET">Net</option><option value="CREDIT">Credit Card</option><option value="REWARDS">Rewards</option></select></div>
       <div><select class="row-acc" required><option value="">Account</option></select></div>
       <div><input type="number" class="row-amt" placeholder="Amt" step="0.01" required min="0.01"></div>
-      <button type="button" class="btn-del-mode">✕</button>
+      </div>
     </div>
     <input class="row-acc-other hidden" style="margin-top:6px; height:36px; width:100%; border-radius:10px; border:1px solid var(--border-color); padding:0 10px;" placeholder="Specify Account" required disabled>
     <div class="err-msg">Payment details incomplete</div>
@@ -572,10 +586,9 @@ function createPaymentRow(initial = null) {
     otherAccInp.classList.toggle('hidden', !isOther); otherAccInp.disabled = !isOther;
     otherAccInp.required = isOther;
   };
-  wrapper.querySelector('.btn-del-mode').onclick = () => { 
-    if(document.querySelectorAll('.payment-row-wrapper').length > 1) { wrapper.remove(); toggleCashBlock(); updateGrandTotal(); } 
-  };
+
   document.getElementById('paymentContainer').appendChild(wrapper);
+  enableSwipeToDelete(wrapper);
   if(initial) { 
     tSel.value = initial.type; tSel.dispatchEvent(new Event('change')); 
     if(initial.acc) aSel.value = initial.acc;
@@ -583,7 +596,63 @@ function createPaymentRow(initial = null) {
     aSel.dispatchEvent(new Event('change'));
   }
 }
+function enableSwipeToDelete(wrapper) {
+  if (!wrapper) return;
 
+  let startX = 0;
+  let currentX = 0;
+  const content = wrapper.querySelector('.swipe-content');
+
+  wrapper.addEventListener('touchstart', (e) => {
+    startX = e.touches[0].clientX;
+    content.style.transition = "none";
+  });
+
+  wrapper.addEventListener('touchmove', (e) => {
+    currentX = e.touches[0].clientX - startX;
+
+    // Swipe LEFT only
+    if (currentX < 0) {
+      content.style.transform = `translateX(${currentX}px)`;
+    }
+  });
+
+  wrapper.addEventListener('touchend', () => {
+    const allRows = document.querySelectorAll('.payment-row-wrapper');
+
+    // Allow delete only if more than 1 row exists
+    if (currentX < -80 && allRows.length > 1) {
+
+      content.style.transition = "transform 0.2s ease, opacity 0.2s ease";
+      content.style.transform = "translateX(-100%)";
+      content.style.opacity = "0";
+
+      setTimeout(() => {
+        wrapper.remove();
+        toggleCashBlock();
+        updateGrandTotal();
+      }, 200);
+
+    } else if (currentX < -80 && allRows.length === 1) {
+
+      // Bounce effect if trying to delete last row
+      content.style.transition = "transform 0.15s ease";
+      content.style.transform = "translateX(-20px)";
+
+      setTimeout(() => {
+        content.style.transform = "translateX(0)";
+      }, 150);
+
+    } else {
+
+      // Reset position if swipe not enough
+      content.style.transition = "transform 0.2s ease";
+      content.style.transform = "translateX(0)";
+    }
+
+    currentX = 0;
+  });
+}
 function recalcCash() {
   let tot = 0; document.querySelectorAll('.denom-input').forEach(i => tot += (i.value || 0) * i.dataset.val);
   document.querySelectorAll('.payment-row-wrapper').forEach(w => { if(w.querySelector('.row-type').value === 'CASH') w.querySelector('.row-amt').value = tot || ""; });
