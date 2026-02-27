@@ -442,6 +442,13 @@ function formatDisplayDate(dateStr) {
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxSzVgkfK2biBp_XsbINA8wIxWA-ai1Zyz_x1iMYrbTCo9-SIvOTGJuNA4289pE6lMC/exec";  
 const IMAGE_PROCESS_URL = "https://script.google.com/macros/s/AKfycbx7CrlFktwGnHXRvdcovoXrZAjEGlg5axKnK5a7udfT-NdRwLcQ1xyqOsJ7vW7PUyPj3A/exec";  
 let globalMemory = {};
+const STOP_WORDS = [
+  "paid","pay","received","receive","transfer","upi","debit","credit",
+  "from","to","for","via","bank","account","amt","amount",
+  "traders","store","shop","txn","ref","online","offline",
+  "purchased","purchase","bought","buy",
+  "the","and","with","this","that","was","are","you","your"
+];
 const bankAccounts = ["FI","HDFC Old","HDFC New","ICICI","IndusInd","Kotak","RBL","SBI"];  
 const creditCards = [  
   "Axis Flipkart","Axis MyZone","Axis Neo",  
@@ -969,7 +976,15 @@ document.getElementById('spent_for_other').disabled = true;
   toggleCashBlock(); updateGrandTotal();  
 }  
 function predictPurposeSmart(text) {
-  const words = text.toLowerCase().split(/\s+/).filter(w => w.length > 2);
+
+  const words = text
+    .toLowerCase()
+    .split(/\s+/)
+    .filter(w =>
+      w.length > 2 &&
+      !STOP_WORDS.includes(w)
+    );
+
   let scores = {};
 
   words.forEach(word => {
@@ -1025,16 +1040,22 @@ async function syncAllData(){
   if(syncAborted) alert("Sync stopped.");  
 }  
 function trainPurpose(narration, purpose) {
-  const words = narration.toLowerCase().split(/\s+/).filter(w => w.length > 2);
+
+  const words = narration
+    .toLowerCase()
+    .split(/\s+/)
+    .filter(w =>
+      w.length > 2 &&
+      !STOP_WORDS.includes(w)
+    );
 
   words.forEach(word => {
 
-    // 🔥 Update RAM immediately
     if (!globalMemory[word]) globalMemory[word] = {};
     if (!globalMemory[word][purpose]) globalMemory[word][purpose] = 0;
     globalMemory[word][purpose]++;
 
-    // 🔥 Send to backend async (non-blocking)
+    // backend update
     fetch(SCRIPT_URL, {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -1046,7 +1067,6 @@ function trainPurpose(narration, purpose) {
     });
   });
 
-  // Cache locally
   localStorage.setItem("purposeMemoryCache", JSON.stringify(globalMemory));
 }  
 function renderQueue(items) {  
