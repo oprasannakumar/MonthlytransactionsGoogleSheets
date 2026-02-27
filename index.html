@@ -621,7 +621,7 @@ function enableSwipeToDelete(wrapper) {
     const allRows = document.querySelectorAll('.payment-row-wrapper');
 
     // Allow delete only if more than 1 row exists
-    if (currentX < -80 && allRows.length > 1) {
+    if (currentX < -150 && allRows.length > 1) {
 
       content.style.transition = "transform 0.2s ease, opacity 0.2s ease";
       content.style.transform = "translateX(-100%)";
@@ -633,7 +633,7 @@ function enableSwipeToDelete(wrapper) {
         updateGrandTotal();
       }, 200);
 
-    } else if (currentX < -80 && allRows.length === 1) {
+    } else if (currentX < -150 && allRows.length === 1) {
 
       // Bounce effect if trying to delete last row
       content.style.transition = "transform 0.15s ease";
