@@ -441,6 +441,9 @@ function formatDisplayDate(dateStr) {
   
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxSzVgkfK2biBp_XsbINA8wIxWA-ai1Zyz_x1iMYrbTCo9-SIvOTGJuNA4289pE6lMC/exec";  
 const IMAGE_PROCESS_URL = "https://script.google.com/macros/s/AKfycbx7CrlFktwGnHXRvdcovoXrZAjEGlg5axKnK5a7udfT-NdRwLcQ1xyqOsJ7vW7PUyPj3A/exec";  
+let db;
+let syncAborted = false;
+let currentPayloads = [];
 let globalMemory = {};
 const STOP_WORDS = [
   "paid","pay","received","receive","transfer","upi","debit","credit",
@@ -828,13 +831,18 @@ async function processSave() {
   
   try {  
     for(let body of currentPayloads) { await fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body }); }  
-    alert("Saved Successfully!"); fullReset();  
+    showToast("Saved Successfully ✅"); fullReset();  
   } catch (err) {  
     saveToDB();  
     alert("Network Error: Saving to local storage.");  
   } finally { btn.disabled = false; btn.textContent = originalText; }  
 }  
-  
+  function showToast(message) {
+  const toast = document.getElementById('toast');
+  toast.textContent = message;
+  toast.classList.remove('hidden');
+  setTimeout(() => toast.classList.add('hidden'), 2500);
+}
 function saveToDB() {  
     const tx = db.transaction(STORE_NAME, "readwrite");  
     currentPayloads.forEach(body => tx.objectStore(STORE_NAME).add(body));  
@@ -1039,35 +1047,33 @@ async function syncAllData(){
   btnSync.classList.remove('hidden');  
   if(syncAborted) alert("Sync stopped.");  
 }  
-function trainPurpose(narration, purpose) {
+async function trainPurpose(narration, purpose) {
 
   const words = narration
     .toLowerCase()
     .split(/\s+/)
-    .filter(w =>
-      w.length > 2 &&
-      !STOP_WORDS.includes(w)
-    );
+    .filter(w => w.length > 2 && !STOP_WORDS.includes(w));
 
-  words.forEach(word => {
+  const uniqueWords = [...new Set(words)];
 
+  for (let word of uniqueWords) {
     if (!globalMemory[word]) globalMemory[word] = {};
     if (!globalMemory[word][purpose]) globalMemory[word][purpose] = 0;
     globalMemory[word][purpose]++;
-
-    // backend update
-    fetch(SCRIPT_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        action: "trainMemory",
-        word: word,
-        category: purpose
-      })
-    });
-  });
+  }
 
   localStorage.setItem("purposeMemoryCache", JSON.stringify(globalMemory));
+
+  // 🔥 Single backend call
+  fetch(SCRIPT_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      action: "trainMemoryBulk",
+      words: JSON.stringify(uniqueWords),
+      category: purpose
+    })
+  });
 }  
 function renderQueue(items) {  
   const body = document.getElementById('queueBody'); body.innerHTML = "";  
@@ -1159,7 +1165,8 @@ window.editQueue = (idx) => {
     if(p.get('trtype') === 'CASH') {  
         denoms.forEach(v => {  
             const val = p.get('d'+v);  
-            document.querySelector(`.denom-input[data-val="${v}"]`).value = val || "";  
+            const denomInput = document.querySelector(`.denom-input[data-val="${v}"]`);
+if (denomInput) denomInput.value = val || "";  
         });  
         recalcCash();  
     }  
