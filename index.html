@@ -430,7 +430,7 @@ table td:nth-child(3), table th:nth-child(3) {
     </div>  
   </div>  
 </div>  
-<div id="toast" class="hidden">Auto-Fill Applied ✅</div>  <script>  
+<script>  
 // DATE FORMATTER HELPER  
 function formatDisplayDate(dateStr) {  
   if (!dateStr) return "";  
@@ -866,21 +866,56 @@ function applyAutoFill(text) {
     }  
   }  
   
-  // NARRATION  
-  if (name) {  
-    let prefix = "";  
-    if (rawDirection?.toLowerCase().includes("in")) prefix = "Received from ";  
-    else if (rawDirection?.toLowerCase().includes("out")) prefix = "Paid to ";  
-      
-    // Append the message if it exists  
-    let fullNarration = prefix + name;  
-    if (msg) {  
-      fullNarration += " - " + msg;  
-    }  
-      
-    document.getElementById('narration').value = fullNarration;  
-  }  
-  
+// NARRATION
+let fullNarration = "";
+let hasValidMsg = false;
+
+if (name) {
+  let prefix = "";
+
+  if (rawDirection?.toLowerCase().includes("in"))
+    prefix = "Received from ";
+  else if (rawDirection?.toLowerCase().includes("out"))
+    prefix = "Paid to ";
+
+  fullNarration = prefix + name;
+
+  // ✅ Append message only if it's valid
+  if (
+    msg &&
+    !msg.toLowerCase().includes("amount") &&
+    !msg.includes("💰") &&
+    !msg.includes("📅") &&
+    !msg.includes("🔗")
+  ) {
+    fullNarration += " - " + msg;
+    hasValidMsg = true; // 🔥 important
+  }
+}
+
+if (fullNarration) {
+  document.getElementById("narration").value = fullNarration;
+
+  if (hasValidMsg) {
+    autoPredictPurpose();
+  }
+
+  setTimeout(() => {
+
+    if (hasValidMsg) {
+      // ✅ Open Spent For
+      const spentField = document.getElementById("spent_for");
+      spentField.focus();
+      spentField.click();   // 🔥 attempt open
+    } else {
+      // ✅ Open Purpose
+      const purposeField = document.getElementById("purpose");
+      purposeField.focus();
+      purposeField.click(); // 🔥 attempt open
+    }
+
+  }, 150);
+}
   // FLOW  
   const flowField = document.getElementById('flow');  
   if (rawDirection?.toLowerCase().includes("in")) flowField.value = "deposit";  
@@ -949,11 +984,7 @@ setTimeout(() => {
     document.getElementById('reference').value = ref;  
   }  
   
-  const toast = document.getElementById('toast');  
-  toast.classList.remove('hidden');  
-  setTimeout(() => {  
-    toast.classList.add('hidden');  
-  }, 2500);  
+  
 }  
 function fullReset() {  
   const batchState = document.getElementById('batchToggle').checked;  
@@ -975,6 +1006,35 @@ document.getElementById('spent_for_other').disabled = true;
   document.querySelectorAll('.denom-input').forEach(i => i.value = "");  
   toggleCashBlock(); updateGrandTotal();  
 }  
+function autoPredictPurpose() {
+  const narrationField = document.getElementById("narration");
+  const suggestion = predictPurposeSmart(narrationField.value);
+  if (!suggestion) return;
+
+  const purposeSelect = document.getElementById("purpose");
+  const otherInput = document.getElementById("purpose_other");
+
+  const optionExists = Array.from(purposeSelect.options)
+    .some(opt => opt.value === suggestion);
+
+  if (optionExists) {
+    purposeSelect.value = suggestion;
+    toggleSmartOther(purposeSelect, 'purpose_other', 'purposeSmartRow', true);
+  } else {
+    purposeSelect.value = "Other";
+    toggleSmartOther(purposeSelect, 'purpose_other', 'purposeSmartRow', true);
+    otherInput.value = suggestion;
+  }
+}
+function highlightField(el) {
+  el.style.boxShadow = "0 0 0 3px rgba(34,197,94,0.4)";
+  el.style.borderColor = "#22c55e";
+
+  setTimeout(() => {
+    el.style.boxShadow = "";
+    el.style.borderColor = "";
+  }, 800);
+}
 function predictPurposeSmart(text) {
 
   const words = text
@@ -1102,27 +1162,7 @@ if (p.get('trtype') === 'CASH') {
 </tr>`;   
  });  
 }  
-document.getElementById("narration").addEventListener("blur", function() {  
-  const suggestion = predictPurposeSmart(this.value);  
-  if (!suggestion) return;  
-  
-  const purposeSelect = document.getElementById("purpose");  
-  const otherInput = document.getElementById("purpose_other");  
-  
-  const optionExists = Array.from(purposeSelect.options)  
-    .some(opt => opt.value === suggestion);  
-  
-  if (optionExists) {  
-    // ✅ Normal category exists  
-    purposeSelect.value = suggestion;  
-    toggleSmartOther(purposeSelect, 'purpose_other', 'purposeSmartRow');  
-  } else {  
-    // 🔥 Custom category  
-    purposeSelect.value = "Other";  
-    toggleSmartOther(purposeSelect, 'purpose_other', 'purposeSmartRow');  
-    otherInput.value = suggestion;  
-  }  
-});  
+document.getElementById("narration").addEventListener("blur", autoPredictPurpose);  
 window.deleteQueue = (idx) => {  
   if(!confirm("Delete this queued item?")) return;  
   const tx = db.transaction(STORE_NAME, "readwrite");  
@@ -1169,16 +1209,21 @@ window.editQueue = (idx) => {
   };  
 };  
   
-function toggleSmartOther(selectObj, otherId, parentId) {  
-  const otherInput = document.getElementById(otherId);  
-  const parent = document.getElementById(parentId);  
-  const isOther = selectObj.value === 'Other';  
-  otherInput.classList.toggle('hidden', !isOther);  
-  otherInput.disabled = !isOther;  
-  otherInput.required = isOther;  
-  parent.classList.toggle('has-other', isOther);  
-  if(isOther) otherInput.focus();  
-}  
+function toggleSmartOther(selectObj, otherId, parentId, silent = false) {
+  const otherInput = document.getElementById(otherId);
+  const parent = document.getElementById(parentId);
+  const isOther = selectObj.value === 'Other';
+
+  otherInput.classList.toggle('hidden', !isOther);
+  otherInput.disabled = !isOther;
+  otherInput.required = isOther;
+  parent.classList.toggle('has-other', isOther);
+
+  // 🚀 Only focus if NOT silent
+  if (isOther && !silent) {
+    otherInput.focus();
+  }
+}
   
 denoms.forEach(v => {  
   const c = document.createElement("div"); c.className = "cash-card";  
