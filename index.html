@@ -840,153 +840,165 @@ function saveToDB() {
     currentPayloads.forEach(body => tx.objectStore(STORE_NAME).add(body));  
     tx.oncomplete = () => { updatePendingCount(); fullReset(); };  
 }  
-function applyAutoFill(text) {  
-  
-  const getVal = (key) => {  
-    const regex = new RegExp(`${key}:\\s*(.*)`, 'i');  
-    const match = text.match(regex);  
-    return match ? match[1].trim() : "";  
-  };  
-  
-  const rawDate = getVal('📅 Date');  
-  const name = getVal('👤 Name');  
-  const msg = getVal('📝 Msg');  
-  const amountStr = getVal('💰 Amount');  
-  const ref = getVal('🔗 Ref');  
-  const rawType = getVal('⇄ Type');  
-  const rawAcc = getVal('🏢 Account');  
-  const rawDirection = getVal('📊 Direction');  
-  
-  // DATE  
-  if (rawDate) {  
-    const parts = rawDate.split('-');  
-    if (parts.length === 3) {  
-      document.getElementById('date').value =  
-        `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;  
-    }  
-  }  
-  
-// NARRATION
-let fullNarration = "";
-let hasValidMsg = false;
+function applyAutoFill(text) {
 
-if (name) {
-  let prefix = "";
+  const getVal = (key) => {
+    const regex = new RegExp(`${key}:\\s*(.*)`, 'i');
+    const match = text.match(regex);
+    return match ? match[1].trim() : "";
+  };
 
-  if (rawDirection?.toLowerCase().includes("in"))
-    prefix = "Received from ";
-  else if (rawDirection?.toLowerCase().includes("out"))
-    prefix = "Paid to ";
+  const rawDate = getVal('📅 Date');
+  const name = getVal('👤 Name');
+  const msg = getVal('📝 Msg');
+  const amountStr = getVal('💰 Amount');
+  const ref = getVal('🔗 Ref');
+  const rawType = getVal('⇄ Type');
+  const rawAcc = getVal('🏢 Account');
+  const rawDirection = getVal('📊 Direction');
+  const rawCategory = getVal('🏷️ Category'); // ✅ NEW
 
-  fullNarration = prefix + name;
-
-  // ✅ Append message only if it's valid
-  if (
-    msg &&
-    !msg.toLowerCase().includes("amount") &&
-    !msg.includes("💰") &&
-    !msg.includes("📅") &&
-    !msg.includes("🔗")
-  ) {
-    fullNarration += " - " + msg;
-    hasValidMsg = true; // 🔥 important
-  }
-}
-
-if (fullNarration) {
-  document.getElementById("narration").value = fullNarration;
-
-  if (hasValidMsg) {
-    autoPredictPurpose();
+  // ================= DATE =================
+  if (rawDate) {
+    const parts = rawDate.split('-');
+    if (parts.length === 3) {
+      document.getElementById('date').value =
+        `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+    }
   }
 
+  // ================= NARRATION =================
+  let fullNarration = "";
+  let hasValidMsg = false;
+
+  if (name) {
+    let prefix = "";
+
+    if (rawDirection?.toLowerCase().includes("in"))
+      prefix = "Received from ";
+    else if (rawDirection?.toLowerCase().includes("out"))
+      prefix = "Paid to ";
+
+    fullNarration = prefix + name;
+
+    if (
+      msg &&
+      !msg.toLowerCase().includes("amount") &&
+      !msg.includes("💰") &&
+      !msg.includes("📅") &&
+      !msg.includes("🔗")
+    ) {
+      fullNarration += " - " + msg;
+      hasValidMsg = true;
+    }
+  }
+
+  if (fullNarration) {
+    document.getElementById("narration").value = fullNarration;
+  }
+
+  // ================= PURPOSE FROM CATEGORY =================
+  if (rawCategory) {
+
+    const purposeSelect = document.getElementById("purpose");
+    const otherInput = document.getElementById("purpose_other");
+
+    const optionExists = Array.from(purposeSelect.options)
+      .some(opt => opt.value.toLowerCase() === rawCategory.toLowerCase());
+
+    if (optionExists) {
+      purposeSelect.value = rawCategory;
+      toggleSmartOther(purposeSelect, 'purpose_other', 'purposeSmartRow', true);
+    } else {
+      purposeSelect.value = "Other";
+      toggleSmartOther(purposeSelect, 'purpose_other', 'purposeSmartRow', true);
+      otherInput.value = rawCategory;
+    }
+  }
+
+  // ================= FLOW =================
+  const flowField = document.getElementById('flow');
+  if (rawDirection?.toLowerCase().includes("in")) flowField.value = "deposit";
+  if (rawDirection?.toLowerCase().includes("out")) flowField.value = "withdraw";
+
+  // ================= PAYMENT ROW =================
+  let firstRow = document.querySelector('.payment-row-wrapper');
+  if (!firstRow) {
+    createPaymentRow();
+    firstRow = document.querySelector('.payment-row-wrapper');
+  }
+
+  const typeSelect = firstRow.querySelector('.row-type');
+  const accSelect = firstRow.querySelector('.row-acc');
+  const amtInput = firstRow.querySelector('.row-amt');
+
+  if (rawType) {
+    const typeLower = rawType.toLowerCase();
+
+    if (typeLower.includes("credit")) typeSelect.value = "CREDIT";
+    else if (typeLower.includes("debit")) typeSelect.value = "DEBIT";
+    else if (typeLower.includes("upi")) typeSelect.value = "UPI";
+    else if (typeLower.includes("net")) typeSelect.value = "NET";
+  }
+
+  // Force dropdown rebuild
+  typeSelect.dispatchEvent(new Event('change'));
+
+  // Account match after rebuild
   setTimeout(() => {
 
-    if (hasValidMsg) {
-      // ✅ Open Spent For
-      const spentField = document.getElementById("spent_for");
-      spentField.focus();
-      spentField.click();   // 🔥 attempt open
+    if (!rawAcc) return;
+
+    const raw = rawAcc.toLowerCase().trim();
+    const options = Array.from(accSelect.options);
+
+    let match = options.find(opt =>
+      opt.value.toLowerCase() === raw
+    );
+
+    if (!match) {
+      match = options.find(opt =>
+        raw.includes(opt.value.toLowerCase())
+      );
+    }
+
+    if (match) {
+      accSelect.value = match.value;
     } else {
-      // ✅ Open Purpose
-      const purposeField = document.getElementById("purpose");
-      purposeField.focus();
-      purposeField.click(); // 🔥 attempt open
+      accSelect.value = "Other";
+      accSelect.dispatchEvent(new Event('change'));
+      firstRow.querySelector('.row-acc-other').value = rawAcc;
+    }
+
+  }, 50);
+
+  // ================= AMOUNT =================
+  if (amountStr) {
+    const numericAmt = amountStr.replace(/[^\d.]/g, '');
+    amtInput.value = numericAmt;
+    updateGrandTotal();
+  }
+
+  // ================= REFERENCE =================
+  if (ref) {
+    document.getElementById('referenceWrapper').classList.remove('hidden');
+    document.getElementById('reference').value = ref;
+  }
+
+  // ================= SMART FIELD FOCUS =================
+  setTimeout(() => {
+
+    if (rawCategory) {
+      document.getElementById("spent_for").focus();
+      document.getElementById("spent_for").click();
+    } else {
+      document.getElementById("purpose").focus();
+      document.getElementById("purpose").click();
     }
 
   }, 150);
 }
-  // FLOW  
-  const flowField = document.getElementById('flow');  
-  if (rawDirection?.toLowerCase().includes("in")) flowField.value = "deposit";  
-  if (rawDirection?.toLowerCase().includes("out")) flowField.value = "withdraw";  
-  
-    
-  // PAYMENT ROW  
-  let firstRow = document.querySelector('.payment-row-wrapper');  
-  if (!firstRow) {  
-    createPaymentRow();  
-    firstRow = document.querySelector('.payment-row-wrapper');  
-  }  
-  
-  const typeSelect = firstRow.querySelector('.row-type');  
-  const accSelect = firstRow.querySelector('.row-acc');  
-  const amtInput = firstRow.querySelector('.row-amt');  
-  
-if (rawType) {  
-  const typeLower = rawType.toLowerCase();  
-  
-  if (typeLower.includes("credit")) typeSelect.value = "CREDIT";  
-  else if (typeLower.includes("debit")) typeSelect.value = "DEBIT";  
-  else if (typeLower.includes("upi")) typeSelect.value = "UPI";  
-  else if (typeLower.includes("net")) typeSelect.value = "NET";  
-}  
-  
-// 🔥 Force dropdown rebuild FIRST  
-typeSelect.dispatchEvent(new Event('change'));  
-  
-// 🔥 Delay account matching slightly to ensure options loaded  
-setTimeout(() => {  
-  
-  if (!rawAcc) return;  
-  
-  const raw = rawAcc.toLowerCase().trim();  
-  const options = Array.from(accSelect.options);  
-  
-  let match = options.find(opt =>  
-    opt.value.toLowerCase() === raw  
-  );  
-  
-  if (!match) {  
-    match = options.find(opt =>  
-      raw.includes(opt.value.toLowerCase())  
-    );  
-  }  
-  
-  if (match) {  
-    accSelect.value = match.value;  
-  } else {  
-    accSelect.value = "Other";  
-    accSelect.dispatchEvent(new Event('change'));  
-    firstRow.querySelector('.row-acc-other').value = rawAcc;  
-  }  
-  
-}, 50);   // 👈 critical delay  
-  if (amountStr) {  
-    const numericAmt = amountStr.replace(/[^\d.]/g, '');  
-    amtInput.value = numericAmt;  
-    updateGrandTotal();  
-  }  
-  
-  // REFERENCE  
-  if (ref) {  
-    document.getElementById('referenceWrapper').classList.remove('hidden');  
-    document.getElementById('reference').value = ref;  
-  }  
-  
-  
-}  
-function fullReset() {  
+  function fullReset() {  
   const batchState = document.getElementById('batchToggle').checked;  
   document.getElementById('txnForm').reset();  
   document.getElementById('batchToggle').checked = batchState;  
@@ -1162,8 +1174,6 @@ if (p.get('trtype') === 'CASH') {
 </tr>`;   
  });  
 }  
-document.getElementById("narration").addEventListener("blur", autoPredictPurpose);  
-window.deleteQueue = (idx) => {  
   if(!confirm("Delete this queued item?")) return;  
   const tx = db.transaction(STORE_NAME, "readwrite");  
   const store = tx.objectStore(STORE_NAME);  
