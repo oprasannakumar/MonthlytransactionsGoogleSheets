@@ -855,8 +855,8 @@ function applyAutoFill(text) {
   const ref = getVal('🔗 Ref');  
   const rawType = getVal('⇄ Type');  
   const rawAcc = getVal('🏢 Account');  
-  const rawDirection = getVal('📊 Direction');  
-  
+  const rawDirection = getVal('📊 Direction');
+  const rawCategory = getVal('🏷️ Category');
   // DATE  
   if (rawDate) {  
     const parts = rawDate.split('-');  
@@ -896,10 +896,6 @@ if (name) {
 if (fullNarration) {
   document.getElementById("narration").value = fullNarration;
 
-  if (hasValidMsg) {
-    autoPredictPurpose();
-  }
-
   setTimeout(() => {
 
     if (hasValidMsg) {
@@ -915,6 +911,30 @@ if (fullNarration) {
     }
 
   }, 150);
+}
+// ✅ DIRECT CATEGORY FILL (No AI guessing needed)
+if (rawCategory) {
+
+  const purposeSelect = document.getElementById("purpose");
+  const otherInput = document.getElementById("purpose_other");
+
+  const categoryClean = rawCategory.trim();
+
+  const optionMatch = Array.from(purposeSelect.options)
+    .find(opt => opt.value.toLowerCase() === categoryClean.toLowerCase());
+
+  if (optionMatch) {
+    purposeSelect.value = optionMatch.value;
+    toggleSmartOther(purposeSelect, 'purpose_other', 'purposeSmartRow', true);
+  } else {
+    purposeSelect.value = "Other";
+    toggleSmartOther(purposeSelect, 'purpose_other', 'purposeSmartRow', true);
+    otherInput.value = categoryClean;
+  }
+
+} else {
+  // fallback to AI prediction only if category not provided
+  autoPredictPurpose();
 }
   // FLOW  
   const flowField = document.getElementById('flow');  
