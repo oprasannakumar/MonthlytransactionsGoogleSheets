@@ -100,7 +100,7 @@
       background: var(--bg-card); color: var(--text-main); padding: 8px 14px;   
       border-radius: 10px; font-size: 12px; font-weight: 600; text-decoration: none;   
       box-shadow: 0 4px 12px rgba(0,0,0,0.15); border: 1px solid var(--border-color);   
-      white-space: nowrap; text-align: right;  
+      white-space: nowrap; text-align: left;  
       transition: background 0.5s ease, color 0.5s ease;  
     }  
     .nav-item:hover { background: var(--primary); color: white; border-color: var(--primary); }  
@@ -300,7 +300,16 @@ table td:nth-child(3), table th:nth-child(3) {
   z-index: 10001;  
   transition: opacity 0.3s ease, visibility 0.3s ease;  
 }  
-  
+.toggle-row{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  margin-bottom:10px;
+}
+
+.toggle-row .batch-control{
+  margin:0;
+}
  </style>  </head>  <body>  
 <form id="txnForm" novalidate>  
   <div class="header-row-top">  
@@ -311,7 +320,9 @@ table td:nth-child(3), table th:nth-child(3) {
     <div class="nav-options">  
       <a href="https://oprasannakumar.github.io/LoanTransferGoogleSheets/" class="nav-item">🔄 Loan Entry</a>  
       <a href="https://oprasannakumar.github.io/Self-TransferGoogleScripts/" class="nav-item">🏦 Self Transfer</a>  
+      <a href="#" class="nav-item" onclick="openRecurringManager()">🔁 Recurring</a>
     </div>  
+    
   </div>  
   <button type="button" id="themeToggle">🌙</button>  
 </div>
@@ -323,13 +334,26 @@ table td:nth-child(3), table th:nth-child(3) {
     📷  
     <input type="file" id="receiptUpload" accept="image/*" hidden>  
   </label>  
-</div>    <div class="batch-control">  
-    <span style="font-size: 12px; font-weight: 600;">Batch Mode</span>  
-    <label class="switch">  
-      <input type="checkbox" id="batchToggle">  
-      <span class="slider"></span>  
-    </label>  
-  </div>  <label>Date</label>
+</div>    
+<div class="toggle-row">
+  <div class="batch-control">
+    <span style="font-size: 12px; font-weight: 600;">Batch Mode</span>
+    <label class="switch">
+      <input type="checkbox" id="batchToggle">
+      <span class="slider"></span>
+    </label>
+  </div>
+
+  <div class="batch-control">
+    <span style="font-size: 12px; font-weight: 600;">Recurring</span>
+    <label class="switch">
+      <input type="checkbox" id="recurringToggle">
+      <span class="slider"></span>
+    </label>
+  </div>
+</div>
+
+  <label>Date</label>
 <input type="date" id="date" required>
 
   <div class="err-msg">Selection required</div>  <label>Narration</label>
@@ -430,6 +454,36 @@ table td:nth-child(3), table th:nth-child(3) {
     </div>  
   </div>  
 </div>  
+<div id="recurringModal" class="modal hidden">
+  <div class="modal-content">
+
+    <div class="modal-header" style="display:flex;justify-content:space-between;padding:15px;background:var(--bg-input);border-bottom:1px solid var(--border-color);">
+      <h4 style="margin:0">Recurring Transactions</h4>
+      <span style="cursor:pointer;font-size:20px" onclick="closeRecurringManager()">✕</span>
+    </div>
+
+    <div class="table-container">
+      <table>
+      <thead>
+      <tr>
+      <th>Day</th>
+      <th>Narration</th>
+      <th>Purpose</th>
+      <th>Spent For</th>
+      <th>Flow</th>
+      <th>Account</th>
+      <th>Amount</th>
+      <th>Action</th>
+      </tr>
+      </thead>
+
+        <tbody id="recurringBody"></tbody>
+
+      </table>
+    </div>
+
+  </div>
+</div>
 <script>  
 // DATE FORMATTER HELPER  
 function formatDisplayDate(dateStr) {  
@@ -735,7 +789,7 @@ document.getElementById('txnForm').onsubmit = function(e) {
   const form = e.target;  
   const isOnline = navigator.onLine;  
   const isBatch = document.getElementById('batchToggle').checked;  
-  
+  const isRecurring = document.getElementById('recurringToggle')?.checked;
   const hasCashMode = Array.from(document.querySelectorAll('.row-type')).some(s => s.value === 'CASH');  
   const cashTotal = Array.from(document.querySelectorAll('.denom-input')).reduce((sum, i) => sum + (i.value * i.dataset.val), 0);  
     
@@ -808,18 +862,71 @@ if (!refVal) {
   
   document.getElementById('confirmDetails').innerHTML = detailsHtml;  
   localStorage.setItem("lastPackage", JSON.stringify(repeatData));  
+  localStorage.setItem("lastPackage", JSON.stringify(repeatData));
+
+
 // 🔥 Train AI with user correction  
 trainPurpose(  
   document.getElementById("narration").value,  
   pFinal  
 );  
-  if (!isOnline || isBatch) {  
-    saveToDB();  
-  } else {  
-    document.getElementById('confirmModal').classList.remove('hidden');  
-  }  
+  if(isRecurring){
+
+  const template = {
+    narration: document.getElementById("narration").value,
+    purpose: pFinal,
+    spent_for: sFinal,
+    flow: document.getElementById("flow").value,
+    payments: currentPayloads,
+    day: new Date().getDate(), frequency: "monthly"
+  };
+
+  let list = JSON.parse(localStorage.getItem("recurringTemplates") || "[]");
+
+  // ✅ Prevent duplicates
+  const exists = list.some(t =>
+    t.narration === template.narration &&
+    t.day === template.day
+  );
+
+  if(!exists){
+    list.push(template);
+    localStorage.setItem("recurringTemplates", JSON.stringify(list));
+    syncRecurringBackup();
+    alert("Recurring template saved.");
+  }else{
+    alert("This recurring transaction already exists.");
+  }
+
+  fullReset();
+  return;
+}
+
+if (!isOnline || isBatch) {
+  saveToDB();
+} else {
+  document.getElementById('confirmModal').classList.remove('hidden');
+}
 };  
-  
+function syncRecurringBackup(){
+
+  const templates = localStorage.getItem("recurringTemplates");
+
+  fetch(SCRIPT_URL,{
+    method:"POST",
+    headers:{
+      "Content-Type":"application/x-www-form-urlencoded"
+    },
+    body:new URLSearchParams({
+      action:"backupRecurring",
+      data:templates
+    })
+  })
+  .then(r=>r.text())
+  .then(()=>console.log("Recurring backup updated"))
+  .catch(()=>console.log("Backup skipped (offline)"));
+
+}
 async function processSave() {  
   document.getElementById('confirmModal').classList.add('hidden');  
   const btn = document.getElementById('submitBtn');   
@@ -1046,6 +1153,43 @@ function autoPredictPurpose() {
     otherInput.value = suggestion;
   }
 }
+function checkRecurringTemplates(){
+
+  const today = new Date();
+  const day = today.getDate();
+
+  const templates = JSON.parse(localStorage.getItem("recurringTemplates") || "[]");
+
+  const todayTemplates = templates.filter(t => t.day === day);
+
+  if(todayTemplates.length === 0) return;
+
+  if(!confirm(`You have ${todayTemplates.length} recurring transactions today.\nLoad them?`))
+    return;
+
+  document.getElementById("paymentContainer").innerHTML="";
+
+  todayTemplates.forEach(t => {
+
+    document.getElementById("narration").value = t.narration;
+    document.getElementById("purpose").value = t.purpose;
+    document.getElementById("spent_for").value = t.spent_for;
+    document.getElementById("flow").value = t.flow;
+
+    t.payments.forEach(p=>{
+      const params = new URLSearchParams(p);
+
+      createPaymentRow({
+        type: params.get("trtype"),
+        acc: params.get("from_to"),
+        amt: params.get("withdrawn") || params.get("deposit")
+      });
+    });
+
+  });
+
+  updateGrandTotal();
+}
 function highlightField(el) {
   el.style.boxShadow = "0 0 0 3px rgba(34,197,94,0.4)";
   el.style.borderColor = "#22c55e";
@@ -1228,7 +1372,116 @@ window.editQueue = (idx) => {
     store.getAllKeys().onsuccess = (ev) => { store.delete(ev.target.result[idx]).onsuccess = () => { updatePendingCount(); document.getElementById('queueModal').classList.add('hidden'); }; };  
   };  
 };  
-  
+function renderRecurringTemplates(){
+
+  const list = JSON.parse(localStorage.getItem("recurringTemplates") || "[]");
+
+  const body = document.getElementById("recurringBody");
+  body.innerHTML = "";
+
+  list.forEach((t, index) => {
+
+    let account = "";
+    let amount = "";
+
+    if(t.payments && t.payments.length > 0){
+
+      const params = new URLSearchParams(t.payments[0]);
+
+      account = params.get("from_to") || "-";
+
+      amount =
+        params.get("withdrawn") && params.get("withdrawn") !== "0"
+          ? params.get("withdrawn")
+          : params.get("deposit");
+    }
+
+    body.innerHTML += `
+      <tr>
+        <td>${t.day}</td>
+        <td>${t.narration}</td>
+        <td>${t.purpose}</td>
+        <td>${t.spent_for}</td>
+        <td>${t.flow}</td>
+        <td>${account}</td>
+        <td>₹${amount || "-"}</td>
+
+        <td>
+          <div class="td-center">
+            <span style="cursor:pointer;font-size:16px" onclick="loadRecurring(${index})">📥</span>
+            <span style="cursor:pointer;font-size:16px" onclick="deleteRecurring(${index})">🗑️</span>
+          </div>
+        </td>
+      </tr>
+    `;
+
+  });
+
+}
+function openRecurringManager(){
+
+  renderRecurringTemplates();
+  document.getElementById("recurringModal").classList.remove("hidden");
+
+}
+
+function closeRecurringManager(){
+
+  document.getElementById("recurringModal").classList.add("hidden");
+
+}
+function loadRecurring(index){
+
+  const templates = JSON.parse(localStorage.getItem("recurringTemplates") || "[]");
+  const t = templates[index];
+
+  document.getElementById("narration").value = t.narration;
+  document.getElementById("purpose").value = t.purpose;
+  document.getElementById("spent_for").value = t.spent_for;
+  document.getElementById("flow").value = t.flow;
+
+  document.getElementById("paymentContainer").innerHTML = "";
+
+  t.payments.forEach(p=>{
+    const params = new URLSearchParams(p);
+
+    createPaymentRow({
+      type: params.get("trtype"),
+      acc: params.get("from_to"),
+      amt: params.get("withdrawn") || params.get("deposit")
+    });
+
+  });
+
+  updateGrandTotal();
+
+  closeRecurringManager();
+}
+function deleteRecurring(index){
+
+  if(!confirm("Delete this recurring template?")) return;
+
+  let templates = JSON.parse(localStorage.getItem("recurringTemplates") || "[]");
+
+  templates.splice(index,1);
+
+  localStorage.setItem("recurringTemplates",JSON.stringify(templates));
+
+  renderRecurringTemplates();
+}
+function restoreRecurringBackup(){
+
+  if(localStorage.getItem("recurringTemplates")) return;
+
+  fetch(SCRIPT_URL + "?action=getRecurringBackup")
+  .then(r=>r.json())
+  .then(data=>{
+    if(data.length){
+      localStorage.setItem("recurringTemplates", JSON.stringify(data));
+    }
+  });
+
+}
 function toggleSmartOther(selectObj, otherId, parentId, silent = false) {
   const otherInput = document.getElementById(otherId);
   const parent = document.getElementById(parentId);
@@ -1290,6 +1543,7 @@ document.getElementById('btnRepeat').onclick = () => {
 };  
 document.getElementById('date').value = new Date().toISOString().split("T")[0];  
 loadPurposeMemory();
+restoreRecurringBackup();
 createPaymentRow();  
 </script>  <script>  
 if ('serviceWorker' in navigator) {  
