@@ -873,13 +873,14 @@ trainPurpose(
   if(isRecurring){
 
   const template = {
-    narration: document.getElementById("narration").value,
-    purpose: pFinal,
-    spent_for: sFinal,
-    flow: document.getElementById("flow").value,
-    payments: currentPayloads,
-    day: new Date().getDate(), frequency: "monthly"
-  };
+  narration: document.getElementById("narration").value,
+  purpose: pFinal,
+  spent_for: sFinal,
+  flow: document.getElementById("flow").value,
+  payments: currentPayloads,
+  day: new Date(document.getElementById("date").value).getDate(),
+  frequency: "monthly"
+};
 
   let list = JSON.parse(localStorage.getItem("recurringTemplates") || "[]");
 
