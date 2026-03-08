@@ -323,7 +323,7 @@ border-radius:10px;
 style="max-width:400px;margin:auto;margin-bottom:10px;font-size:12px;" class="hidden">
 </div>
 
-<form id="txnForm" novalidate>
+
 <form id="txnForm" novalidate>  
   <div class="header-row-top">  
     <div id="statusDot" title="Network Status"></div>  
@@ -537,7 +537,7 @@ const creditCards = [
   "Indusind Plat Aura EDGE","Indusind Legend",  
   "Yes Finbooster","Kotak League","Kotak Image",  
   "SBI BPCL","Standard Chartered"  
-];;  
+];
 const rewardPlatforms = ["Amazon", "Flipkart", "Supermoney", "Payzapp", "MobiKwik", "Tata Neu"];  
 const denoms = [500,200,100,50,20,10,5,2,1];  
 const DB_NAME = "TransactionManagerDB_v4", STORE_NAME = "txn_queue";  
@@ -1259,15 +1259,6 @@ function checkRecurringTemplates(){
 
   updateGrandTotal();
 }
-function highlightField(el) {
-  el.style.boxShadow = "0 0 0 3px rgba(34,197,94,0.4)";
-  el.style.borderColor = "#22c55e";
-
-  setTimeout(() => {
-    el.style.boxShadow = "";
-    el.style.borderColor = "";
-  }, 800);
-}
 function predictPurposeSmart(text) {
 
   const words = text
@@ -1567,7 +1558,7 @@ function closeRecurringManager(){
 }
 function updateRecurringNextDate(){
 
-  let templates = JSON.parse(localStorage.getItem("recurringTemplates") || []);
+  let templates = JSON.parse(localStorage.getItem("recurringTemplates") || "[]");
   if(!templates.length) return;
 
   const narration = document.getElementById("narration").value;
