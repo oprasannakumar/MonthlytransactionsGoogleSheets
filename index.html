@@ -1394,6 +1394,7 @@ if (p.get('trtype') === 'CASH') {
  });  
 }  
 document.getElementById("narration").addEventListener("blur", autoPredictPurpose);  
+document.getElementById("narration").addEventListener("input", autoFillSalary);
 window.deleteQueue = async (idx) => {
 
   const ok = await showConfirm("Delete this queued item?");
@@ -1749,6 +1750,69 @@ function showToast(msg, color="var(--primary)"){
   setTimeout(()=>{
     toast.classList.add("hidden");
   },2500);
+}
+function isLastDayOfMonth(date){
+  const d = new Date(date);
+  const lastDay = new Date(d.getFullYear(), d.getMonth()+1, 0).getDate();
+  return d.getDate() === lastDay;
+}
+
+function isLastFriday(date){
+  const d = new Date(date);
+  if(d.getDay() !== 5) return false; // 5 = Friday
+
+  const nextWeek = new Date(d);
+  nextWeek.setDate(d.getDate()+7);
+
+  return nextWeek.getMonth() !== d.getMonth();
+}
+function autoFillSalary(){
+
+  const narrationField = document.getElementById("narration");
+  const text = narrationField.value.toLowerCase().trim();
+
+  if(text !== "salary") return;
+
+  const today = new Date();
+
+  if(!(isLastDayOfMonth(today) || isLastFriday(today))) return;
+
+  // Date
+  document.getElementById("date").value = getTodayLocal();
+
+  // Narration
+  narrationField.value = "Salary Credited";
+
+  // Purpose
+  document.getElementById("purpose").value = "Income";
+  toggleSmartOther(document.getElementById("purpose"),'purpose_other','purposeSmartRow',true);
+
+  // Spent For
+  document.getElementById("spent_for").value = "Self";
+  toggleSmartOther(document.getElementById("spent_for"),'spent_for_other','spentSmartRow',true);
+
+  // Flow
+  document.getElementById("flow").value = "deposit";
+
+  // Payment row
+  let row = document.querySelector('.payment-row-wrapper');
+
+  if(!row){
+    createPaymentRow();
+    row = document.querySelector('.payment-row-wrapper');
+  }
+
+  const type = row.querySelector('.row-type');
+  const acc = row.querySelector('.row-acc');
+
+  type.value = "NET";
+  type.dispatchEvent(new Event('change'));
+
+  setTimeout(()=>{
+    acc.value = "HDFC New";
+  },50);
+
+  showToast("💰 Salary template loaded");
 }
 function showConfirm(message){
 
