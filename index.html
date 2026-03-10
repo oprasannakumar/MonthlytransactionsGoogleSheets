@@ -287,20 +287,39 @@ table td:nth-child(3), table th:nth-child(3) {
 /* Toast Notification Style */  
 #toast {
   position: fixed;
-  bottom:50%;
+  bottom: 40px;
   left: 50%;
-  transform: translate(-50%, 0);
+  transform: translate(-50%, 40px) scale(0.95);
+  
   background: var(--primary);
   color: white;
-  padding: 12px 24px;
-  border-radius: 15px;
+  
+  padding: 12px 20px;
+  border-radius: 14px;
+  
   font-size: 14px;
-  font-weight: 700;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+  font-weight: 600;
+  letter-spacing: 0.2px;
+
+  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+
   z-index: 10001;
-  text-align: center;   /* ⭐ centers text */
-  min-width: 20px;     /* optional: nicer shape */
-  max-width: 280px;
+  text-align: center;
+
+  max-width: 85%;
+  min-width: 120px;
+
+  opacity: 0;
+  pointer-events: none;
+
+  transition:
+    transform 0.35s cubic-bezier(.22,1,.36,1),
+    opacity 0.35s ease;
+}
+
+#toast.show {
+  opacity: 1;
+  transform: translate(-50%, 0) scale(1);
 }
 .toggle-row{
   display:grid;
@@ -1747,9 +1766,18 @@ function showToast(msg, color="var(--primary)"){
 
   toast.classList.remove("hidden");
 
+  requestAnimationFrame(()=>{
+    toast.classList.add("show");
+  });
+
   setTimeout(()=>{
-    toast.classList.add("hidden");
-  },2500);
+    toast.classList.remove("show");
+
+    setTimeout(()=>{
+      toast.classList.add("hidden");
+    },350);
+
+  },2200);
 }
 function isLastDayOfMonth(date){
   const d = new Date(date);
@@ -1771,17 +1799,19 @@ function autoFillSalary(){
   const narrationField = document.getElementById("narration");
   const text = narrationField.value.toLowerCase().trim();
 
-  if(text !== "salary") return;
+  if(!text.includes("salary")) return;
 
   const today = new Date();
 
-  if(!(isLastDayOfMonth(today) || isLastFriday(today))) return;
+  //if(!(isLastDayOfMonth(today) || isLastFriday(today))) return;
 
   // Date
   document.getElementById("date").value = getTodayLocal();
 
   // Narration
+  if(narrationField.value.toLowerCase() === "salary"){
   narrationField.value = "Salary Credited";
+}
 
   // Purpose
   document.getElementById("purpose").value = "Income";
@@ -1809,9 +1839,18 @@ function autoFillSalary(){
   type.dispatchEvent(new Event('change'));
 
   setTimeout(()=>{
-    acc.value = "HDFC New";
-  },50);
 
+  acc.value = "HDFC New";
+
+  // Focus amount field
+  const amountField = row.querySelector('.row-amt');
+
+  if(amountField){
+    amountField.focus();
+    amountField.click();
+  }
+
+},120);
   showToast("💰 Salary template loaded");
 }
 function showConfirm(message){
