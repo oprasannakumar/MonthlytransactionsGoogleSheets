@@ -1803,7 +1803,7 @@ function autoFillSalary(){
 
   const today = new Date();
 
-  //if(!(isLastDayOfMonth(today) || isLastFriday(today))) return;
+  if(!(isLastDayOfMonth(today) || isLastFriday(today))) return;
 
   // Date
   document.getElementById("date").value = getTodayLocal();
