@@ -1916,10 +1916,19 @@ recurringType.addEventListener("change",function(){
   }
 
 });
-document.getElementById("batchToggle").addEventListener("change",function(){
+document.getElementById("batchToggle").addEventListener("change", function(){
+
   if(this.checked){
-    document.getElementById("recurringToggle").checked=false;
+
+    const recurringToggle = document.getElementById("recurringToggle");
+
+    recurringToggle.checked = false;
+
+    // Trigger the recurring toggle logic
+    recurringToggle.dispatchEvent(new Event("change"));
+
   }
+
 });
 if (document.body.classList.contains('dark')) {  
     themeToggle.textContent = '☀️';  
