@@ -1,534 +1,572 @@
-<!DOCTYPE html>  <html lang="en">  
-<head>  
-  <meta charset="UTF-8">  
-  <title>Monthly Transaction | Smart Row Sync</title> <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">  
-  <link rel="manifest" href="manifest.json">  
-  <meta name="theme-color" content="#fcfcfc">  
-  <meta name="apple-mobile-web-app-capable" content="yes">  
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">  
-  <meta name="apple-mobile-web-app-title" content="Monthly Expences">  
-  <link rel="apple-touch-icon" href="icon-192.png">    <style>  
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');  
-    :root {   
-      --h:42px; --r:10px; --primary: #22c55e; --secondary: #3b82f6; --danger: #f87171;   
-      --bg-body: linear-gradient(135deg,#eef2f7,#f9fafb);  
-      --bg-card: #ffffff; --text-main: #1f2937; --text-label: #374151; --border-color: #d1d5db; --bg-input: #ffffff;  
-    }  
-    body.dark {  
-      --bg-body: #020617; --bg-card: #0f172a; --text-main: #f8fafc; --text-label: #94a3b8; --border-color: #334155; --bg-input: #1e293b;  
-    }  
-    body {   
-      font-family:'Inter', sans-serif;   
-      background: var(--bg-body);   
-      color: var(--text-main);   
-      padding:15px; margin:0;   
-      min-height: 100vh;   
-      transition: background 0.5s ease, color 0.5s ease;   
-    }  
-      
-    form, .confirm-card {   
-      background: var(--bg-card);   
-      max-width:400px; margin:auto; padding:20px; border-radius:16px;   
-      box-shadow:0 10px 30px rgba(0,0,0,.1); border: 1px solid var(--border-color);   
-      position: relative;   
-      transition: background 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease;  
-    }  
-      
-    .confirm-card { max-width: 550px; width: 70%; }   
-  
-    /* HEADER CENTERING LOGIC */  
-    .header-row-top {   
-      display: grid;   
-      grid-template-columns: 40px 1fr 80px;   
-      align-items: center;   
-      margin-bottom: 20px;   
-      margin-top: -5px;   
-    }  
-  
-    h3 {   
-      margin: 0;   
-      font-weight: 600;   
-      font-size: 18px;   
-      text-align: center;   
-      grid-column: 1 / -1;   
-      grid-row: 1;  
-      z-index: 1;  
-    }  
-  
-    #statusDot {   
-      grid-column: 1;   
-      grid-row: 1;   
-      z-index: 2;   
-      width: 10px;   
-      height: 10px;   
-      border-radius: 50%;   
-      background: #94a3b8;   
-      justify-self: start;  
-    }  
-      
-    .right-btns {  
-      grid-column: 3;  
-      grid-row: 1;  
-      z-index: 2;  
-      display: flex;  
-      gap: 8px;  
-      justify-self: end;  
-    }  
-  
-    #statusDot.online { background: var(--primary); box-shadow: 0 0 8px var(--secondary); }  
-    #statusDot.offline { background: var(--danger); box-shadow: 0 0 8px var(--danger); }  
-  
-    #themeToggle, #fabToggle {   
-      width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--border-color);   
-      background: var(--bg-input); color: var(--text-main); cursor: pointer;   
-      display: flex; align-items: center; justify-content: center; font-size: 14px;   
-      transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);   
-      flex-shrink: 0;  
-    }  
-  
-    .theme-rotate { transform: rotate(360deg); }  
-  
-    .nav-fab-container { position: relative; }  
-    .nav-options {   
-      position: absolute; right: 0; top: 40px;   
-      display: flex; flex-direction: column; gap: 8px;   
-      opacity: 0; transform: translateY(-10px); pointer-events: none;   
-      transition: 0.2s ease-out; z-index: 10001;   
-    }  
-    .nav-fab-container.active .nav-options { opacity: 1; transform: translateY(0); pointer-events: auto; }  
-    .nav-item {   
-      background: var(--bg-card); color: var(--text-main); padding: 8px 14px;   
-      border-radius: 10px; font-size: 12px; font-weight: 600; text-decoration: none;   
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15); border: 1px solid var(--border-color);   
-      white-space: nowrap; text-align: left;  
-      transition: background 0.5s ease, color 0.5s ease;  
-    }  
-    .nav-item:hover { background: var(--primary); color: white; border-color: var(--primary); }  
-  
-     .autofill-section { background: rgba(16, 185, 129, 0.05); padding: 12px; border-radius: 12px; margin-bottom: 15px; border: 1px solid var(--secondary); }  
-    .autofill-section textarea { width: 100%; height: 130px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 11px; padding: 8px; box-sizing: border-box; resize: none; background: var(--bg-input); color: var(--text-main); transition: background 0.5s ease; }  
-    .btn-autofill { background: var(--secondary); color: white; border: none; font-size: 11px; font-weight: 700; height: 30px; border-radius: 6px; cursor: pointer; margin-top: 0px; width: 100%; }  
-  
-    .batch-control { display: flex; align-items: center; justify-content: space-between; background: rgba(99,102,241,0.1); padding: 8px 12px; border-radius: 10px; margin-bottom: 10px; border: 1px solid var(--primary); margin-top:5px;}  
-      
-    .switch { position: relative; display: inline-block; width: 40px; height: 22px; margin-top:0px; }  
-    .switch input { opacity: 0; width: 0; height: 0; }  
-    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 22px; }  
-      
-    .slider:before {   
-      position: absolute; content: "";   
-      height: 16px; width: 16px;   
-      left: 3px; bottom: 3px;   
-      background-color: white; transition: .4s; border-radius: 50%;   
-    }  
-    input:checked + .slider { background-color: var(--primary); }  
-    input:checked + .slider:before { transform: translateX(18px); }  
-  
-    label { font-size:12px; font-weight:600; margin-top:12px; display:block; color: var(--text-label); transition: color 0.5s ease; }  
-    input, select, button { width:100%; height:var(--h); margin-top:5px; padding:0 10px; border-radius:var(--r); border:1px solid var(--border-color); box-sizing:border-box; font-size:13px; background: var(--bg-input); color: var(--text-main); transition: all 0.5s ease; }  
-    input:focus, select:focus { outline:none; border-color:#2563eb; box-shadow:0 0 0 3px rgba(99,102,241,.1); }  
-      
-    .err-msg { color: var(--danger); font-size: 10px; margin-top: 4px; display: none; font-weight: 600; }  
-    form.was-validated :invalid ~ .err-msg, .is-invalid ~ .err-msg { display: block; }  
-    form.was-validated input:invalid, form.was-validated select:invalid, .is-invalid { border-color: var(--danger) !important; background: rgba(239, 68, 68, 0.03); }  
-  
-    .smart-row { display: block; width: 100%; }  
-    .smart-row.has-other { display: grid; grid-template-columns: 1fr 1.2fr; gap: 10px; }  
-  
-    .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 25px; }  
-    button[type="submit"], .btn-confirm { background: var(--primary); color: #fff; border: none; font-weight: 700; cursor: pointer; letter-spacing: 0.3px; transition: filter 0.2s; }  
-    button[type="submit"]:hover, .btn-confirm:hover { filter: brightness(1.1); }  
-      
-    #btnRepeat, .btn-cancel { background: var(--bg-input); color: var(--text-main); border: 1.5px solid var(--border-color); font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }  
-  
-    .sync-wrapper { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; border-top: 1px dashed var(--border-color); padding-top: 15px; }  
-      
-    #btnSyncAll, #btnStopSync, #btnViewQueue {   
-        height: 42px; margin: 0; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 4px; cursor: pointer; border: none;  
-    }  
-    /* Swipe Delete */  
-.swipe-wrapper {  
-  position: relative;  
-  overflow: hidden;  
-}  
-  
-.swipe-content {  
-  transition: transform 0.25s ease, opacity 0.2s ease;  
-  touch-action: pan-y;  
-}  
-    #btnSyncAll { background: var(--secondary); color: white; }  
-   #btnStopSync {   
-  background: #ffffff; /* White background to contrast primary sync */  
-  color: #f87171;      /* Red text to indicate a stop/danger action */  
-  border: 1.5px solid #f87171; /* Red border */  
-  height: 42px;  
-  border-radius: 12px; /* Slightly more rounded for a modern feel */  
-  font-weight: 700;  
-  display: flex;  
-  align-items: center;  
-  justify-content: center;  
-  gap: 8px;  
-  cursor: pointer;  
-  transition: all 0.2s ease;  
-}  
-    #btnViewQueue { background: #94a3b8; color: white; }  
-    body.dark #btnViewQueue { background: #475569; }  
-  
-    .payment-row-wrapper { margin-bottom: 12px; border-bottom: 1px dashed var(--border-color); padding-bottom: 12px; }  
-    .payment-row {   
-  display: grid;   
-  grid-template-columns: 1fr 1.2fr 80px;   
-  gap: 6px;   
-  align-items: end;   
-}  
-  
-    .btn-add-mode { background: var(--secondary); color: #fff; border: none; font-size: 11px; height: 24px; cursor: pointer; border-radius: 6px; width: auto; padding: 0 10px; margin: 0; }  
-    .total-wrapper { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding: 8px 12px; background: var(--bg-input); border-radius: 8px; border: 1px solid var(--border-color); transition: background 0.5s ease; }  
-      
-    .cash-wrapper { border:1px solid var(--border-color); border-radius:12px; padding:12px; margin-top:12px; background: var(--bg-input); transition: background 0.5s ease; }  
-    .cash-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }  
-    .cash-card { border:1px solid var(--border-color); border-radius:8px; padding:5px; text-align:center; background: var(--bg-card); transition: background 0.5s ease; }  
-    .cash-card span { display:block; font-size: 10px; font-weight:600; color: var(--text-label); transition: color 0.5s ease; }  
-    .cash-card input { width:50%; height:28px; text-align:center; margin-top: 2px; font-size: 11px; }  
-  
-    .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); z-index: 1000; display: flex; justify-content: center; align-items: center; padding: 10px; box-sizing: border-box; }  
-    .modal-content { background: var(--bg-card); color: var(--text-main); width: 98%; max-width: 850px; max-height: 85vh; border-radius: 14px; display: flex; flex-direction: column; overflow: hidden; transition: background 0.5s ease; }  
-    .table-container { overflow-x: auto; padding: 10px; }  
-    table { width: 100%; border-collapse: collapse; font-size: 11px; min-width: 900px; }  
-      
-    th { text-align: center; padding: 10px; border-bottom: 2px solid var(--border-color); color: var(--text-label); transition: color 0.5s ease; }  
-    td { padding: 10px; border-bottom: 1px solid var(--border-color); vertical-align: middle; text-align: center; transition: border-color 0.5s ease; }  
-      
-    /* Target the first column (Date) in every table row */  
-    table td:first-child, table th:first-child {  
-      text-align: center; /* Aligned left for date reading */  
-      padding-left: 5px;   
-      width: 70px; /* Width for format 1-Jan-2026 */  
-    }  
-/* Target the second column (Narration) in the table */  
-table td:nth-child(2), table th:nth-child(2) {  
-  text-align: center;width:200px; /* Options: left, center, right */  
-  padding-left: 0px;/* Optional: adds a small gap from the border */  
-}  
-/* Target the fifth column (Narration) in the table */  
-table td:nth-child(5), table th:nth-child(5) {  
-  text-align: center;width:160px; /* Options: left, center, right */  
-  padding-left: 0px;/* Optional: adds a small gap from the border */  
-}  
-/* Target the third column (Narration) in the table */  
-table td:nth-child(3), table th:nth-child(3) {  
-  text-align: center;width:120px; /* Options: left, center, right */  
-  padding-left: 0px;/* Optional: adds a small gap from the border */  
-}  
-  
-    .td-center { display: flex; justify-content: center; align-items: center; height: 100%; border-bottom: none !important; gap: 8px; }  
-    .btn-action { height:25px; width:30px; background:transparent; border:none; cursor:pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; }  
-  
-    .confirm-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border-color); font-size: 13px; transition: border-color 0.5s ease; }  
-    .confirm-label { font-weight: 600; color: var(--text-label); transition: color 0.5s ease; }  
-    .confirm-val { color: var(--text-main); text-align: right; max-width: 60%; transition: color 0.5s ease; }  
-    .confirm-section-title { font-size: 12px; font-weight: 700; color: var(--primary); margin: 15px 0 5px 0; border-bottom: 2px solid var(--primary); width: fit-content; padding-right: 10px; }  
-  
-    .confirm-matrix-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-top: 10px; background: var(--bg-input); padding: 8px; border-radius: 8px; border: 1px solid var(--border-color); transition: background 0.5s ease; }  
-    .confirm-matrix-card { border:1px solid var(--border-color); border-radius:6px; padding:4px; text-align:center; background: var(--bg-card); display: flex; flex-direction: column; align-items: center; transition: background 0.5s ease; }  
-    .confirm-matrix-card span { display:block; font-size: 9px; font-weight:700; color: var(--text-label); line-height: 1; transition: color 0.5s ease; }  
-    .confirm-matrix-card strong { font-size: 11px; color: var(--text-main); margin-top: 2px; transition: color 0.5s ease; }  
-  
-    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }  
-    .saving-text { animation: blink 1s infinite; }  
-    .hidden { display:none !important }  
-      
-    .queue-denoms { display: block; font-size: 10px; color: #6366f1; margin-top: 4px; line-height: 1.4; text-align: center; width:160px;}  
-.receipt-flex {  
-  display: flex;  
-  align-items: stretch; /* makes same height */  
-  gap: 10px;  
-  margin: 10px 0;  
-}  
-  
-.receipt-flex button  {  
-  flex: 1;  
-  margin: 0 !important;   /* remove global margin-top */  
-  height: 30px;  
-  border-radius: 8px;  
-  font-size: 13px;  
-  font-weight: 700;  
-  display: flex;  
-  align-items: center;  
-  justify-content: center;  
-  cursor: pointer;  
-}  
-.receipt-flex label {  
-  flex: 0 0 30px;  
-  margin: 0 !important;   /* remove global margin-top */  
-  height: 30px;  
-  border-radius: 8px;  
-  font-size: 13px;  
-  font-weight: 700;  
-  display: flex;  
-  align-items: center;  
-  justify-content: center;  
-  cursor: pointer;  
-}                        
-  
-/* Autofill */  
-#btnShowAutofill {  
-  background: rgba(16,185,129,0.1);  
-  color: var(--primary);  
-  border: 1px dashed var(--primary);  
-}  
-  
-/* Upload */  
-.upload-btn {  
-  background: rgba(59,130,246,0.1);  
-  color: var(--secondary);  
-  border: 1px dashed var(--secondary);  
-}  
-/* Toast Notification Style */  
-#toast {
-  position: fixed;
-  bottom: 40px;
-  left: 50%;
-  transform: translate(-50%, 40px) scale(0.95);
-  
-  background: var(--primary);
-  color: white;
-  
-  padding: 12px 20px;
-  border-radius: 14px;
-  
-  font-size: 14px;
-  font-weight: 600;
-  letter-spacing: 0.2px;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Monthly Transaction | Smart Row Sync</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#fcfcfc">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Monthly Expences">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <style>
+    /* ===== all original styles (unchanged) ===== */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    :root {
+      --h:42px; --r:10px; --primary: #22c55e; --secondary: #3b82f6; --danger: #f87171;
+      --bg-body: linear-gradient(135deg,#eef2f7,#f9fafb);
+      --bg-card: #ffffff; --text-main: #1f2937; --text-label: #374151; --border-color: #d1d5db; --bg-input: #ffffff;
+    }
+    body.dark {
+      --bg-body: #020617; --bg-card: #0f172a; --text-main: #f8fafc; --text-label: #94a3b8; --border-color: #334155; --bg-input: #1e293b;
+    }
+    body {
+      font-family:'Inter', sans-serif;
+      background: var(--bg-body);
+      color: var(--text-main);
+      padding:15px; margin:0;
+      min-height: 100vh;
+      transition: background 0.5s ease, color 0.5s ease;
+    }
 
-  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+    form, .confirm-card {
+      background: var(--bg-card);
+      max-width:400px; margin:auto; padding:20px; border-radius:16px;
+      box-shadow:0 10px 30px rgba(0,0,0,.1); border: 1px solid var(--border-color);
+      position: relative;
+      transition: background 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease;
+    }
 
-  z-index: 10001;
-  text-align: center;
+    .confirm-card { max-width: 550px; width: 70%; }
 
-  max-width: 85%;
-  min-width: 120px;
+    .header-row-top {
+      display: grid;
+      grid-template-columns: 40px 1fr 80px;
+      align-items: center;
+      margin-bottom: 20px;
+      margin-top: -5px;
+    }
 
-  opacity: 0;
-  pointer-events: none;
+    h3 {
+      margin: 0;
+      font-weight: 600;
+      font-size: 18px;
+      text-align: center;
+      grid-column: 1 / -1;
+      grid-row: 1;
+      z-index: 1;
+    }
 
-  transition:
-    transform 0.35s cubic-bezier(.22,1,.36,1),
-    opacity 0.35s ease;
-}
+    #statusDot {
+      grid-column: 1;
+      grid-row: 1;
+      z-index: 2;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #94a3b8;
+      justify-self: start;
+    }
 
-#toast.show {
-  opacity: 1;
-  transform: translate(-50%, 0) scale(1);
-}
-.toggle-row{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:8px;
-  margin-bottom:10px;
-}
+    .right-btns {
+      grid-column: 3;
+      grid-row: 1;
+      z-index: 2;
+      display: flex;
+      gap: 8px;
+      justify-self: end;
+    }
 
-.toggle-row .batch-control{
-  margin:0;
-}
-#recurringPreview{
-background: rgba(34,197,94,0.08);
-border:1px dashed var(--primary);
-padding:10px;
-border-radius:10px;
-}
- </style>  </head>  <body>  
- <div id="recurringPreview"
-style="max-width:400px;margin:auto;margin-bottom:10px;font-size:12px;" class="hidden">
-</div>
+    #statusDot.online { background: var(--primary); box-shadow: 0 0 8px var(--secondary); }
+    #statusDot.offline { background: var(--danger); box-shadow: 0 0 8px var(--danger); }
 
+    #themeToggle, #fabToggle {
+      width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--border-color);
+      background: var(--bg-input); color: var(--text-main); cursor: pointer;
+      display: flex; align-items: center; justify-content: center; font-size: 14px;
+      transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      flex-shrink: 0;
+    }
 
-<form id="txnForm" novalidate>  
-  <div class="header-row-top">  
-    <div id="statusDot" title="Network Status"></div>  
-    <h3>Monthly Transaction</h3>  <div class="right-btns">  
-  <div class="nav-fab-container" id="navFab">  
-    <button type="button" id="fabToggle" title="Navigation">🔗</button>  
-    <div class="nav-options">  
-      <a href="https://oprasannakumar.github.io/LoanTransferGoogleSheets/" class="nav-item">🔄 Loan Entry</a>  
-      <a href="https://oprasannakumar.github.io/Self-TransferGoogleScripts/" class="nav-item">🏦 Self Transfer</a>  
-      <a href="#" class="nav-item" onclick="openRecurringManager()">🔁 Recurring</a>
-    </div>  
-    
-  </div>  
-  <button type="button" id="themeToggle">🌙</button>  
-</div>
+    .theme-rotate { transform: rotate(360deg); }
 
-  </div>  <div class="receipt-flex">  
-  <button type="button" id="btnShowAutofill" class="receipt-btn">  
-    ✨ Use Receipt Auto-Fill  
-  </button>    <label class="receipt-btn upload-btn">  
-    📷  
-    <input type="file" id="receiptUpload" accept="image/*" hidden>  
-  </label>  
-</div>    
-<div class="toggle-row">
-  <div class="batch-control">
-    <span style="font-size: 12px; font-weight: 600;">Batch Mode</span>
-    <label class="switch">
-      <input type="checkbox" id="batchToggle">
-      <span class="slider"></span>
+    .nav-fab-container { position: relative; }
+    .nav-options {
+      position: absolute; right: 0; top: 40px;
+      display: flex; flex-direction: column; gap: 8px;
+      opacity: 0; transform: translateY(-10px); pointer-events: none;
+      transition: 0.2s ease-out; z-index: 10001;
+    }
+    .nav-fab-container.active .nav-options { opacity: 1; transform: translateY(0); pointer-events: auto; }
+    .nav-item {
+      background: var(--bg-card); color: var(--text-main); padding: 8px 14px;
+      border-radius: 10px; font-size: 12px; font-weight: 600; text-decoration: none;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15); border: 1px solid var(--border-color);
+      white-space: nowrap; text-align: left;
+      transition: background 0.5s ease, color 0.5s ease;
+    }
+    .nav-item:hover { background: var(--primary); color: white; border-color: var(--primary); }
+
+    .autofill-section { background: rgba(16, 185, 129, 0.05); padding: 12px; border-radius: 12px; margin-bottom: 15px; border: 1px solid var(--secondary); }
+    .autofill-section textarea { width: 100%; height: 130px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 11px; padding: 8px; box-sizing: border-box; resize: none; background: var(--bg-input); color: var(--text-main); transition: background 0.5s ease; }
+    .btn-autofill { background: var(--secondary); color: white; border: none; font-size: 11px; font-weight: 700; height: 30px; border-radius: 6px; cursor: pointer; margin-top: 0px; width: 100%; }
+
+    .batch-control { display: flex; align-items: center; justify-content: space-between; background: rgba(99,102,241,0.1); padding: 8px 12px; border-radius: 10px; margin-bottom: 10px; border: 1px solid var(--primary); margin-top:5px;}
+
+    .switch { position: relative; display: inline-block; width: 40px; height: 22px; margin-top:0px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 22px; }
+
+    .slider:before {
+      position: absolute; content: "";
+      height: 16px; width: 16px;
+      left: 3px; bottom: 3px;
+      background-color: white; transition: .4s; border-radius: 50%;
+    }
+    input:checked + .slider { background-color: var(--primary); }
+    input:checked + .slider:before { transform: translateX(18px); }
+
+    label { font-size:12px; font-weight:600; margin-top:12px; display:block; color: var(--text-label); transition: color 0.5s ease; }
+    input, select, button { width:100%; height:var(--h); margin-top:5px; padding:0 10px; border-radius:var(--r); border:1px solid var(--border-color); box-sizing:border-box; font-size:13px; background: var(--bg-input); color: var(--text-main); transition: all 0.5s ease; }
+    input:focus, select:focus { outline:none; border-color:#2563eb; box-shadow:0 0 0 3px rgba(99,102,241,.1); }
+
+    .err-msg { color: var(--danger); font-size: 10px; margin-top: 4px; display: none; font-weight: 600; }
+    form.was-validated :invalid ~ .err-msg, .is-invalid ~ .err-msg { display: block; }
+    form.was-validated input:invalid, form.was-validated select:invalid, .is-invalid { border-color: var(--danger) !important; background: rgba(239, 68, 68, 0.03); }
+
+    .smart-row { display: block; width: 100%; }
+    .smart-row.has-other { display: grid; grid-template-columns: 1fr 1.2fr; gap: 10px; }
+
+    .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 25px; }
+    button[type="submit"], .btn-confirm { background: var(--primary); color: #fff; border: none; font-weight: 700; cursor: pointer; letter-spacing: 0.3px; transition: filter 0.2s; }
+    button[type="submit"]:hover, .btn-confirm:hover { filter: brightness(1.1); }
+
+    #btnRepeat, .btn-cancel { background: var(--bg-input); color: var(--text-main); border: 1.5px solid var(--border-color); font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
+
+    .sync-wrapper { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; border-top: 1px dashed var(--border-color); padding-top: 15px; }
+
+    #btnSyncAll, #btnStopSync, #btnViewQueue {
+        height: 42px; margin: 0; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 4px; cursor: pointer; border: none;
+    }
+    .swipe-wrapper {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .swipe-content {
+      transition: transform 0.25s ease, opacity 0.2s ease;
+      touch-action: pan-y;
+    }
+    #btnSyncAll { background: var(--secondary); color: white; }
+    #btnStopSync {
+      background: #ffffff;
+      color: #f87171;
+      border: 1.5px solid #f87171;
+      height: 42px;
+      border-radius: 12px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    #btnViewQueue { background: #94a3b8; color: white; }
+    body.dark #btnViewQueue { background: #475569; }
+
+    .payment-row-wrapper { margin-bottom: 12px; border-bottom: 1px dashed var(--border-color); padding-bottom: 12px; }
+    .payment-row {
+      display: grid;
+      grid-template-columns: 1fr 1.2fr 80px;
+      gap: 6px;
+      align-items: end;
+    }
+
+    .btn-add-mode { background: var(--secondary); color: #fff; border: none; font-size: 11px; height: 24px; cursor: pointer; border-radius: 6px; width: auto; padding: 0 10px; margin: 0; }
+    .total-wrapper { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding: 8px 12px; background: var(--bg-input); border-radius: 8px; border: 1px solid var(--border-color); transition: background 0.5s ease; }
+
+    .cash-wrapper { border:1px solid var(--border-color); border-radius:12px; padding:12px; margin-top:12px; background: var(--bg-input); transition: background 0.5s ease; }
+    .cash-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+    .cash-card { border:1px solid var(--border-color); border-radius:8px; padding:5px; text-align:center; background: var(--bg-card); transition: background 0.5s ease; }
+    .cash-card span { display:block; font-size: 10px; font-weight:600; color: var(--text-label); transition: color 0.5s ease; }
+    .cash-card input { width:50%; height:28px; text-align:center; margin-top: 2px; font-size: 11px; }
+
+    .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); z-index: 1000; display: flex; justify-content: center; align-items: center; padding: 10px; box-sizing: border-box; }
+    .modal-content { background: var(--bg-card); color: var(--text-main); width: 98%; max-width: 850px; max-height: 85vh; border-radius: 14px; display: flex; flex-direction: column; overflow: hidden; transition: background 0.5s ease; }
+    .table-container { overflow-x: auto; padding: 10px; }
+    table { width: 100%; border-collapse: collapse; font-size: 11px; min-width: 900px; }
+
+    th { text-align: center; padding: 10px; border-bottom: 2px solid var(--border-color); color: var(--text-label); transition: color 0.5s ease; }
+    td { padding: 10px; border-bottom: 1px solid var(--border-color); vertical-align: middle; text-align: center; transition: border-color 0.5s ease; }
+
+    table td:first-child, table th:first-child {
+      text-align: center;
+      padding-left: 5px;
+      width: 70px;
+    }
+    table td:nth-child(2), table th:nth-child(2) {
+      text-align: center;width:200px;
+      padding-left: 0px;
+    }
+    table td:nth-child(5), table th:nth-child(5) {
+      text-align: center;width:160px;
+      padding-left: 0px;
+    }
+    table td:nth-child(3), table th:nth-child(3) {
+      text-align: center;width:120px;
+      padding-left: 0px;
+    }
+
+    .td-center { display: flex; justify-content: center; align-items: center; height: 100%; border-bottom: none !important; gap: 8px; }
+    .btn-action { height:25px; width:30px; background:transparent; border:none; cursor:pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; }
+
+    .confirm-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border-color); font-size: 13px; transition: border-color 0.5s ease; }
+    .confirm-label { font-weight: 600; color: var(--text-label); transition: color 0.5s ease; }
+    .confirm-val { color: var(--text-main); text-align: right; max-width: 60%; transition: color 0.5s ease; }
+    .confirm-section-title { font-size: 12px; font-weight: 700; color: var(--primary); margin: 15px 0 5px 0; border-bottom: 2px solid var(--primary); width: fit-content; padding-right: 10px; }
+
+    .confirm-matrix-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-top: 10px; background: var(--bg-input); padding: 8px; border-radius: 8px; border: 1px solid var(--border-color); transition: background 0.5s ease; }
+    .confirm-matrix-card { border:1px solid var(--border-color); border-radius:6px; padding:4px; text-align:center; background: var(--bg-card); display: flex; flex-direction: column; align-items: center; transition: background 0.5s ease; }
+    .confirm-matrix-card span { display:block; font-size: 9px; font-weight:700; color: var(--text-label); line-height: 1; transition: color 0.5s ease; }
+    .confirm-matrix-card strong { font-size: 11px; color: var(--text-main); margin-top: 2px; transition: color 0.5s ease; }
+
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    .saving-text { animation: blink 1s infinite; }
+    .hidden { display:none !important }
+
+    .queue-denoms { display: block; font-size: 10px; color: #6366f1; margin-top: 4px; line-height: 1.4; text-align: center; width:160px;}
+    .receipt-flex {
+      display: flex;
+      align-items: stretch;
+      gap: 10px;
+      margin: 10px 0;
+    }
+
+    .receipt-flex button  {
+      flex: 1;
+      margin: 0 !important;
+      height: 30px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    .receipt-flex label {
+      flex: 0 0 30px;
+      margin: 0 !important;
+      height: 30px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    #btnShowAutofill {
+      background: rgba(16,185,129,0.1);
+      color: var(--primary);
+      border: 1px dashed var(--primary);
+    }
+
+    .upload-btn {
+      background: rgba(59,130,246,0.1);
+      color: var(--secondary);
+      border: 1px dashed var(--secondary);
+    }
+    #toast {
+      position: fixed;
+      bottom: 40px;
+      left: 50%;
+      transform: translate(-50%, 40px) scale(0.95);
+      background: var(--primary);
+      color: white;
+      padding: 12px 20px;
+      border-radius: 14px;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.2px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+      z-index: 10001;
+      text-align: center;
+      max-width: 85%;
+      min-width: 120px;
+      opacity: 0;
+      pointer-events: none;
+      transition: transform 0.35s cubic-bezier(.22,1,.36,1), opacity 0.35s ease;
+    }
+
+    #toast.show {
+      opacity: 1;
+      transform: translate(-50%, 0) scale(1);
+    }
+    .toggle-row{
+      display:grid;
+      grid-template-columns:1fr 1fr 1fr;
+      gap:8px;
+      margin-bottom:10px;
+    }
+
+    .toggle-row .batch-control{
+      margin:0;
+    }
+    #recurringPreview{
+      background: rgba(34,197,94,0.08);
+      border:1px dashed var(--primary);
+      padding:10px;
+      border-radius:10px;
+    }
+
+    /* Split recipient row styling */
+    .recipient-row {
+      position: relative;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+    .recipient-swipe-content {
+      display: grid;
+      grid-template-columns: 1fr 1fr 30px;
+      gap: 8px;
+      align-items: center;
+      transition: transform 0.25s ease, opacity 0.2s ease;
+      touch-action: pan-y;
+    }
+    .recipient-other-input {
+      grid-column: 1 / span 2;
+      margin-top: 4px;
+    }
+  </style>
+</head>
+<body>
+<div id="recurringPreview" style="max-width:400px;margin:auto;margin-bottom:10px;font-size:12px;" class="hidden"></div>
+
+<form id="txnForm" novalidate>
+  <div class="header-row-top">
+    <div id="statusDot" title="Network Status"></div>
+    <h3>Monthly Transaction</h3>
+    <div class="right-btns">
+      <div class="nav-fab-container" id="navFab">
+        <button type="button" id="fabToggle" title="Navigation">🔗</button>
+        <div class="nav-options">
+          <a href="https://oprasannakumar.github.io/LoanTransferGoogleSheets/" class="nav-item">🔄 Loan Entry</a>
+          <a href="https://oprasannakumar.github.io/Self-TransferGoogleScripts/" class="nav-item">🏦 Self Transfer</a>
+          <a href="#" class="nav-item" onclick="openRecurringManager()">🔁 Recurring</a>
+        </div>
+      </div>
+      <button type="button" id="themeToggle">🌙</button>
+    </div>
+  </div>
+  <div class="receipt-flex">
+    <button type="button" id="btnShowAutofill" class="receipt-btn">
+      ✨ Use Receipt Auto-Fill
+    </button>
+    <label class="receipt-btn upload-btn">
+      📷
+      <input type="file" id="receiptUpload" accept="image/*" hidden>
     </label>
   </div>
+  <div class="toggle-row">
+    <div class="batch-control">
+      <span style="font-size: 12px; font-weight: 600;">Batch Mode</span>
+      <label class="switch">
+        <input type="checkbox" id="batchToggle">
+        <span class="slider"></span>
+      </label>
+    </div>
 
-  <div class="batch-control">
-    <span style="font-size: 12px; font-weight: 600;">Recurring</span>
-    <label class="switch">
-      <input type="checkbox" id="recurringToggle">
-      <span class="slider"></span>
-    </label>
+    <div class="batch-control">
+      <span style="font-size: 12px; font-weight: 600;">Recurring</span>
+      <label class="switch">
+        <input type="checkbox" id="recurringToggle">
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="batch-control">
+      <span style="font-size: 12px; font-weight: 600;">Split Mode</span>
+      <label class="switch">
+        <input type="checkbox" id="splitToggle">
+        <span class="slider"></span>
+      </label>
+    </div>
   </div>
-</div>
-<div id="recurringOptions" class="hidden">
-<label>Frequency</label>
-<select id="recurringType">
-<option value="weekly">Weekly</option>
-<option value="monthly">Monthly</option>
-<option value="quarterly">Quarterly</option>
-<option value="halfyearly">Half-Yearly</option>
-<option value="yearly">Yearly</option>
-<option value="custom">Custom Days</option>
-</select>
 
-<input type="number" id="customDays" placeholder="Days" class="hidden" min="1">
-</div>
+  <div id="recurringOptions" class="hidden">
+    <label>Frequency</label>
+    <select id="recurringType">
+      <option value="weekly">Weekly</option>
+      <option value="monthly">Monthly</option>
+      <option value="quarterly">Quarterly</option>
+      <option value="halfyearly">Half-Yearly</option>
+      <option value="yearly">Yearly</option>
+      <option value="custom">Custom Days</option>
+    </select>
+    <input type="number" id="customDays" placeholder="Days" class="hidden" min="1">
+  </div>
+
   <label>Date</label>
-<input type="date" id="date" required>
+  <input type="date" id="date" required>
+  <div class="err-msg">Selection required</div>
 
-  <div class="err-msg">Selection required</div>  <label>Narration</label>
-<input type="text" id="narration" required placeholder="Description">
+  <label>Narration</label>
+  <input type="text" id="narration" required placeholder="Description">
+  <div class="err-msg">Description required</div>
 
-  <div class="err-msg">Description required</div>  <label>Invoice No. (Optional)</label>
-<input type="text" id="invoice_no" placeholder="Enter Invoice Number">
+  <label>Invoice No. (Optional)</label>
+  <input type="text" id="invoice_no" placeholder="Enter Invoice Number">
 
-  <div id="referenceWrapper" class="hidden">  
-    <label>Reference</label>  
-    <input type="text" id="reference" placeholder="Auto-filled Reference">  
-  </div>  <label>Purpose</label>
+  <div id="referenceWrapper" class="hidden">
+    <label>Reference</label>
+    <input type="text" id="reference" placeholder="Auto-filled Reference">
+  </div>
 
-  <div id="purposeSmartRow" class="smart-row">  
-      <select id="purpose" required onchange="toggleSmartOther(this, 'purpose_other', 'purposeSmartRow')">  
-        <option value="">Select</option>  
-          <option>Business</option>  
-  <option>Donation</option>  
-  <option>Entertainment</option>  
-  <option>Food</option>  
-  <option>Grocery</option>  
-  <option>Hospital</option>  
-  <option>House</option>  
-  <option>Income</option>  
-  <option>Insurance</option>  
-  <option>Loan</option>  
-  <option>Medicines</option>  
-  <option>Miscellaneous</option>  
-  <option>Puja</option>  
-  <option>Tax</option>  
-  <option>Travelling</option>  
-  <option>Utility Bills</option>  
-  <option>Water</option>  
-  <option value="Other">Other</option>  
-      </select>  
-      <input id="purpose_other" class="hidden" placeholder="Specify Purpose" required disabled>  
-      <div class="err-msg">Category required</div>  
-  </div>  <label>Spent For</label>
+  <label>Purpose</label>
+  <div id="purposeSmartRow" class="smart-row">
+    <select id="purpose" required onchange="toggleSmartOther(this, 'purpose_other', 'purposeSmartRow')">
+      <option value="">Select</option>
+      <option>Business</option>
+      <option>Donation</option>
+      <option>Entertainment</option>
+      <option>Food</option>
+      <option>Grocery</option>
+      <option>Hospital</option>
+      <option>House</option>
+      <option>Income</option>
+      <option>Insurance</option>
+      <option>Loan</option>
+      <option>Medicines</option>
+      <option>Miscellaneous</option>
+      <option>Puja</option>
+      <option>Tax</option>
+      <option>Travelling</option>
+      <option>Utility Bills</option>
+      <option>Water</option>
+      <option value="Other">Other</option>
+    </select>
+    <input id="purpose_other" class="hidden" placeholder="Specify Purpose" required disabled>
+    <div class="err-msg">Category required</div>
+  </div>
 
-  <div id="spentSmartRow" class="smart-row">  
-      <select id="spent_for" required onchange="toggleSmartOther(this, 'spent_for_other', 'spentSmartRow')">  
-        <option value="">Select</option>  
-        <option>Self</option><option>House</option><option>Mother</option><option>Grand Father</option><option>Family</option><option>Pedhamma</option><option>Vasavi</option><option value="Other">Other</option>  
-      </select>  
-      <input id="spent_for_other" class="hidden" placeholder="Specify Name" required disabled>  
-      <div class="err-msg">Entity required</div>  
-  </div>  <label>Flow</label>
-<select id="flow" required>
-<option value="">Select</option>
-<option value="withdraw">Withdraw</option>
-<option value="deposit">Deposit</option>
-</select>
+  <label>Spent For</label>
+  <div id="spentSmartRow" class="smart-row">
+    <select id="spent_for" required onchange="toggleSmartOther(this, 'spent_for_other', 'spentSmartRow')">
+      <option value="">Select</option>
+      <option>Self</option><option>House</option><option>Mother</option><option>Grand Father</option><option>Family</option><option>Pedhamma</option><option>Vasavi</option><option value="Other">Other</option>
+    </select>
+    <input id="spent_for_other" class="hidden" placeholder="Specify Name" required disabled>
+    <div class="err-msg">Entity required</div>
+  </div>
 
-  <div class="err-msg">Flow required</div>    <div class="header-row" style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 14px;">  
-    <label style="margin:0">Payment Breakdown</label>  
-    <button type="button" class="btn-add-mode" id="btnAddMode">+ Add Mode</button>  
-  </div>  
-  <div id="paymentContainer"></div>    <div class="total-wrapper">  
-    <span style="font-size: 12px; font-weight: 700; color: var(--text-label);">Total Amount:</span>  
-    <span style="font-size: 14px; font-weight: 700; color: var(--primary);" id="grandTotal">₹0.00</span>  
-  </div>    <div id="cashBlock" class="hidden cash-wrapper">  
-    <div style="font-weight:600; color:#6366f1; margin-bottom:8px; font-size:12px;">Cash Denominations</div>  
-    <div class="cash-grid" id="cashGrid"></div>  
-    <div class="err-msg">Please enter denominations</div>  
-  </div>    <div class="btn-group">  
-    <button type="submit" id="submitBtn">Save Transaction</button>  
-    <button type="button" id="btnRepeat">↺ Repeat</button>  
-  </div>    <div id="footerSync" class="sync-wrapper hidden">  
-    <button type="button" id="btnSyncAll">  
-        <span id="syncText">☁️ Sync All</span>  
-        <small id="syncCount">(0)</small>  
-    </button>  
-    <button type="button" id="btnStopSync" class="hidden">🛑 Stop Sync</button>  
-    <button type="button" id="btnViewQueue">📋 View Queue</button>  
-  </div>  
-</form>  <div id="confirmModal" class="modal hidden">  
-  <div class="confirm-card">  
-    <h3 style="margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">Confirm Details</h3>  
-    <div id="confirmDetails"></div>  
-    <div class="btn-group">  
-      <button type="button" id="btnConfirmFinal" class="btn-confirm">Proceed</button>  
-      <button type="button" id="btnConfirmCancel" class="btn-cancel">Edit</button>  
-    </div>  
-  </div>  
-</div>  <div id="queueModal" class="modal hidden">  
-  <div class="modal-content">  
-    <div class="modal-header" style="display: flex; justify-content: space-between; padding: 15px; background: var(--bg-input); border-bottom: 1px solid var(--border-color);">  
-      <h4 style="margin:0">Offline / Batch Queue</h4>  
-      <span style="cursor:pointer; font-size: 20px;" onclick="document.getElementById('queueModal').classList.add('hidden')">✕</span>  
-    </div>  
-    <div class="table-container">  
-      <table>  
-        <thead>  
-          <tr><th>Date</th><th>Narration</th><th>Invoice</th><th>Purpose</th><th>Account</th><th>Flow</th><th>Amount</th><th style="text-align:center;">Action</th></tr>  
-        </thead>  
-        <tbody id="queueBody"></tbody>  
-      </table>  
-    </div>  
-  </div>  
-</div>  
+  <label>Flow</label>
+  <select id="flow" required>
+    <option value="">Select</option>
+    <option value="withdraw">Withdraw</option>
+    <option value="deposit">Deposit</option>
+  </select>
+  <div class="err-msg">Flow required</div>
+
+  <div class="header-row" style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 14px;">
+    <label style="margin:0">Payment Breakdown</label>
+    <button type="button" class="btn-add-mode" id="btnAddMode">+ Add Mode</button>
+  </div>
+  <div id="paymentContainer"></div>
+
+  <!-- Split panel (visible only when Split Mode is enabled) -->
+  <!-- Split panel (visible only when Split Mode is enabled) -->
+<div id="splitPanel" style="display: none; margin-top: 12px; border-top: 1px solid var(--border-color); padding-top: 12px;">
+    <div style="display:flex; justify-content:space-between; background:var(--bg-input); padding:8px 12px; border-radius:12px; margin-bottom:12px;">
+      <span>Total Transaction Amount:</span>
+      <strong id="splitTotalAmount">₹0.00</strong>
+    </div>
+  
+    <label>My Share (Personal)</label>
+    <input type="number" id="personalShare" placeholder="0.00" step="0.01" value="0">
+  
+    <div style="display:flex; justify-content:space-between; align-items:center; margin: 12px 0 8px 0;">
+      <span style="font-size:12px; font-weight:600;">Recipients</span>
+      <span id="addRecipientIcon" style="cursor:pointer; font-size:18px; font-weight:bold; color:var(--secondary);">➕</span>
+    </div>
+    <div id="recipientsContainer"></div>
+  </div>
+
+  <div class="total-wrapper">
+    <span style="font-size: 12px; font-weight: 700; color: var(--text-label);">Total Amount:</span>
+    <span style="font-size: 14px; font-weight: 700; color: var(--primary);" id="grandTotal">₹0.00</span>
+  </div>
+
+  <div id="cashBlock" class="hidden cash-wrapper">
+    <div style="font-weight:600; color:#6366f1; margin-bottom:8px; font-size:12px;">Cash Denominations</div>
+    <div class="cash-grid" id="cashGrid"></div>
+    <div class="err-msg">Please enter denominations</div>
+  </div>
+
+  <div class="btn-group">
+    <button type="submit" id="submitBtn">Save Transaction</button>
+    <button type="button" id="btnRepeat">↺ Repeat</button>
+  </div>
+
+  <div id="footerSync" class="sync-wrapper hidden">
+    <button type="button" id="btnSyncAll">
+      <span id="syncText">☁️ Sync All</span>
+      <small id="syncCount">(0)</small>
+    </button>
+    <button type="button" id="btnStopSync" class="hidden">🛑 Stop Sync</button>
+    <button type="button" id="btnViewQueue">📋 View Queue</button>
+  </div>
+</form>
+
+<div id="confirmModal" class="modal hidden">
+  <div class="confirm-card">
+    <h3 style="margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">Confirm Details</h3>
+    <div id="confirmDetails"></div>
+    <div class="btn-group">
+      <button type="button" id="btnConfirmFinal" class="btn-confirm">Proceed</button>
+      <button type="button" id="btnConfirmCancel" class="btn-cancel">Edit</button>
+    </div>
+  </div>
+</div>
+
+<div id="queueModal" class="modal hidden">
+  <div class="modal-content">
+    <div class="modal-header" style="display: flex; justify-content: space-between; padding: 15px; background: var(--bg-input); border-bottom: 1px solid var(--border-color);">
+      <h4 style="margin:0">Offline / Batch Queue</h4>
+      <span style="cursor:pointer; font-size: 20px;" onclick="document.getElementById('queueModal').classList.add('hidden')">✕</span>
+    </div>
+    <div class="table-container">
+       <table>
+        <thead>
+           <tr><th>Date</th><th>Narration</th><th>Invoice</th><th>Purpose</th><th>Account</th><th>Flow</th><th>Amount</th><th style="text-align:center;">Action</th></tr>
+        </thead>
+        <tbody id="queueBody"></tbody>
+       </table>
+    </div>
+  </div>
+</div>
+
 <div id="recurringModal" class="modal hidden">
   <div class="modal-content">
-
     <div class="modal-header" style="display:flex;justify-content:space-between;padding:15px;background:var(--bg-input);border-bottom:1px solid var(--border-color);">
       <h4 style="margin:0">Recurring Transactions</h4>
       <span style="cursor:pointer;font-size:20px" onclick="closeRecurringManager()">✕</span>
     </div>
-
     <div class="table-container">
       <table>
-      <thead>
-      <tr>
-      <th>Date</th>
-      <th>Narration</th>
-      <th>Purpose</th>
-      <th>Spent For</th>
-      <th>Flow</th>
-      <th>Account</th>
-      <th>Amount</th>
-      <th>Action</th>
-      </tr>
-      </thead>
-
+        <thead>
+          <tr><th>Date</th><th>Narration</th><th>Purpose</th><th>Spent For</th><th>Flow</th><th>Account</th><th>Amount</th><th>Action</th></tr>
+        </thead>
         <tbody id="recurringBody"></tbody>
-
       </table>
     </div>
-
   </div>
 </div>
-<script>  
+
+<script>
 // DATE FORMATTER HELPER  
 function formatDisplayDate(dateStr) {  
   if (!dateStr) return "";  
@@ -537,7 +575,7 @@ function formatDisplayDate(dateStr) {
   return `${d.getDate()}-${months[d.getMonth()]}-${d.getFullYear()}`;  
 }  
   
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxSzVgkfK2biBp_XsbINA8wIxWA-ai1Zyz_x1iMYrbTCo9-SIvOTGJuNA4289pE6lMC/exec";  
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwtxq-LrJYu21QO07vBWWQrWhHtQ7hpkvYHeTsMAG0eAj3am6Tn0rryT5jDnRc-SwO-/exec";  
 const IMAGE_PROCESS_URL = "https://script.google.com/macros/s/AKfycbx7CrlFktwGnHXRvdcovoXrZAjEGlg5axKnK5a7udfT-NdRwLcQ1xyqOsJ7vW7PUyPj3A/exec";  
 let globalMemory = {};
 const STOP_WORDS = [
@@ -839,136 +877,245 @@ function getCashTextSummary(p) {
     return denoms.map(v => `${v}x${p.get("d"+v) || 0}`).join(", ");  
 }  
   
-document.getElementById('txnForm').onsubmit = function(e) {  
-  e.preventDefault();  
-  const form = e.target;  
-  const isOnline = navigator.onLine;  
-  const isBatch = document.getElementById('batchToggle').checked;  
+document.getElementById('txnForm').onsubmit = function(e) {
+  e.preventDefault();
+  const form = e.target;
+  const isOnline = navigator.onLine;
+  const isBatch = document.getElementById('batchToggle').checked;
   const isRecurring = document.getElementById('recurringToggle')?.checked;
-  const hasCashMode = Array.from(document.querySelectorAll('.row-type')).some(s => s.value === 'CASH');  
-  const cashTotal = Array.from(document.querySelectorAll('.denom-input')).reduce((sum, i) => sum + (i.value * i.dataset.val), 0);  
-    
-  if(hasCashMode && cashTotal <= 0) document.getElementById('cashBlock').classList.add('is-invalid');  
-  else document.getElementById('cashBlock').classList.remove('is-invalid');  
-  
+  const hasCashMode = Array.from(document.querySelectorAll('.row-type')).some(s => s.value === 'CASH');
+  const cashTotal = Array.from(document.querySelectorAll('.denom-input')).reduce((sum, i) => sum + (i.value * i.dataset.val), 0);
+
+  if (hasCashMode && cashTotal <= 0) document.getElementById('cashBlock').classList.add('is-invalid');
+  else document.getElementById('cashBlock').classList.remove('is-invalid');
+
   form.classList.add('was-validated');
+  if (!isRecurring && !form.checkValidity()) return;
+  if (hasCashMode && cashTotal <= 0) return;
 
-// ⭐ Skip Mode & Account validation when saving recurring template
-if(!isRecurring && !form.checkValidity()) return;
-  if(hasCashMode && cashTotal <= 0) return;  
-    
-  const gTotalStr = document.getElementById('grandTotal').textContent;  
-  if(parseFloat(gTotalStr.replace('₹', '')) <= 0) {  
-    showToast("Amount must be greater than zero", "#f87171");  
-    return;  
-  }  
-  
-  const pFinal = document.getElementById('purpose').value === 'Other' ? document.getElementById('purpose_other').value : document.getElementById('purpose').value;  
-  const sFinal = document.getElementById('spent_for').value === 'Other' ? document.getElementById('spent_for_other').value : document.getElementById('spent_for').value;  
-  const invoiceVal = document.getElementById('invoice_no').value || "N/A";  
- let refVal = document.getElementById('reference').value.trim();  
-if (!refVal) {  
-    const now = new Date();  
-    const datePart = now.toISOString().split('T')[0].replace(/-/g, ''); // e.g., 20260205  
-    const randomPart = Math.random().toString(36).substring(2, 6).toUpperCase(); // 4 random chars  
-    refVal = `REF-${datePart}-${randomPart}`;  
-}  
-  currentPayloads = [];  
-  const repeatData = [];  
-    
-  document.querySelectorAll('.payment-row-wrapper').forEach(row => {  
-    const accSel = row.querySelector('.row-acc');  
-    const aFinal = accSel.value === 'Other' ? row.querySelector('.row-acc-other').value : accSel.value;  
-    const p = new URLSearchParams({  
-      date: document.getElementById('date').value,   
-      narration: document.getElementById('narration').value,  
-      invoice_no: document.getElementById('invoice_no').value,  
-      reference: refVal,  
-      purpose: pFinal, spent_for: sFinal, flow: document.getElementById('flow').value,  
-      trtype: row.querySelector('.row-type').value, from_to: aFinal,  
-      withdrawn: document.getElementById('flow').value === 'withdraw' ? row.querySelector('.row-amt').value : 0,  
-      deposit: document.getElementById('flow').value === 'deposit' ? row.querySelector('.row-amt').value : 0,  
-      category: "monthly transactions"  
-    });  
-    if(row.querySelector('.row-type').value === "CASH") {  
-        document.querySelectorAll(".denom-input").forEach(i => p.append("d"+i.dataset.val, i.value || 0));  
-    }  
-    currentPayloads.push(p.toString());  
-    repeatData.push(p.toString());  
-  });  
-  
-  let detailsHtml = `  
-    <div class="confirm-item"><span class="confirm-label">Date</span><span class="confirm-val">${formatDisplayDate(document.getElementById('date').value)}</span></div>  
-    <div class="confirm-item"><span class="confirm-label">Narration</span><span class="confirm-val">${document.getElementById('narration').value}</span></div>  
-    <div class="confirm-item"><span class="confirm-label">Invoice No.</span><span class="confirm-val">${invoiceVal}</span></div>  
-    ${refVal ? `<div class="confirm-item"><span class="confirm-label">Ref</span><span class="confirm-val">${refVal}</span></div>` : ''}  
-    <div class="confirm-item"><span class="confirm-label">Purpose</span><span class="confirm-val">${pFinal}</span></div>  
-    <div class="confirm-item"><span class="confirm-label">Spent For</span><span class="confirm-val">${sFinal}</span></div>  
-    <div class="confirm-item"><span class="confirm-label">Flow</span><span class="confirm-val">${document.getElementById('flow').value}</span></div>  
-    <div class="confirm-item" style="border:none"><span class="confirm-label" style="color:var(--primary)">Total Amount</span><span class="confirm-val" style="color:var(--primary); font-weight:bold">${gTotalStr}</span></div>  
-    <br>  
-    <div class="confirm-section-title">Payments</div>  
-  `;  
-  
-  currentPayloads.forEach(payloadStr => {  
-      const p = new URLSearchParams(payloadStr);  
-      const amt = p.get('flow') === 'withdraw' ? p.get('withdrawn') : p.get('deposit');  
-      detailsHtml += `<div class="confirm-item" style="border-bottom:none"><span class="confirm-label">${p.get('from_to')} (${p.get('trtype')})</span><span class="confirm-val">₹${amt}</span></div>`;  
-      if(p.get('trtype') === 'CASH') detailsHtml += getCashSummaryHtml(p);  
-  });  
-  
-  document.getElementById('confirmDetails').innerHTML = detailsHtml;  
-  localStorage.setItem("lastPackage", JSON.stringify(repeatData));
-
-
-// 🔥 Train AI with user correction  
-trainPurpose(  
-  document.getElementById("narration").value,  
-  pFinal  
-);  
-  if(isRecurring){
-
-  const template = {
-  narration: document.getElementById("narration").value,
-  purpose: pFinal,
-  spent_for: sFinal,
-  flow: document.getElementById("flow").value,
-  payments: currentPayloads,
-  date: document.getElementById("date").value,
-  frequency: document.getElementById("recurringType").value,
-customDays: document.getElementById("customDays")?.value || null,
-  active: true
-};
-
-  let list = JSON.parse(localStorage.getItem("recurringTemplates") || "[]");
-
-  // ⭐ UPDATE existing template
-  if(window.editRecurringIndex !== undefined){
-
-    list[window.editRecurringIndex] = template;
-    window.editRecurringIndex = undefined;
-
-    showToast("✏️ Recurring template updated");
-
-  }else{
-
-    list.push(template);
-    showToast("🔁 Recurring template saved");
-
+  const gTotalStr = document.getElementById('grandTotal').textContent;
+  if (parseFloat(gTotalStr.replace('₹', '')) <= 0) {
+    showToast("Amount must be greater than zero", "#f87171");
+    return;
   }
 
-  localStorage.setItem("recurringTemplates", JSON.stringify(list));
-  syncRecurringBackup();
+  const pFinal = document.getElementById('purpose').value === 'Other' ? document.getElementById('purpose_other').value : document.getElementById('purpose').value;
+  const sFinal = document.getElementById('spent_for').value === 'Other' ? document.getElementById('spent_for_other').value : document.getElementById('spent_for').value;
+  const invoiceVal = document.getElementById('invoice_no').value || "";
+  let refVal = document.getElementById('reference').value.trim();
+  if (!refVal) {
+    const now = new Date();
+    const datePart = now.toISOString().split('T')[0].replace(/-/g, '');
+    const randomPart = Math.random().toString(36).substring(2, 6).toUpperCase();
+    refVal = `REF-${datePart}-${randomPart}`;
+  }
 
-  fullReset();
-  return;
-}
+  // ========== SPLIT MODE ==========
+  const splitData = window.getSplitData ? window.getSplitData() : null;
+  if (splitData && document.getElementById('splitToggle').checked) {
+    // Validate split totals
+    const total = parseFloat(gTotalStr.replace('₹', ''));
+    const splitTotal = splitData.personal + splitData.recipients.reduce((s, r) => s + r.amount, 0);
+    if (Math.abs(splitTotal - total) > 0.01) {
+      showToast("Split amounts do not match total amount", "#f87171");
+      return;
+    }
 
-if (!isOnline || isBatch) {
-  saveToDB();
-} else {
-  document.getElementById('confirmModal').classList.remove('hidden');
-}
+    // Build a single payload that includes split info + all payment rows
+    const payload = new URLSearchParams();
+    payload.append('date', document.getElementById('date').value);
+    payload.append('narration', document.getElementById('narration').value);
+    payload.append('invoice_no', invoiceVal);
+    payload.append('reference', refVal);
+    payload.append('purpose', pFinal);
+    payload.append('spent_for', sFinal);
+    payload.append('flow', document.getElementById('flow').value);
+    payload.append('split_enabled', '1');
+    payload.append('personal_share', splitData.personal);
+    payload.append('recipients', JSON.stringify(splitData.recipients));
+
+    // Collect payment rows (same as original, but store as JSON)
+    const payments = [];
+    document.querySelectorAll('.payment-row-wrapper').forEach(row => {
+      const accSel = row.querySelector('.row-acc');
+      const aFinal = accSel.value === 'Other' ? row.querySelector('.row-acc-other').value : accSel.value;
+      const type = row.querySelector('.row-type').value;
+      const amt = row.querySelector('.row-amt').value;
+      const payment = { type, account: aFinal, amount: amt };
+      if (type === 'CASH') {
+        const denoms = {};
+        document.querySelectorAll('.denom-input').forEach(i => { denoms[i.dataset.val] = i.value || 0; });
+        payment.denominations = denoms;
+      }
+      payments.push(payment);
+    });
+    payload.append('payments', JSON.stringify(payments));
+
+    // Store as a single‑element array (compatible with saveToDB / processSave)
+    window.currentPayloads = [payload.toString()];
+    const repeatData = [payload.toString()];
+
+    // Build confirm details using split data
+    function buildSplitConfirmHtml() {
+      let html = `
+        <div class="confirm-item"><span class="confirm-label">Date</span><span class="confirm-val">${formatDisplayDate(document.getElementById('date').value)}</span></div>
+        <div class="confirm-item"><span class="confirm-label">Narration</span><span class="confirm-val">${document.getElementById('narration').value}</span></div>
+        <div class="confirm-item"><span class="confirm-label">Invoice No.</span><span class="confirm-val">${invoiceVal}</span></div>
+        <div class="confirm-item"><span class="confirm-label">Ref</span><span class="confirm-val">${refVal}</span></div>
+        <div class="confirm-item"><span class="confirm-label">Purpose</span><span class="confirm-val">${pFinal}</span></div>
+        <div class="confirm-item"><span class="confirm-label">Spent For</span><span class="confirm-val">${sFinal}</span></div>
+        <div class="confirm-item"><span class="confirm-label">Flow</span><span class="confirm-val">${document.getElementById('flow').value}</span></div>
+        <div class="confirm-item"><span class="confirm-label">Split Mode</span><span class="confirm-val">Enabled</span></div>
+        <div class="confirm-item"><span class="confirm-label">Personal Share</span><span class="confirm-val">₹${splitData.personal.toFixed(2)}</span></div>
+        <div class="confirm-section-title">Recipients</div>`;
+      splitData.recipients.forEach(r => {
+        html += `<div class="confirm-item"><span class="confirm-label">${r.name}</span><span class="confirm-val">₹${r.amount.toFixed(2)}</span></div>`;
+      });
+      html += `<div class="confirm-section-title">Payments</div>`;
+      payments.forEach(p => {
+        html += `<div class="confirm-item"><span class="confirm-label">${p.account} (${p.type})</span><span class="confirm-val">₹${p.amount}</span></div>`;
+        if (p.denominations) {
+          html += `<div class="confirm-matrix-grid">`;
+          Object.entries(p.denominations).forEach(([val, count]) => {
+            if (count > 0) html += `<div class="confirm-matrix-card"><span>₹${val}</span><strong>${count}</strong></div>`;
+          });
+          html += `</div>`;
+        }
+      });
+      html += `<div class="confirm-item" style="border:none"><span class="confirm-label" style="color:var(--primary)">Total Amount</span><span class="confirm-val" style="color:var(--primary); font-weight:bold">${gTotalStr}</span></div>`;
+      return html;
+    }
+
+    document.getElementById('confirmDetails').innerHTML = buildSplitConfirmHtml();
+    localStorage.setItem("lastPackage", JSON.stringify(repeatData));
+    trainPurpose(document.getElementById("narration").value, pFinal);
+
+    // Recurring handling (if also enabled)
+    if (isRecurring) {
+      const template = {
+        narration: document.getElementById("narration").value,
+        purpose: pFinal,
+        spent_for: sFinal,
+        flow: document.getElementById("flow").value,
+        payments: payments,
+        date: document.getElementById("date").value,
+        frequency: document.getElementById("recurringType").value,
+        customDays: document.getElementById("customDays")?.value || null,
+        active: true,
+        split_enabled: true,
+        personal_share: splitData.personal,
+        recipients: splitData.recipients
+      };
+      let list = JSON.parse(localStorage.getItem("recurringTemplates") || "[]");
+      if (window.editRecurringIndex !== undefined) {
+        list[window.editRecurringIndex] = template;
+        window.editRecurringIndex = undefined;
+        showToast("✏️ Recurring template updated");
+      } else {
+        list.push(template);
+        showToast("🔁 Recurring template saved");
+      }
+      localStorage.setItem("recurringTemplates", JSON.stringify(list));
+      syncRecurringBackup();
+      fullReset();
+      return; // 🚪 exit – don't go further
+    }
+
+    // Save (online / offline)
+    if (!isOnline || isBatch) {
+      saveToDB();   // this uses window.currentPayloads
+    } else {
+      document.getElementById('confirmModal').classList.remove('hidden');
+    }
+    return; // 🚪 exit – split handled, skip original code
+  }
+  // ========== END SPLIT MODE ==========
+
+  // ========== ORIGINAL (non‑split) CODE ==========
+  window.currentPayloads = [];
+  const repeatData = [];
+
+  document.querySelectorAll('.payment-row-wrapper').forEach(row => {
+    const accSel = row.querySelector('.row-acc');
+    const aFinal = accSel.value === 'Other' ? row.querySelector('.row-acc-other').value : accSel.value;
+    const p = new URLSearchParams({
+      date: document.getElementById('date').value,
+      narration: document.getElementById('narration').value,
+      invoice_no: document.getElementById('invoice_no').value,
+      reference: refVal,
+      purpose: pFinal,
+      spent_for: sFinal,
+      flow: document.getElementById('flow').value,
+      trtype: row.querySelector('.row-type').value,
+      from_to: aFinal,
+      withdrawn: document.getElementById('flow').value === 'withdraw' ? row.querySelector('.row-amt').value : 0,
+      deposit: document.getElementById('flow').value === 'deposit' ? row.querySelector('.row-amt').value : 0,
+      category: "monthly transactions"
+    });
+    if (row.querySelector('.row-type').value === "CASH") {
+      document.querySelectorAll(".denom-input").forEach(i => p.append("d" + i.dataset.val, i.value || 0));
+    }
+    window.currentPayloads.push(p.toString());
+    repeatData.push(p.toString());
+  });
+
+  // Build confirm details (same as before)
+  let detailsHtml = `
+    <div class="confirm-item"><span class="confirm-label">Date</span><span class="confirm-val">${formatDisplayDate(document.getElementById('date').value)}</span></div>
+    <div class="confirm-item"><span class="confirm-label">Narration</span><span class="confirm-val">${document.getElementById('narration').value}</span></div>
+    <div class="confirm-item"><span class="confirm-label">Invoice No.</span><span class="confirm-val">${invoiceVal}</span></div>
+    ${refVal ? `<div class="confirm-item"><span class="confirm-label">Ref</span><span class="confirm-val">${refVal}</span></div>` : ''}
+    <div class="confirm-item"><span class="confirm-label">Purpose</span><span class="confirm-val">${pFinal}</span></div>
+    <div class="confirm-item"><span class="confirm-label">Spent For</span><span class="confirm-val">${sFinal}</span></div>
+    <div class="confirm-item"><span class="confirm-label">Flow</span><span class="confirm-val">${document.getElementById('flow').value}</span></div>
+    <div class="confirm-item" style="border:none"><span class="confirm-label" style="color:var(--primary)">Total Amount</span><span class="confirm-val" style="color:var(--primary); font-weight:bold">${gTotalStr}</span></div>
+    <br>
+    <div class="confirm-section-title">Payments</div>
+  `;
+
+  window.currentPayloads.forEach(payloadStr => {
+    const p = new URLSearchParams(payloadStr);
+    const amt = p.get('flow') === 'withdraw' ? p.get('withdrawn') : p.get('deposit');
+    detailsHtml += `<div class="confirm-item" style="border-bottom:none"><span class="confirm-label">${p.get('from_to')} (${p.get('trtype')})</span><span class="confirm-val">₹${amt}</span></div>`;
+    if (p.get('trtype') === 'CASH') detailsHtml += getCashSummaryHtml(p);
+  });
+
+  document.getElementById('confirmDetails').innerHTML = detailsHtml;
+  localStorage.setItem("lastPackage", JSON.stringify(repeatData));
+  trainPurpose(document.getElementById("narration").value, pFinal);
+
+  if (isRecurring) {
+    const template = {
+      narration: document.getElementById("narration").value,
+      purpose: pFinal,
+      spent_for: sFinal,
+      flow: document.getElementById("flow").value,
+      payments: window.currentPayloads,
+      date: document.getElementById("date").value,
+      frequency: document.getElementById("recurringType").value,
+      customDays: document.getElementById("customDays")?.value || null,
+      active: true
+    };
+    let list = JSON.parse(localStorage.getItem("recurringTemplates") || "[]");
+    if (window.editRecurringIndex !== undefined) {
+      list[window.editRecurringIndex] = template;
+      window.editRecurringIndex = undefined;
+      showToast("✏️ Recurring template updated");
+    } else {
+      list.push(template);
+      showToast("🔁 Recurring template saved");
+    }
+    localStorage.setItem("recurringTemplates", JSON.stringify(list));
+    syncRecurringBackup();
+    fullReset();
+    return;
+  }
+
+  if (!isOnline || isBatch) {
+    saveToDB();
+  } else {
+    document.getElementById('confirmModal').classList.remove('hidden');
+  }
 };  
 function syncRecurringBackup(){
 
@@ -1947,30 +2094,118 @@ if (document.body.classList.contains('dark')) {
 document.getElementById('btnConfirmFinal').onclick = processSave;  
 document.getElementById('btnConfirmCancel').onclick = () => document.getElementById('confirmModal').classList.add('hidden');  
   
-document.getElementById('btnRepeat').onclick = () => {  
-  const last = localStorage.getItem("lastPackage"); if(!last) return;  
-  const list = JSON.parse(last); document.getElementById('paymentContainer').innerHTML = "";  
-  list.forEach((s, idx) => {  
-    const p = new URLSearchParams(s);  
-    if(idx === 0) {   
-        document.getElementById('narration').value = p.get('narration');   
-        document.getElementById('invoice_no').value = p.get('invoice_no') || "";  
-        document.getElementById('purpose').value = p.get('purpose');   
-        document.getElementById('spent_for').value = p.get('spent_for');   
-        document.getElementById('flow').value = p.get('flow');   
-        toggleSmartOther(document.getElementById('purpose'), 'purpose_other', 'purposeSmartRow');  
-        toggleSmartOther(document.getElementById('spent_for'), 'spent_for_other', 'spentSmartRow');  
-    }  
-    createPaymentRow({ type: p.get('trtype'), acc: p.get('from_to'), amt: p.get('flow') === 'withdraw' ? p.get('withdrawn') : p.get('deposit') });  
-    if(p.get('trtype') === 'CASH') {  
-        denoms.forEach(v => {  
-            document.querySelector(`.denom-input[data-val="${v}"]`).value = p.get('d'+v) || "";  
-        });  
-        recalcCash();  
-    }  
-  });  
-  updateGrandTotal();  
-};  
+document.getElementById('btnRepeat').onclick = () => {
+  const last = localStorage.getItem("lastPackage");
+  if (!last) return;
+
+  const list = JSON.parse(last);
+  if (!list.length) return;
+
+  // Check if it's a split transaction (first payload has split_enabled=1)
+  const firstPayload = list[0];
+  const params = new URLSearchParams(firstPayload);
+  const isSplit = params.get('split_enabled') === '1';
+
+  if (isSplit) {
+    // Split mode: restore split UI
+    const splitToggle = document.getElementById('splitToggle');
+    if (!splitToggle.checked) {
+      splitToggle.checked = true;
+      splitToggle.dispatchEvent(new Event('change'));
+    }
+
+    // Restore personal share
+    const personalShare = parseFloat(params.get('personal_share') || 0);
+    document.getElementById('personalShare').value = personalShare;
+
+    // Restore recipients
+    const recipients = JSON.parse(params.get('recipients') || '[]');
+    const recipientsContainer = document.getElementById('recipientsContainer');
+    recipientsContainer.innerHTML = ''; // clear existing
+    recipients.forEach(rec => {
+      // Use the existing addRecipientRow function (global)
+      if (typeof window.addRecipientRow === 'function') {
+        window.addRecipientRow(rec.name, rec.amount);
+      } else {
+        // Fallback: manual creation (but it should exist)
+        console.warn('addRecipientRow not found');
+      }
+    });
+
+    // Restore payment rows from payments JSON
+    const payments = JSON.parse(params.get('payments') || '[]');
+    const paymentContainer = document.getElementById('paymentContainer');
+    paymentContainer.innerHTML = ''; // clear existing
+    payments.forEach(pmt => {
+      // Use existing createPaymentRow function
+      if (typeof createPaymentRow === 'function') {
+        createPaymentRow({
+          type: pmt.type,
+          acc: pmt.account,
+          amt: pmt.amount
+        });
+        // For cash rows, restore denominations
+        if (pmt.type === 'CASH' && pmt.denominations) {
+          const lastRow = document.querySelector('.payment-row-wrapper:last-child');
+          if (lastRow) {
+            const denomInputs = lastRow.parentElement.querySelectorAll('.denom-input');
+            denomInputs.forEach(input => {
+              const val = input.dataset.val;
+              if (pmt.denominations[val]) {
+                input.value = pmt.denominations[val];
+              }
+            });
+            recalcCash(); // update cash total
+          }
+        }
+      } else {
+        console.warn('createPaymentRow not found');
+      }
+    });
+
+    // Restore other form fields
+    document.getElementById('narration').value = params.get('narration') || '';
+    document.getElementById('invoice_no').value = params.get('invoice_no') || '';
+    document.getElementById('purpose').value = params.get('purpose') || '';
+    document.getElementById('spent_for').value = params.get('spent_for') || '';
+    document.getElementById('flow').value = params.get('flow') || '';
+    document.getElementById('date').value = params.get('date') || getTodayLocal();
+
+    // Trigger smart toggles
+    toggleSmartOther(document.getElementById('purpose'), 'purpose_other', 'purposeSmartRow');
+    toggleSmartOther(document.getElementById('spent_for'), 'spent_for_other', 'spentSmartRow');
+
+    updateGrandTotal();
+    return; // done
+  }
+
+  // Non-split mode: original logic
+  document.getElementById('paymentContainer').innerHTML = "";
+  list.forEach((s, idx) => {
+    const p = new URLSearchParams(s);
+    if (idx === 0) {
+      document.getElementById('narration').value = p.get('narration');
+      document.getElementById('invoice_no').value = p.get('invoice_no') || "";
+      document.getElementById('purpose').value = p.get('purpose');
+      document.getElementById('spent_for').value = p.get('spent_for');
+      document.getElementById('flow').value = p.get('flow');
+      toggleSmartOther(document.getElementById('purpose'), 'purpose_other', 'purposeSmartRow');
+      toggleSmartOther(document.getElementById('spent_for'), 'spent_for_other', 'spentSmartRow');
+    }
+    createPaymentRow({
+      type: p.get('trtype'),
+      acc: p.get('from_to'),
+      amt: p.get('flow') === 'withdraw' ? p.get('withdrawn') : p.get('deposit')
+    });
+    if (p.get('trtype') === 'CASH') {
+      denoms.forEach(v => {
+        document.querySelector(`.denom-input[data-val="${v}"]`).value = p.get('d' + v) || "";
+      });
+      recalcCash();
+    }
+  });
+  updateGrandTotal();
+}; 
 document.getElementById('date').value = getTodayLocal();  
 loadPurposeMemory();
 restoreRecurringBackup();
@@ -1984,19 +2219,192 @@ if ('serviceWorker' in navigator) {
         .catch(err => console.log('SW Registration Failed', err));  
     });  
   }  
-</script>  
+</script>
+
+<!-- Split Helper Script (no button, plus icon gesture) -->
+<script>
+    (function() {
+      // DOM elements
+      const splitToggle = document.getElementById('splitToggle');
+      const splitPanel = document.getElementById('splitPanel');
+      const splitTotalSpan = document.getElementById('splitTotalAmount');
+      const personalShareInput = document.getElementById('personalShare');
+      const recipientsContainer = document.getElementById('recipientsContainer');
+      const addRecipientIcon = document.getElementById('addRecipientIcon');
+  
+      const recipientOptions = ["Mother", "Grand Father", "Chinnama", "Srinivas Babai", "Other"];
+  
+      // Update total shown in split panel
+      function updateSplitTotal() {
+        const grandTotalElem = document.getElementById('grandTotal');
+        if (grandTotalElem) splitTotalSpan.textContent = grandTotalElem.innerText;
+      }
+  
+      // Create a swipe‑to‑delete recipient row (no manual delete button)
+      function addRecipientRow(initialName = "", initialAmount = "") {
+        const rowDiv = document.createElement('div');
+        rowDiv.className = 'recipient-row';
+        rowDiv.style.position = 'relative';
+        rowDiv.style.overflow = 'hidden';
+  
+        const swipeContent = document.createElement('div');
+        swipeContent.className = 'recipient-swipe-content';
+        swipeContent.style.display = 'grid';
+        swipeContent.style.gridTemplateColumns = '1fr 1fr';
+        swipeContent.style.gap = '8px';
+        swipeContent.style.alignItems = 'center';
+        swipeContent.style.transition = 'transform 0.25s ease, opacity 0.2s ease';
+        swipeContent.style.touchAction = 'pan-y';
+  
+        // Dropdown
+        const select = document.createElement('select');
+        select.className = 'recipient-select';
+        recipientOptions.forEach(opt => {
+          const option = document.createElement('option');
+          option.value = opt;
+          option.textContent = opt;
+          select.appendChild(option);
+        });
+        if (initialName) select.value = initialName;
+  
+        // Other name input (hidden initially)
+        const otherInput = document.createElement('input');
+        otherInput.type = 'text';
+        otherInput.placeholder = 'Name';
+        otherInput.className = 'recipient-other-input';
+        otherInput.style.display = 'none';
+        otherInput.style.gridColumn = '1 / span 2';
+        otherInput.style.marginTop = '4px';
+        otherInput.style.border = '1px solid var(--border-color)';
+        otherInput.style.borderRadius = '6px';
+        otherInput.style.padding = '6px 8px';
+        otherInput.style.backgroundColor = 'var(--bg-input)';
+        otherInput.style.color = 'var(--text-main)';
+  
+        select.addEventListener('change', () => {
+          if (select.value === 'Other') {
+            otherInput.style.display = 'block';
+            otherInput.required = true;
+          } else {
+            otherInput.style.display = 'none';
+            otherInput.required = false;
+          }
+        });
+        if (select.value === 'Other') otherInput.style.display = 'block';
+        if (initialName === 'Other' && initialAmount) otherInput.value = initialAmount;
+  
+        // Amount input
+        const amountInput = document.createElement('input');
+        amountInput.type = 'number';
+        amountInput.placeholder = 'Amount';
+        amountInput.step = '0.01';
+        amountInput.value = initialAmount;
+        amountInput.style.width = '100%';
+  
+        swipeContent.appendChild(select);
+        swipeContent.appendChild(amountInput);
+        rowDiv.appendChild(swipeContent);
+        rowDiv.appendChild(otherInput);
+        recipientsContainer.appendChild(rowDiv);
+  
+        // Swipe‑to‑delete for recipient row
+        let startX = 0, currentX = 0, isDragging = false;
+        const startHandler = (e) => {
+          isDragging = true;
+          startX = e.touches ? e.touches[0].clientX : e.clientX;
+          swipeContent.style.transition = 'none';
+        };
+        const moveHandler = (e) => {
+          if (!isDragging) return;
+          const x = e.touches ? e.touches[0].clientX : e.clientX;
+          currentX = x - startX;
+          if (currentX < 0) {
+            swipeContent.style.transform = `translateX(${currentX}px)`;
+          }
+        };
+        const endHandler = () => {
+          if (!isDragging) return;
+          isDragging = false;
+          if (currentX < -150) {
+            swipeContent.style.transition = 'transform 0.2s ease, opacity 0.2s ease';
+            swipeContent.style.transform = 'translateX(-100%)';
+            swipeContent.style.opacity = '0';
+            setTimeout(() => rowDiv.remove(), 200);
+          } else {
+            swipeContent.style.transition = 'transform 0.2s ease';
+            swipeContent.style.transform = 'translateX(0)';
+          }
+          currentX = 0;
+        };
+        rowDiv.addEventListener('touchstart', startHandler);
+        rowDiv.addEventListener('touchmove', moveHandler);
+        rowDiv.addEventListener('touchend', endHandler);
+        rowDiv.addEventListener('mousedown', startHandler);
+        window.addEventListener('mousemove', moveHandler);
+        window.addEventListener('mouseup', endHandler);
+        rowDiv.addEventListener('dragstart', (e) => e.preventDefault());
+      }
+  
+      // Clear all recipients
+      function clearRecipients() {
+        recipientsContainer.innerHTML = '';
+      }
+  
+      // Toggle split panel visibility
+      splitToggle.addEventListener('change', function() {
+        splitPanel.style.display = this.checked ? 'block' : 'none';
+        if (this.checked) updateSplitTotal();
+      });
+  
+      // Add recipient via plus icon click
+      if (addRecipientIcon) {
+        addRecipientIcon.addEventListener('click', () => addRecipientRow());
+      }
+  
+      // Keep total in sync with grand total changes
+      const observer = new MutationObserver(() => {
+        if (splitToggle.checked) updateSplitTotal();
+      });
+      const grandTotalElem = document.getElementById('grandTotal');
+      if (grandTotalElem) observer.observe(grandTotalElem, { childList: true, subtree: true, characterData: true });
+      window.addEventListener('click', () => { if (splitToggle.checked) updateSplitTotal(); });
+  
+      // Expose functions for use in the main form submit handler
+      window.getSplitData = function() {
+        if (!splitToggle.checked) return null;
+        const personal = parseFloat(personalShareInput.value) || 0;
+        const recipients = [];
+        document.querySelectorAll('.recipient-row').forEach(row => {
+          const select = row.querySelector('.recipient-select');
+          const amountInput = row.querySelector('input[type="number"]');
+          const otherInput = row.querySelector('.recipient-other-input');
+          let name = select.value;
+          if (name === 'Other') {
+            name = otherInput.value.trim();
+            if (!name) return; // skip invalid
+          }
+          const amount = parseFloat(amountInput.value) || 0;
+          if (amount > 0) recipients.push({ name, amount });
+        });
+        return { personal, recipients };
+      };
+  
+      window.clearSplitPanel = function() {
+        personalShareInput.value = '0';
+        clearRecipients();
+      };window.addRecipientRow = addRecipientRow;
+    })();
+  </script>
 <div id="toast" class="hidden"></div>
 <div id="confirmPopup" class="modal hidden">
   <div class="confirm-card">
     <h3 id="confirmTitle">Confirm</h3>
-
     <div style="padding:15px;text-align:center" id="confirmMsg"></div>
-
     <div class="btn-group">
       <button id="confirmYes" class="btn-confirm">Yes</button>
       <button id="confirmNo" class="btn-cancel">Cancel</button>
     </div>
   </div>
 </div>
-</body>  
+</body>
 </html>
