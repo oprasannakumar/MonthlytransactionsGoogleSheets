@@ -678,64 +678,74 @@ function createPaymentRow(initial = null) {
     aSel.dispatchEvent(new Event('change'));  
   }  
 }  
-function enableSwipeToDelete(wrapper) {  
-  if (!wrapper) return;  
+function enableSwipeToDelete(wrapper) {
+  if (!wrapper) return;
+
+  let startX = 0;
+  let currentX = 0;
+  let isDragging = false; // Track mouse state
+  const content = wrapper.querySelector('.swipe-content');
+
+  // Unified start handler
+  const start = (e) => {
+    isDragging = true;
+    startX = e.touches ? e.touches[0].clientX : e.clientX;
+    content.style.transition = "none";
+  };
+
+  // Unified move handler
+  const move = (e) => {
+    if (!isDragging) return;
+    const x = e.touches ? e.touches[0].clientX : e.clientX;
+    currentX = x - startX;
+
+    // Swipe LEFT only
+    if (currentX < 0) {
+      content.style.transform = `translateX(${currentX}px)`;
+    }
+  };
+
+  // Unified end handler
+  const end = () => {
+    if (!isDragging) return;
+    isDragging = false;
+    const allRows = document.querySelectorAll('.payment-row-wrapper');
+
+    if (currentX < -150 && allRows.length > 1) {
+      content.style.transition = "transform 0.2s ease, opacity 0.2s ease";
+      content.style.transform = "translateX(-100%)";
+      content.style.opacity = "0";
+
+      setTimeout(() => {
+        wrapper.remove();
+        toggleCashBlock();
+        updateGrandTotal();
+      }, 200);
+
+    } else if (currentX < -150 && allRows.length === 1) {
+      content.style.transition = "transform 0.15s ease";
+      content.style.transform = "translateX(-20px)";
+      setTimeout(() => content.style.transform = "translateX(0)", 150);
+    } else {
+      content.style.transition = "transform 0.2s ease";
+      content.style.transform = "translateX(0)";
+    }
+    currentX = 0;
+  };
+
+  // Touch Events
+  wrapper.addEventListener('touchstart', start);
+  wrapper.addEventListener('touchmove', move);
+  wrapper.addEventListener('touchend', end);
+
+  // Mouse Events
+  wrapper.addEventListener('mousedown', start);
+  window.addEventListener('mousemove', move); // Bind to window for smoother dragging
+  window.addEventListener('mouseup', end);
   
-  let startX = 0;  
-  let currentX = 0;  
-  const content = wrapper.querySelector('.swipe-content');  
-  
-  wrapper.addEventListener('touchstart', (e) => {  
-    startX = e.touches[0].clientX;  
-    content.style.transition = "none";  
-  });  
-  
-  wrapper.addEventListener('touchmove', (e) => {  
-    currentX = e.touches[0].clientX - startX;  
-  
-    // Swipe LEFT only  
-    if (currentX < 0) {  
-      content.style.transform = `translateX(${currentX}px)`;  
-    }  
-  });  
-  
-  wrapper.addEventListener('touchend', () => {  
-    const allRows = document.querySelectorAll('.payment-row-wrapper');  
-  
-    // Allow delete only if more than 1 row exists  
-    if (currentX < -150 && allRows.length > 1) {  
-  
-      content.style.transition = "transform 0.2s ease, opacity 0.2s ease";  
-      content.style.transform = "translateX(-100%)";  
-      content.style.opacity = "0";  
-  
-      setTimeout(() => {  
-        wrapper.remove();  
-        toggleCashBlock();  
-        updateGrandTotal();  
-      }, 200);  
-  
-    } else if (currentX < -150 && allRows.length === 1) {  
-  
-      // Bounce effect if trying to delete last row  
-      content.style.transition = "transform 0.15s ease";  
-      content.style.transform = "translateX(-20px)";  
-  
-      setTimeout(() => {  
-        content.style.transform = "translateX(0)";  
-      }, 150);  
-  
-    } else {  
-  
-      // Reset position if swipe not enough  
-      content.style.transition = "transform 0.2s ease";  
-      content.style.transform = "translateX(0)";  
-    }  
-  
-    currentX = 0;  
-  });  
-}  
-function recalcCash() {  
+  // Prevent ghost clicks/drags on images/links inside the row
+  wrapper.addEventListener('dragstart', (e) => e.preventDefault());
+}function recalcCash() {  
   let tot = 0; document.querySelectorAll('.denom-input').forEach(i => tot += (i.value || 0) * i.dataset.val);  
   document.querySelectorAll('.payment-row-wrapper').forEach(w => { if(w.querySelector('.row-type').value === 'CASH') w.querySelector('.row-amt').value = tot || ""; });  
   if(tot > 0) document.getElementById('cashBlock').classList.remove('is-invalid');  
