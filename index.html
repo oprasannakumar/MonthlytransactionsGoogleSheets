@@ -120,11 +120,21 @@
       transition: all 0.2s ease;
     }
     .mode-btn.active {
-      background: var(--primary);
-      color: white;
-      border-color: var(--primary);
+        background: rgba(59, 130, 246, 0.1);
+        color: var(--secondary);
+        border-color:var(--secondary);
+        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
+        transform: scale(1.02);
+        transition: all 0.2s ease;
     }
-
+    .mode-btn:hover {
+        background: rgba(59, 130, 246, 0.1);
+        color: var(--secondary);
+        border-color:var(--secondary);
+        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
+        transform: scale(1.02);
+        transition: all 0.2s ease;
+    }
     label { font-size:12px; font-weight:600; margin-top:12px; display:block; color: var(--text-label); transition: color 0.5s ease; }
     input, select, button { width:100%; height:var(--h); margin-top:5px; padding:0 10px; border-radius:var(--r); border:1px solid var(--border-color); box-sizing:border-box; font-size:13px; background: var(--bg-input); color: var(--text-main); transition: all 0.5s ease; }
     input:focus, select:focus { outline:none; border-color:#2563eb; box-shadow:0 0 0 3px rgba(99,102,241,.1); }
@@ -194,7 +204,7 @@
     .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); z-index: 1000; display: flex; justify-content: center; align-items: center; padding: 10px; box-sizing: border-box; }
     .modal-content { background: var(--bg-card); color: var(--text-main); width: 98%; max-width: 850px; max-height: 85vh; border-radius: 14px; display: flex; flex-direction: column; overflow: hidden; transition: background 0.5s ease; }
     .table-container { overflow-x: auto; padding: 10px; }
-    table { width: 100%; border-collapse: collapse; font-size: 11px; min-width: 900px; }
+    table { width: 100%; border-collapse: collapse; font-size: 11px; min-width: 1200px; }
 
     th { text-align: center; padding: 10px; border-bottom: 2px solid var(--border-color); color: var(--text-label); transition: color 0.5s ease; }
     td { padding: 10px; border-bottom: 1px solid var(--border-color); vertical-align: middle; text-align: center; transition: border-color 0.5s ease; }
@@ -512,8 +522,18 @@
     <div class="table-container">
       <table>
         <thead>
-          <tr><th>Date</th><th>Narration</th><th>Invoice</th><th>Purpose</th><th>Account</th><th>Flow</th><th>Amount</th><th style="text-align:center;">Action</th></tr>
-        </thead>
+            <tr>
+              <th>Date</th>
+              <th>Narration</th>
+              <th>Invoice</th>
+              <th>Purpose</th>
+              <th>Spent For</th>           <!-- New column -->
+              <th>Account</th>
+              <th>Flow</th>
+              <th>Amount</th>
+              <th style="text-align:center;">Action</th>
+            </tr>
+          </thead>
         <tbody id="queueBody"></tbody>
       </table>
     </div>
@@ -1180,17 +1200,70 @@ function trainPurpose(narration, purpose) {
 }  
 
 function renderQueue(items) {  
-  const body = document.getElementById('queueBody'); body.innerHTML = "";  
+  const body = document.getElementById('queueBody'); 
+  body.innerHTML = "";  
   items.forEach((item, idx) => {  
     const p = new URLSearchParams(item);  
-    const amt = parseFloat(p.get('withdrawn')) > 0 ? p.get('withdrawn') : p.get('deposit');  
+    const isSplit = p.get('split_enabled') === '1';
+    const spentFor = p.get('spent_for') || "-";
+    let accountDisplay = "", amountDisplay = "";
+    let flow = p.get('flow') || "";
+
+    if (isSplit) {
+      const personalShare = parseFloat(p.get('personal_share') || 0);
+      const recipients = JSON.parse(p.get('recipients') || '[]');
+      const payments = JSON.parse(p.get('payments') || '[]');
+      const totalAmt = payments.reduce((sum, pmt) => sum + (parseFloat(pmt.amount) || 0), 0);
+      amountDisplay = `₹${totalAmt.toFixed(2)}`;
+
+      // Build detailed recipient list with amounts
+      let recipientsHtml = '';
+      if (recipients.length === 0) {
+        recipientsHtml = '<div style="font-size:10px;">👥 No recipients</div>';
+      } else {
+        recipientsHtml = '<div style="font-size:10px; margin-top:2px;">👥 Recipients:</div>';
+        recipients.forEach(r => {
+          recipientsHtml += `<div style="font-size:10px; margin-left:4px;">  • ${r.name}: ₹${r.amount.toFixed(2)}</div>`;
+        });
+      }
+
+      accountDisplay = `
+        <strong>Split</strong>
+        <div style="font-size:10px; margin-top:2px;">👤 Personal: ₹${personalShare.toFixed(2)}</div>
+        ${recipientsHtml}
+      `;
+    } else {
+      const amt = parseFloat(p.get('withdrawn')) > 0 ? p.get('withdrawn') : p.get('deposit');
+      amountDisplay = `₹${amt}`;
+      let cashInfo = ''; 
+      if(p.get('trtype') === 'CASH') {
+        cashInfo = `<div class="queue-denoms">${getCashTextSummary(p)}</div>`;  
+      }
+      accountDisplay = `<strong>${p.get('from_to')}</strong>`;  
+      if (p.get('trtype') === 'CASH') {
+        accountDisplay += cashInfo; 
+      } else {
+        accountDisplay += `<div style="font-size:10px; color:#94a3b8; margin-top:2px;">(${p.get('trtype')})</div>`;
+      }
+      flow = p.get('flow');
+    }
+
     const invoice = p.get('invoice_no') || "-";  
-    let cashInfo = ''; if(p.get('trtype') === 'CASH') cashInfo = `<div class="queue-denoms">${getCashTextSummary(p)}</div>`;  
-    let accountDisplay = `<strong>${p.get('from_to')}</strong>`;  
-    if (p.get('trtype') === 'CASH') accountDisplay += cashInfo; else accountDisplay += `<div style="font-size:10px; color:#94a3b8; margin-top:2px;">(${p.get('trtype')})</div>`;  
-    body.innerHTML += `<tr><td>${formatDisplayDate(p.get('date'))}</td><td>${p.get('narration')}</td><td>${invoice}</td><td>${p.get('purpose')}</td><td>${accountDisplay}</td><td>${p.get('flow')}</td><td>₹${amt}</td><td><div class="td-center"><span style="cursor:pointer; font-size:16px;" onclick="editQueue(${idx})">✏️</span><span style="cursor:pointer; font-size:16px;" onclick="deleteQueue(${idx})">🗑️</span></div></td></tr>`;   
+    const purpose = p.get('purpose') || "-";
+
+    body.innerHTML += `<tr>
+       <td style="text-align:center;">${formatDisplayDate(p.get('date'))}</td>
+       <td style="text-align:center;">${p.get('narration')}</td>
+       <td style="text-align:center;">${invoice}</td>
+       <td style="text-align:center;">${purpose}</td>
+       <td style="text-align:center;">${spentFor}</td>
+       <td style="text-align:center; padding-left:10px;">${accountDisplay}</td>
+       <td style="text-align:center;">${flow}</td>
+       <td style="text-align:center;">${amountDisplay}</td>
+       <td><div class="td-center"><span style="cursor:pointer; font-size:16px;" onclick="editQueue(${idx})">✏️</span><span style="cursor:pointer; font-size:16px;" onclick="deleteQueue(${idx})">🗑️</span></div></td>
+      </tr>`;   
   });  
-}  
+}
 
 document.getElementById("narration").addEventListener("blur", autoPredictPurpose);  
 document.getElementById("narration").addEventListener("input", autoFillSalary);
@@ -1201,24 +1274,77 @@ window.editQueue = (idx) => {
   const tx = db.transaction(STORE_NAME, "readwrite"); const store = tx.objectStore(STORE_NAME);  
   store.getAll().onsuccess = (e) => {  
     const item = e.target.result[idx]; const p = new URLSearchParams(item);  
+    const isSplit = p.get('split_enabled') === '1';
+    
+    // Reset form and clear containers
     document.getElementById('paymentContainer').innerHTML = "";  
-    document.getElementById('date').value = p.get('date'); document.getElementById('narration').value = p.get('narration'); document.getElementById('invoice_no').value = p.get('invoice_no') || "";  
-    if(p.get('reference')) { document.getElementById('referenceWrapper').classList.remove('hidden'); document.getElementById('reference').value = p.get('reference'); }  
+    document.getElementById('date').value = p.get('date'); 
+    document.getElementById('narration').value = p.get('narration'); 
+    document.getElementById('invoice_no').value = p.get('invoice_no') || "";  
+    if(p.get('reference')) { 
+      document.getElementById('referenceWrapper').classList.remove('hidden'); 
+      document.getElementById('reference').value = p.get('reference'); 
+    }  
     const purpVal = p.get('purpose'); const purpSel = document.getElementById('purpose');  
-    if(Array.from(purpSel.options).some(o => o.value === purpVal)) purpSel.value = purpVal; else { purpSel.value = "Other"; document.getElementById('purpose_other').value = purpVal; }  
+    if(Array.from(purpSel.options).some(o => o.value === purpVal)) purpSel.value = purpVal; 
+    else { purpSel.value = "Other"; document.getElementById('purpose_other').value = purpVal; }  
     toggleSmartOther(purpSel, 'purpose_other', 'purposeSmartRow');  
     const spentVal = p.get('spent_for'); const spentSel = document.getElementById('spent_for');  
-    if(Array.from(spentSel.options).some(o => o.value === spentVal)) spentSel.value = spentVal; else { spentSel.value = "Other"; document.getElementById('spent_for_other').value = spentVal; }  
+    if(Array.from(spentSel.options).some(o => o.value === spentVal)) spentSel.value = spentVal; 
+    else { spentSel.value = "Other"; document.getElementById('spent_for_other').value = spentVal; }  
     toggleSmartOther(spentSel, 'spent_for_other', 'spentSmartRow');  
     document.getElementById('flow').value = p.get('flow');  
-    const amt = p.get('flow') === 'withdraw' ? p.get('withdrawn') : p.get('deposit');  
-    createPaymentRow({ type: p.get('trtype'), acc: p.get('from_to'), amt: amt });  
-    if(p.get('trtype') === 'CASH') { denoms.forEach(v => { const val = p.get('d'+v); document.querySelector(`.denom-input[data-val="${v}"]`).value = val || ""; }); recalcCash(); }  
-    updateGrandTotal();  
-    store.getAllKeys().onsuccess = (ev) => { store.delete(ev.target.result[idx]).onsuccess = () => { updatePendingCount(); document.getElementById('queueModal').classList.add('hidden'); }; };  
-  };  
-};  
 
+    if (isSplit) {
+      // Activate split mode and restore data
+      setMode('split', true);
+      document.getElementById('personalShare').value = parseFloat(p.get('personal_share') || 0);
+      const recipients = JSON.parse(p.get('recipients') || '[]');
+      const recipientsContainer = document.getElementById('recipientsContainer');
+      recipientsContainer.innerHTML = '';
+      recipients.forEach(rec => {
+        if (typeof window.addRecipientRow === 'function') {
+          window.addRecipientRow(rec.name, rec.amount);
+        }
+      });
+      const payments = JSON.parse(p.get('payments') || '[]');
+      payments.forEach(pmt => {
+        createPaymentRow({ type: pmt.type, acc: pmt.account, amt: pmt.amount });
+        if (pmt.type === 'CASH' && pmt.denominations) {
+          const lastRow = document.querySelector('.payment-row-wrapper:last-child');
+          if (lastRow) {
+            const denomInputs = lastRow.parentElement.querySelectorAll('.denom-input');
+            denomInputs.forEach(input => {
+              const val = input.dataset.val;
+              if (pmt.denominations[val]) input.value = pmt.denominations[val];
+            });
+            recalcCash();
+          }
+        }
+      });
+    } else {
+      // Original non‑split restoration
+      const amt = p.get('flow') === 'withdraw' ? p.get('withdrawn') : p.get('deposit');  
+      createPaymentRow({ type: p.get('trtype'), acc: p.get('from_to'), amt: amt });  
+      if(p.get('trtype') === 'CASH') { 
+        denoms.forEach(v => { 
+          const val = p.get('d'+v); 
+          document.querySelector(`.denom-input[data-val="${v}"]`).value = val || ""; 
+        }); 
+        recalcCash(); 
+      }  
+    }
+    
+    updateGrandTotal();  
+    // Remove the item from the queue after loading it for editing
+    store.getAllKeys().onsuccess = (ev) => { 
+      store.delete(ev.target.result[idx]).onsuccess = () => { 
+        updatePendingCount(); 
+        document.getElementById('queueModal').classList.add('hidden'); 
+      }; 
+    };  
+  };  
+};
 function renderRecurringTemplates(){
   const list = JSON.parse(localStorage.getItem("recurringTemplates") || "[]");
   const body = document.getElementById("recurringBody"); body.innerHTML = "";
