@@ -337,6 +337,59 @@ border:1px dashed var(--primary);
 padding:10px;
 border-radius:10px;
 }
+.tri-state-container {
+  display: flex;
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  position: relative;
+  height: 36px;
+  padding: 2px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.tri-state-container input {
+  display: none;
+}
+
+.tri-state-container label {
+  flex: 1;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 32px;
+  z-index: 2;
+  cursor: pointer;
+  margin: 0 !important;
+  color: var(--text-label);
+  transition: color 0.3s;
+}
+
+.tri-state-slider {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: calc(33.33% - 2px);
+  height: calc(100% - 4px);
+  background: var(--primary);
+  border-radius: 10px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 1;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* Slider Positions */
+#mode-standard:checked ~ .tri-state-slider { left: 2px; }
+#mode-batch:checked ~ .tri-state-slider { left: 33.33%; }
+#mode-recurring:checked ~ .tri-state-slider { left: 66.66%; }
+
+/* Text Color change when active */
+#mode-standard:checked ~ label[for="mode-standard"],
+#mode-batch:checked ~ label[for="mode-batch"],
+#mode-recurring:checked ~ label[for="mode-recurring"] {
+  color: white;
+}
  </style>  </head>  <body>  
  <div id="recurringPreview"
 style="max-width:400px;margin:auto;margin-bottom:10px;font-size:12px;" class="hidden">
@@ -367,21 +420,19 @@ style="max-width:400px;margin:auto;margin-bottom:10px;font-size:12px;" class="hi
     <input type="file" id="receiptUpload" accept="image/*" hidden>  
   </label>  
 </div>    
-<div class="toggle-row">
-  <div class="batch-control">
-    <span style="font-size: 12px; font-weight: 600;">Batch Mode</span>
-    <label class="switch">
-      <input type="checkbox" id="batchToggle">
-      <span class="slider"></span>
-    </label>
-  </div>
-
-  <div class="batch-control">
-    <span style="font-size: 12px; font-weight: 600;">Recurring</span>
-    <label class="switch">
-      <input type="checkbox" id="recurringToggle">
-      <span class="slider"></span>
-    </label>
+<div class="batch-control" style="margin-bottom: 15px; display: block; text-align: center;">
+  <div style="font-size: 12px; font-weight: 700; margin-bottom: 8px; color: var(--text-label);">Entry Mode</div>
+  <div class="tri-state-container">
+    <input type="radio" name="mode" id="mode-standard" value="standard" checked>
+    <label for="mode-standard">Standard</label>
+    
+    <input type="radio" name="mode" id="mode-batch" value="batch">
+    <label for="mode-batch">Batch</label>
+    
+    <input type="radio" name="mode" id="mode-recurring" value="recurring">
+    <label for="mode-recurring">Recurring</label>
+    
+    <div class="tri-state-slider"></div>
   </div>
 </div>
 <div id="recurringOptions" class="hidden">
@@ -839,138 +890,131 @@ function getCashTextSummary(p) {
     return denoms.map(v => `${v}x${p.get("d"+v) || 0}`).join(", ");  
 }  
   
-document.getElementById('txnForm').onsubmit = function(e) {  
-  e.preventDefault();  
-  const form = e.target;  
-  const isOnline = navigator.onLine;  
-  const isBatch = document.getElementById('batchToggle').checked;  
-  const isRecurring = document.getElementById('recurringToggle')?.checked;
-  const hasCashMode = Array.from(document.querySelectorAll('.row-type')).some(s => s.value === 'CASH');  
-  const cashTotal = Array.from(document.querySelectorAll('.denom-input')).reduce((sum, i) => sum + (i.value * i.dataset.val), 0);  
-    
-  if(hasCashMode && cashTotal <= 0) document.getElementById('cashBlock').classList.add('is-invalid');  
-  else document.getElementById('cashBlock').classList.remove('is-invalid');  
+document.getElementById('txnForm').onsubmit = function(e) {
+  e.preventDefault();
+  const form = e.target;
+  const isOnline = navigator.onLine;
+
+  // --- NEW SLIDER LOGIC ---
+  const selectedMode = document.querySelector('input[name="mode"]:checked').value;
+  const isBatch = (selectedMode === 'batch');
+  const isRecurring = (selectedMode === 'recurring');
+
+  const hasCashMode = Array.from(document.querySelectorAll('.row-type')).some(s => s.value === 'CASH');
+  const cashTotal = Array.from(document.querySelectorAll('.denom-input')).reduce((sum, i) => sum + (i.value * i.dataset.val), 0);
+  
+  if(hasCashMode && cashTotal <= 0) document.getElementById('cashBlock').classList.add('is-invalid');
+  else document.getElementById('cashBlock').classList.remove('is-invalid');
   
   form.classList.add('was-validated');
 
-// ⭐ Skip Mode & Account validation when saving recurring template
-if(!isRecurring && !form.checkValidity()) return;
-  if(hasCashMode && cashTotal <= 0) return;  
+  // Skip validation for recurring template shells, otherwise check validity
+  if(!isRecurring && !form.checkValidity()) return;
+  if(hasCashMode && cashTotal <= 0) return;
     
-  const gTotalStr = document.getElementById('grandTotal').textContent;  
-  if(parseFloat(gTotalStr.replace('₹', '')) <= 0) {  
-    showToast("Amount must be greater than zero", "#f87171");  
-    return;  
-  }  
+  const gTotalStr = document.getElementById('grandTotal').textContent;
+  if(parseFloat(gTotalStr.replace('₹', '')) <= 0) {
+    showToast("Amount must be greater than zero", "#f87171");
+    return;
+  }
   
-  const pFinal = document.getElementById('purpose').value === 'Other' ? document.getElementById('purpose_other').value : document.getElementById('purpose').value;  
-  const sFinal = document.getElementById('spent_for').value === 'Other' ? document.getElementById('spent_for_other').value : document.getElementById('spent_for').value;  
-  const invoiceVal = document.getElementById('invoice_no').value || "N/A";  
- let refVal = document.getElementById('reference').value.trim();  
-if (!refVal) {  
-    const now = new Date();  
-    const datePart = now.toISOString().split('T')[0].replace(/-/g, ''); // e.g., 20260205  
-    const randomPart = Math.random().toString(36).substring(2, 6).toUpperCase(); // 4 random chars  
-    refVal = `REF-${datePart}-${randomPart}`;  
-}  
-  currentPayloads = [];  
-  const repeatData = [];  
-    
-  document.querySelectorAll('.payment-row-wrapper').forEach(row => {  
-    const accSel = row.querySelector('.row-acc');  
-    const aFinal = accSel.value === 'Other' ? row.querySelector('.row-acc-other').value : accSel.value;  
-    const p = new URLSearchParams({  
-      date: document.getElementById('date').value,   
-      narration: document.getElementById('narration').value,  
-      invoice_no: document.getElementById('invoice_no').value,  
-      reference: refVal,  
-      purpose: pFinal, spent_for: sFinal, flow: document.getElementById('flow').value,  
-      trtype: row.querySelector('.row-type').value, from_to: aFinal,  
-      withdrawn: document.getElementById('flow').value === 'withdraw' ? row.querySelector('.row-amt').value : 0,  
-      deposit: document.getElementById('flow').value === 'deposit' ? row.querySelector('.row-amt').value : 0,  
-      category: "monthly transactions"  
-    });  
-    if(row.querySelector('.row-type').value === "CASH") {  
-        document.querySelectorAll(".denom-input").forEach(i => p.append("d"+i.dataset.val, i.value || 0));  
-    }  
-    currentPayloads.push(p.toString());  
-    repeatData.push(p.toString());  
-  });  
+  const pFinal = document.getElementById('purpose').value === 'Other' ? document.getElementById('purpose_other').value : document.getElementById('purpose').value;
+  const sFinal = document.getElementById('spent_for').value === 'Other' ? document.getElementById('spent_for_other').value : document.getElementById('spent_for').value;
+  const invoiceVal = document.getElementById('invoice_no').value || "N/A";
   
-  let detailsHtml = `  
-    <div class="confirm-item"><span class="confirm-label">Date</span><span class="confirm-val">${formatDisplayDate(document.getElementById('date').value)}</span></div>  
-    <div class="confirm-item"><span class="confirm-label">Narration</span><span class="confirm-val">${document.getElementById('narration').value}</span></div>  
-    <div class="confirm-item"><span class="confirm-label">Invoice No.</span><span class="confirm-val">${invoiceVal}</span></div>  
-    ${refVal ? `<div class="confirm-item"><span class="confirm-label">Ref</span><span class="confirm-val">${refVal}</span></div>` : ''}  
-    <div class="confirm-item"><span class="confirm-label">Purpose</span><span class="confirm-val">${pFinal}</span></div>  
-    <div class="confirm-item"><span class="confirm-label">Spent For</span><span class="confirm-val">${sFinal}</span></div>  
-    <div class="confirm-item"><span class="confirm-label">Flow</span><span class="confirm-val">${document.getElementById('flow').value}</span></div>  
-    <div class="confirm-item" style="border:none"><span class="confirm-label" style="color:var(--primary)">Total Amount</span><span class="confirm-val" style="color:var(--primary); font-weight:bold">${gTotalStr}</span></div>  
-    <br>  
-    <div class="confirm-section-title">Payments</div>  
-  `;  
-  
-  currentPayloads.forEach(payloadStr => {  
-      const p = new URLSearchParams(payloadStr);  
-      const amt = p.get('flow') === 'withdraw' ? p.get('withdrawn') : p.get('deposit');  
-      detailsHtml += `<div class="confirm-item" style="border-bottom:none"><span class="confirm-label">${p.get('from_to')} (${p.get('trtype')})</span><span class="confirm-val">₹${amt}</span></div>`;  
-      if(p.get('trtype') === 'CASH') detailsHtml += getCashSummaryHtml(p);  
-  });  
-  
-  document.getElementById('confirmDetails').innerHTML = detailsHtml;  
-  localStorage.setItem("lastPackage", JSON.stringify(repeatData));
-
-
-// 🔥 Train AI with user correction  
-trainPurpose(  
-  document.getElementById("narration").value,  
-  pFinal  
-);  
-  if(isRecurring){
-
-  const template = {
-  narration: document.getElementById("narration").value,
-  purpose: pFinal,
-  spent_for: sFinal,
-  flow: document.getElementById("flow").value,
-  payments: currentPayloads,
-  date: document.getElementById("date").value,
-  frequency: document.getElementById("recurringType").value,
-customDays: document.getElementById("customDays")?.value || null,
-  active: true
-};
-
-  let list = JSON.parse(localStorage.getItem("recurringTemplates") || "[]");
-
-  // ⭐ UPDATE existing template
-  if(window.editRecurringIndex !== undefined){
-
-    list[window.editRecurringIndex] = template;
-    window.editRecurringIndex = undefined;
-
-    showToast("✏️ Recurring template updated");
-
-  }else{
-
-    list.push(template);
-    showToast("🔁 Recurring template saved");
-
+  let refVal = document.getElementById('reference').value.trim();
+  if (!refVal) {
+      const now = new Date();
+      const datePart = now.toISOString().split('T')[0].replace(/-/g, ''); 
+      const randomPart = Math.random().toString(36).substring(2, 6).toUpperCase(); 
+      refVal = `REF-${datePart}-${randomPart}`;
   }
 
-  localStorage.setItem("recurringTemplates", JSON.stringify(list));
-  syncRecurringBackup();
+  currentPayloads = [];
+  const repeatData = [];
+    
+  document.querySelectorAll('.payment-row-wrapper').forEach(row => {
+    const accSel = row.querySelector('.row-acc');
+    const aFinal = accSel.value === 'Other' ? row.querySelector('.row-acc-other').value : accSel.value;
+    const p = new URLSearchParams({
+      date: document.getElementById('date').value,   
+      narration: document.getElementById('narration').value,
+      invoice_no: document.getElementById('invoice_no').value,
+      reference: refVal,
+      purpose: pFinal, spent_for: sFinal, flow: document.getElementById('flow').value,
+      trtype: row.querySelector('.row-type').value, from_to: aFinal,
+      withdrawn: document.getElementById('flow').value === 'withdraw' ? row.querySelector('.row-amt').value : 0,
+      deposit: document.getElementById('flow').value === 'deposit' ? row.querySelector('.row-amt').value : 0,
+      category: "monthly transactions"
+    });
+    if(row.querySelector('.row-type').value === "CASH") {
+        document.querySelectorAll(".denom-input").forEach(i => p.append("d"+i.dataset.val, i.value || 0));
+    }
+    currentPayloads.push(p.toString());
+    repeatData.push(p.toString());
+  });
+  
+  // Confirmation Modal HTML
+  let detailsHtml = `
+    <div class="confirm-item"><span class="confirm-label">Date</span><span class="confirm-val">${formatDisplayDate(document.getElementById('date').value)}</span></div>
+    <div class="confirm-item"><span class="confirm-label">Narration</span><span class="confirm-val">${document.getElementById('narration').value}</span></div>
+    <div class="confirm-item"><span class="confirm-label">Invoice No.</span><span class="confirm-val">${invoiceVal}</span></div>
+    ${refVal ? `<div class="confirm-item"><span class="confirm-label">Ref</span><span class="confirm-val">${refVal}</span></div>` : ''}
+    <div class="confirm-item"><span class="confirm-label">Purpose</span><span class="confirm-val">${pFinal}</span></div>
+    <div class="confirm-item"><span class="confirm-label">Spent For</span><span class="confirm-val">${sFinal}</span></div>
+    <div class="confirm-item"><span class="confirm-label">Flow</span><span class="confirm-val">${document.getElementById('flow').value}</span></div>
+    <div class="confirm-item" style="border:none"><span class="confirm-label" style="color:var(--primary)">Total Amount</span><span class="confirm-val" style="color:var(--primary); font-weight:bold">${gTotalStr}</span></div>
+    <br>
+    <div class="confirm-section-title">Payments</div>
+  `;
+  
+  currentPayloads.forEach(payloadStr => {
+      const p = new URLSearchParams(payloadStr);
+      const amt = p.get('flow') === 'withdraw' ? p.get('withdrawn') : p.get('deposit');
+      detailsHtml += `<div class="confirm-item" style="border-bottom:none"><span class="confirm-label">${p.get('from_to')} (${p.get('trtype')})</span><span class="confirm-val">₹${amt}</span></div>`;
+      if(p.get('trtype') === 'CASH') detailsHtml += getCashSummaryHtml(p);
+  });
+  
+  document.getElementById('confirmDetails').innerHTML = detailsHtml;
+  localStorage.setItem("lastPackage", JSON.stringify(repeatData));
 
-  fullReset();
-  return;
-}
+  trainPurpose(document.getElementById("narration").value, pFinal);
 
-if (!isOnline || isBatch) {
-  saveToDB();
-} else {
-  document.getElementById('confirmModal').classList.remove('hidden');
-}
-};  
-function syncRecurringBackup(){
+  if(isRecurring){
+    const template = {
+      narration: document.getElementById("narration").value,
+      purpose: pFinal,
+      spent_for: sFinal,
+      flow: document.getElementById("flow").value,
+      payments: currentPayloads,
+      date: document.getElementById("date").value,
+      frequency: document.getElementById("recurringType").value,
+      customDays: document.getElementById("customDays")?.value || null,
+      active: true
+    };
+
+    let list = JSON.parse(localStorage.getItem("recurringTemplates") || "[]");
+    if(window.editRecurringIndex !== undefined){
+      list[window.editRecurringIndex] = template;
+      window.editRecurringIndex = undefined;
+      showToast("✏️ Recurring template updated");
+    } else {
+      list.push(template);
+      showToast("🔁 Recurring template saved");
+    }
+
+    localStorage.setItem("recurringTemplates", JSON.stringify(list));
+    syncRecurringBackup();
+    fullReset();
+    return;
+  }
+
+  if (!isOnline || isBatch) {
+    saveToDB();
+  } else {
+    document.getElementById('confirmModal').classList.remove('hidden');
+  }
+};function syncRecurringBackup(){
 
   const templates = localStorage.getItem("recurringTemplates");
 
@@ -1021,7 +1065,7 @@ function saveToDB() {
 
   tx.oncomplete = () => {
     updatePendingCount();
-    const isBatch = document.getElementById('batchToggle').checked;
+    const isBatch = (document.querySelector('input[name="mode"]:checked').value === 'batch');
     showToast(isBatch ? "📦 Added to Batch Queue" : "📦 Saved Offline");
     fullReset();
   };
@@ -1198,29 +1242,45 @@ setTimeout(() => {
   
   
 }  
-function fullReset() {  
-  const batchState = document.getElementById('batchToggle').checked;  
-  document.getElementById('txnForm').reset();  
-  document.getElementById('batchToggle').checked = batchState;  
-  document.getElementById('txnForm').classList.remove('was-validated');  
-  document.getElementById('purpose_other').classList.add('hidden');  
-  document.getElementById('spent_for_other').classList.add('hidden');  
-  // 🔥 Reset smart-row layouts properly  
-document.getElementById('purposeSmartRow').classList.remove('has-other');  
-document.getElementById('spentSmartRow').classList.remove('has-other');  
+function fullReset() {
+  // 1. Capture the currently selected mode before resetting
+  const selectedMode = document.querySelector('input[name="mode"]:checked').value;
   
-document.getElementById('purpose_other').disabled = true;  
-document.getElementById('spent_for_other').disabled = true;  
-  document.getElementById('referenceWrapper').classList.add('hidden');  
+  // 2. Perform native form reset
+  document.getElementById('txnForm').reset();
+  
+  // 3. Re-select the mode (since form.reset() clears radio buttons)
+  document.getElementById(`mode-${selectedMode}`).checked = true;
+  
+  // 4. Manual cleanup of UI elements
+  document.getElementById('txnForm').classList.remove('was-validated');
+  document.getElementById('purpose_other').classList.add('hidden');
+  document.getElementById('spent_for_other').classList.add('hidden');
+  document.getElementById('purpose_other').disabled = true;
+  document.getElementById('spent_for_other').disabled = true;
+  
+  // Reset smart-row layouts
+  document.getElementById('purposeSmartRow').classList.remove('has-other');
+  document.getElementById('spentSmartRow').classList.remove('has-other');
+  
+  document.getElementById('referenceWrapper').classList.add('hidden');
   document.getElementById('paymentContainer').innerHTML = "";   
-  createPaymentRow();  
-  document.getElementById('date').value = getTodayLocal();  
-  document.querySelectorAll('.denom-input').forEach(i => i.value = "");  
-  document.getElementById("recurringToggle").checked = false;
-document.getElementById("recurringOptions").classList.add("hidden");
-  toggleCashBlock(); updateGrandTotal();  
-}  
-function autoPredictPurpose() {
+  
+  // 5. Re-initialize defaults
+  createPaymentRow();
+  document.getElementById('date').value = getTodayLocal();
+  document.querySelectorAll('.denom-input').forEach(i => i.value = "");
+  
+  // Ensure the Recurring options panel matches the restored mode
+  if (selectedMode !== 'recurring') {
+    document.getElementById("recurringOptions").classList.add("hidden");
+  } else {
+    document.getElementById("recurringOptions").classList.remove("hidden");
+  }
+  
+  toggleCashBlock(); 
+  updateGrandTotal();
+}function autoPredictPurpose() {
   const narrationField = document.getElementById("narration");
   const suggestion = predictPurposeSmart(narrationField.value);
   if (!suggestion) return;
@@ -1534,7 +1594,7 @@ function editRecurring(index){
   document.getElementById("spent_for").value = t.spent_for;
   document.getElementById("flow").value = t.flow;
 // ⭐ Activate recurring mode
-document.getElementById("recurringToggle").checked = true;
+document.getElementById("mode-recurring").checked = true;
 document.getElementById("recurringOptions").classList.remove("hidden");
 
 // ⭐ Restore frequency
@@ -1897,23 +1957,8 @@ document.getElementById('btnAddMode').onclick = () => createPaymentRow();
 document.getElementById('btnViewQueue').onclick = () => document.getElementById('queueModal').classList.remove('hidden');  
 document.getElementById('btnSyncAll').onclick = syncAllData;  
 document.getElementById('btnStopSync').onclick = () => { syncAborted = true; };  
-  document.getElementById("recurringToggle").addEventListener("change",function(){
-  if(this.checked){
-    document.getElementById("batchToggle").checked=false;
-  }
-});
-const recurringToggle = document.getElementById("recurringToggle");
-const recurringOptions = document.getElementById("recurringOptions");
 
-recurringToggle.addEventListener("change", function(){
 
-  if(this.checked){
-    recurringOptions.classList.remove("hidden");
-  }else{
-    recurringOptions.classList.add("hidden");
-  }
-
-});
 const recurringType = document.getElementById("recurringType");
 const customDaysInput = document.getElementById("customDays");
 
@@ -1926,20 +1971,25 @@ recurringType.addEventListener("change",function(){
   }
 
 });
-document.getElementById("batchToggle").addEventListener("change", function(){
+// --- MODE SLIDER LOGIC ---
+const modeInputs = document.querySelectorAll('input[name="mode"]');
 
-  if(this.checked){
+const customDaysInput = document.getElementById("customDays");
+const recurringTypeSelect = document.getElementById("recurringType");
 
-    const recurringToggle = document.getElementById("recurringToggle");
-
-    recurringToggle.checked = false;
-
-    // Trigger the recurring toggle logic
-    recurringToggle.dispatchEvent(new Event("change"));
-
-  }
-
+modeInputs.forEach(input => {
+  input.onchange = () => {
+    const mode = input.value;
+    // Show/Hide Recurring Options
+    recurringOptions.classList.toggle("hidden", mode !== 'recurring');
+    showToast(`Mode: ${mode.toUpperCase()}`);
+  };
 });
+
+// Handle the "Custom Days" visibility inside the recurring menu
+recurringTypeSelect.onchange = () => {
+  customDaysInput.classList.toggle("hidden", recurringTypeSelect.value !== "custom");
+};
 if (document.body.classList.contains('dark')) {  
     themeToggle.textContent = '☀️';  
 }  
