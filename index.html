@@ -11,7 +11,6 @@
   <meta name="apple-mobile-web-app-title" content="Monthly Expences">
   <link rel="apple-touch-icon" href="icon-192.png">
   <style>
-    /* ===== all original styles (unchanged) ===== */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
     :root {
       --h:42px; --r:10px; --primary: #22c55e; --secondary: #3b82f6; --danger: #f87171;
@@ -108,24 +107,23 @@
     }
     .nav-item:hover { background: var(--primary); color: white; border-color: var(--primary); }
 
-    .autofill-section { background: rgba(16, 185, 129, 0.05); padding: 12px; border-radius: 12px; margin-bottom: 15px; border: 1px solid var(--secondary); }
-    .autofill-section textarea { width: 100%; height: 130px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 11px; padding: 8px; box-sizing: border-box; resize: none; background: var(--bg-input); color: var(--text-main); transition: background 0.5s ease; }
-    .btn-autofill { background: var(--secondary); color: white; border: none; font-size: 11px; font-weight: 700; height: 30px; border-radius: 6px; cursor: pointer; margin-top: 0px; width: 100%; }
-
-    .batch-control { display: flex; align-items: center; justify-content: space-between; background: rgba(99,102,241,0.1); padding: 8px 12px; border-radius: 10px; margin-bottom: 10px; border: 1px solid var(--primary); margin-top:5px;}
-
-    .switch { position: relative; display: inline-block; width: 40px; height: 22px; margin-top:0px; }
-    .switch input { opacity: 0; width: 0; height: 0; }
-    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 22px; }
-
-    .slider:before {
-      position: absolute; content: "";
-      height: 16px; width: 16px;
-      left: 3px; bottom: 3px;
-      background-color: white; transition: .4s; border-radius: 50%;
+    .mode-btn {
+      flex: 1;
+      padding: 8px 0;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 13px;
+      background: var(--bg-input);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+      cursor: pointer;
+      transition: all 0.2s ease;
     }
-    input:checked + .slider { background-color: var(--primary); }
-    input:checked + .slider:before { transform: translateX(18px); }
+    .mode-btn.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
 
     label { font-size:12px; font-weight:600; margin-top:12px; display:block; color: var(--text-label); transition: color 0.5s ease; }
     input, select, button { width:100%; height:var(--h); margin-top:5px; padding:0 10px; border-radius:var(--r); border:1px solid var(--border-color); box-sizing:border-box; font-size:13px; background: var(--bg-input); color: var(--text-main); transition: all 0.5s ease; }
@@ -307,14 +305,10 @@
       transform: translate(-50%, 0) scale(1);
     }
     .toggle-row{
-      display:grid;
-      grid-template-columns:1fr 1fr 1fr;
+      display:flex;
       gap:8px;
-      margin-bottom:10px;
-    }
-
-    .toggle-row .batch-control{
-      margin:0;
+      justify-content:space-between;
+      margin-bottom:12px;
     }
     #recurringPreview{
       background: rgba(34,197,94,0.08);
@@ -372,29 +366,9 @@
     </label>
   </div>
   <div class="toggle-row">
-    <div class="batch-control">
-      <span style="font-size: 12px; font-weight: 600;">Batch Mode</span>
-      <label class="switch">
-        <input type="checkbox" id="batchToggle">
-        <span class="slider"></span>
-      </label>
-    </div>
-
-    <div class="batch-control">
-      <span style="font-size: 12px; font-weight: 600;">Recurring</span>
-      <label class="switch">
-        <input type="checkbox" id="recurringToggle">
-        <span class="slider"></span>
-      </label>
-    </div>
-
-    <div class="batch-control">
-      <span style="font-size: 12px; font-weight: 600;">Split Mode</span>
-      <label class="switch">
-        <input type="checkbox" id="splitToggle">
-        <span class="slider"></span>
-      </label>
-    </div>
+    <button type="button" id="batchModeBtn" class="mode-btn">☁️ Batch Mode</button>
+    <button type="button" id="recurringModeBtn" class="mode-btn">🔁 Recurring</button>
+    <button type="button" id="splitModeBtn" class="mode-btn">✂️ Split Mode</button>
   </div>
 
   <div id="recurringOptions" class="hidden">
@@ -477,17 +451,14 @@
   </div>
   <div id="paymentContainer"></div>
 
-  <!-- Split panel (visible only when Split Mode is enabled) -->
-  <!-- Split panel (visible only when Split Mode is enabled) -->
-<div id="splitPanel" style="display: none; margin-top: 12px; border-top: 1px solid var(--border-color); padding-top: 12px;">
+  <!-- Split panel -->
+  <div id="splitPanel" style="display: none; margin-top: 12px; border-top: 1px solid var(--border-color); padding-top: 12px;">
     <div style="display:flex; justify-content:space-between; background:var(--bg-input); padding:8px 12px; border-radius:12px; margin-bottom:12px;">
       <span>Total Transaction Amount:</span>
       <strong id="splitTotalAmount">₹0.00</strong>
     </div>
-  
     <label>My Share (Personal)</label>
     <input type="number" id="personalShare" placeholder="0.00" step="0.01" value="0">
-  
     <div style="display:flex; justify-content:space-between; align-items:center; margin: 12px 0 8px 0;">
       <span style="font-size:12px; font-weight:600;">Recipients</span>
       <span id="addRecipientIcon" style="cursor:pointer; font-size:18px; font-weight:bold; color:var(--secondary);">➕</span>
@@ -539,12 +510,12 @@
       <span style="cursor:pointer; font-size: 20px;" onclick="document.getElementById('queueModal').classList.add('hidden')">✕</span>
     </div>
     <div class="table-container">
-       <table>
+      <table>
         <thead>
-           <tr><th>Date</th><th>Narration</th><th>Invoice</th><th>Purpose</th><th>Account</th><th>Flow</th><th>Amount</th><th style="text-align:center;">Action</th></tr>
+          <tr><th>Date</th><th>Narration</th><th>Invoice</th><th>Purpose</th><th>Account</th><th>Flow</th><th>Amount</th><th style="text-align:center;">Action</th></tr>
         </thead>
         <tbody id="queueBody"></tbody>
-       </table>
+      </table>
     </div>
   </div>
 </div>
@@ -574,9 +545,12 @@ function formatDisplayDate(dateStr) {
   const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];  
   return `${d.getDate()}-${months[d.getMonth()]}-${d.getFullYear()}`;  
 }  
-  
+
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwtxq-LrJYu21QO07vBWWQrWhHtQ7hpkvYHeTsMAG0eAj3am6Tn0rryT5jDnRc-SwO-/exec";  
 const IMAGE_PROCESS_URL = "https://script.google.com/macros/s/AKfycbx7CrlFktwGnHXRvdcovoXrZAjEGlg5axKnK5a7udfT-NdRwLcQ1xyqOsJ7vW7PUyPj3A/exec";  
+let batchMode = false;
+let recurringMode = false;
+let splitMode = false;
 let globalMemory = {};
 const STOP_WORDS = [
   "paid","pay","received","receive","transfer","upi","debit","credit",
@@ -603,7 +577,6 @@ let db = null;
 // FAB Menu Logic  
 const navFab = document.getElementById('navFab');  
 const fabBtn = document.getElementById('fabToggle');  
-  
 fabBtn.onclick = (e) => {  
   e.stopPropagation();  
   navFab.classList.toggle('active');  
@@ -622,7 +595,43 @@ themeToggle.onclick = () => {
     themeToggle.classList.remove('theme-rotate');  
   }, 500);  
 };  
-  
+
+// Mode buttons event handlers
+document.getElementById('batchModeBtn').addEventListener('click', () => setMode('batch', !batchMode));
+document.getElementById('recurringModeBtn').addEventListener('click', () => setMode('recurring', !recurringMode));
+document.getElementById('splitModeBtn').addEventListener('click', () => setMode('split', !splitMode));
+
+function setMode(mode, state) {
+  if (mode === 'batch') {
+    if (state) {
+      batchMode = true;
+      if (recurringMode) setMode('recurring', false);
+    } else {
+      batchMode = false;
+    }
+  } else if (mode === 'recurring') {
+    if (state) {
+      recurringMode = true;
+      if (batchMode) setMode('batch', false);
+      document.getElementById('recurringOptions').classList.remove('hidden');
+    } else {
+      recurringMode = false;
+      document.getElementById('recurringOptions').classList.add('hidden');
+    }
+  } else if (mode === 'split') {
+    splitMode = state;
+    document.getElementById('splitPanel').style.display = splitMode ? 'block' : 'none';
+    if (splitMode && window.updateSplitTotal) window.updateSplitTotal();
+  }
+  updateModeButtons();
+}
+
+function updateModeButtons() {
+  document.getElementById('batchModeBtn').classList.toggle('active', batchMode);
+  document.getElementById('recurringModeBtn').classList.toggle('active', recurringMode);
+  document.getElementById('splitModeBtn').classList.toggle('active', splitMode);
+}
+
 (function initDB(){  
   try {  
     const req = indexedDB.open(DB_NAME, 1);  
@@ -630,14 +639,14 @@ themeToggle.onclick = () => {
     req.onsuccess = e => { db = e.target.result; updatePendingCount(); checkStatus(); };  
   } catch(e) { console.error("DB Error"); }  
 })();  
-  
+
 function checkStatus() {  
   const online = navigator.onLine;  
   document.getElementById('statusDot').className = online ? 'online' : 'offline';  
 }  
 window.addEventListener('online', checkStatus);  
 window.addEventListener('offline', checkStatus);  
-  
+
 async function updatePendingCount(){  
   if(!db) return;  
   const tx = db.transaction(STORE_NAME, "readonly").objectStore(STORE_NAME).getAll();  
@@ -648,30 +657,25 @@ async function updatePendingCount(){
     renderQueue(items);  
   };  
 }  
-  
+
 function updateGrandTotal() {  
   let total = 0;  
   document.querySelectorAll('.row-amt').forEach(input => { total += parseFloat(input.value) || 0; });  
   document.getElementById('grandTotal').textContent = `₹${Math.abs(total).toFixed(2)}`;  
+  if (splitMode && window.updateSplitTotal) window.updateSplitTotal();
 }  
-  async function loadPurposeMemory() {
 
-  // 1️⃣ Load cached memory instantly
+async function loadPurposeMemory() {
   const cached = localStorage.getItem("purposeMemoryCache");
-  if (cached) {
-    globalMemory = JSON.parse(cached);
-  }
-
-  // 2️⃣ Fetch fresh memory from backend (background)
+  if (cached) globalMemory = JSON.parse(cached);
   try {
     const res = await fetch(SCRIPT_URL + "?action=getMemory");
     const data = await res.json();
     globalMemory = data;
     localStorage.setItem("purposeMemoryCache", JSON.stringify(data));
-  } catch (e) {
-    console.log("Memory sync skipped (offline)");
-  }
+  } catch (e) { console.log("Memory sync skipped (offline)"); }
 }
+
 function createPaymentRow(initial = null) {  
   const wrapper = document.createElement('div');  
   wrapper.className = 'payment-row-wrapper swipe-wrapper';  
@@ -716,50 +720,27 @@ function createPaymentRow(initial = null) {
     aSel.dispatchEvent(new Event('change'));  
   }  
 }  
+
 function enableSwipeToDelete(wrapper) {
   if (!wrapper) return;
-
-  let startX = 0;
-  let currentX = 0;
-  let isDragging = false; // Track mouse state
+  let startX = 0, currentX = 0, isDragging = false;
   const content = wrapper.querySelector('.swipe-content');
-
-  // Unified start handler
-  const start = (e) => {
-    isDragging = true;
-    startX = e.touches ? e.touches[0].clientX : e.clientX;
-    content.style.transition = "none";
-  };
-
-  // Unified move handler
+  const start = (e) => { isDragging = true; startX = e.touches ? e.touches[0].clientX : e.clientX; content.style.transition = "none"; };
   const move = (e) => {
     if (!isDragging) return;
     const x = e.touches ? e.touches[0].clientX : e.clientX;
     currentX = x - startX;
-
-    // Swipe LEFT only
-    if (currentX < 0) {
-      content.style.transform = `translateX(${currentX}px)`;
-    }
+    if (currentX < 0) content.style.transform = `translateX(${currentX}px)`;
   };
-
-  // Unified end handler
   const end = () => {
     if (!isDragging) return;
     isDragging = false;
     const allRows = document.querySelectorAll('.payment-row-wrapper');
-
     if (currentX < -150 && allRows.length > 1) {
       content.style.transition = "transform 0.2s ease, opacity 0.2s ease";
       content.style.transform = "translateX(-100%)";
       content.style.opacity = "0";
-
-      setTimeout(() => {
-        wrapper.remove();
-        toggleCashBlock();
-        updateGrandTotal();
-      }, 200);
-
+      setTimeout(() => { wrapper.remove(); toggleCashBlock(); updateGrandTotal(); }, 200);
     } else if (currentX < -150 && allRows.length === 1) {
       content.style.transition = "transform 0.15s ease";
       content.style.transform = "translateX(-20px)";
@@ -770,119 +751,71 @@ function enableSwipeToDelete(wrapper) {
     }
     currentX = 0;
   };
-
-  // Touch Events
   wrapper.addEventListener('touchstart', start);
   wrapper.addEventListener('touchmove', move);
   wrapper.addEventListener('touchend', end);
-
-  // Mouse Events
   wrapper.addEventListener('mousedown', start);
-  window.addEventListener('mousemove', move); // Bind to window for smoother dragging
+  window.addEventListener('mousemove', move);
   window.addEventListener('mouseup', end);
-  
-  // Prevent ghost clicks/drags on images/links inside the row
   wrapper.addEventListener('dragstart', (e) => e.preventDefault());
-}function recalcCash() {  
+}
+
+function recalcCash() {  
   let tot = 0; document.querySelectorAll('.denom-input').forEach(i => tot += (i.value || 0) * i.dataset.val);  
   document.querySelectorAll('.payment-row-wrapper').forEach(w => { if(w.querySelector('.row-type').value === 'CASH') w.querySelector('.row-amt').value = tot || ""; });  
   if(tot > 0) document.getElementById('cashBlock').classList.remove('is-invalid');  
   updateGrandTotal();  
 }  
-  
+
 function toggleCashBlock() {  
-  const hasCash = Array.from(document.querySelectorAll('.row-type'))  
-    .some(s => s.value === 'CASH');  
-  
-  document.getElementById('cashBlock')  
-    .classList.toggle('hidden', !hasCash);  
+  const hasCash = Array.from(document.querySelectorAll('.row-type')).some(s => s.value === 'CASH');  
+  document.getElementById('cashBlock').classList.toggle('hidden', !hasCash);  
 }  
-  
-  document.getElementById('btnShowAutofill').onclick = async () => {  
+
+document.getElementById('btnShowAutofill').onclick = async () => {  
   try {  
     const text = await navigator.clipboard.readText();  
-  
-    if (!text.trim()) {  
-      showToast("Clipboard is empty.");  
-      return;  
-    }  
-  
+    if (!text.trim()) { showToast("Clipboard is empty."); return; }  
     applyAutoFill(text);  
-  
-  } catch (err) {  
-    showToast("Clipboard permission denied.","#f87171");  
-  }  
+  } catch (err) { showToast("Clipboard permission denied.","#f87171"); }  
 };  
+
 document.getElementById('receiptUpload').addEventListener('change', function(e) {  
-  
   const file = e.target.files[0];  
   if (!file) return;  
-  
   document.getElementById('btnShowAutofill').textContent = "🔍 Processing...";  
-  
   const reader = new FileReader();  
-  
   reader.onload = function () {  
     const base64 = reader.result.split(",")[1];  
-  
-    fetch(IMAGE_PROCESS_URL, {  
-      method: "POST",  
-      body: JSON.stringify({ image: base64 })  
-    })  
+    fetch(IMAGE_PROCESS_URL, { method: "POST", body: JSON.stringify({ image: base64 }) })  
     .then(res => res.json())  
-.then(response => {  
-  
-  document.getElementById('btnShowAutofill').textContent = "✨ Use Receipt Auto-Fill";  
-  
-  if (response.status !== "success") {  
-    showToast("Extraction failed");  
-    return;  
-  }  
-  
-  const d = response.data;  
-  
-  const formattedText =  
-`📅 Date: ${d.date}  
-👤 Name: ${d.name}  
-📝 Msg: ${d.imageMessage}  
-💰 Amount: ${d.amount}  
-📊 Direction: ${d.direction === "IN" ? "🟢 IN" : "🔴 OUT"}  
-⇄ Type: ${d.type}  
-🏢 Account: ${d.account}  
-🔗 Ref: ${d.refId}`;  
-  
-  applyAutoFill(formattedText);  
-})  
-    .catch(err => {  
+    .then(response => {  
       document.getElementById('btnShowAutofill').textContent = "✨ Use Receipt Auto-Fill";  
-      showToast("Upload failed");  
-    });  
+      if (response.status !== "success") { showToast("Extraction failed"); return; }  
+      const d = response.data;  
+      const formattedText = `📅 Date: ${d.date}\n👤 Name: ${d.name}\n📝 Msg: ${d.imageMessage}\n💰 Amount: ${d.amount}\n📊 Direction: ${d.direction === "IN" ? "🟢 IN" : "🔴 OUT"}\n⇄ Type: ${d.type}\n🏢 Account: ${d.account}\n🔗 Ref: ${d.refId}`;  
+      applyAutoFill(formattedText);  
+    })  
+    .catch(err => { document.getElementById('btnShowAutofill').textContent = "✨ Use Receipt Auto-Fill"; showToast("Upload failed"); });  
   };  
-  
   reader.readAsDataURL(file);  
 });  
-  
-  
+
 function getCashSummaryHtml(p) {  
   let html = '<div class="confirm-matrix-grid">';  
-  denoms.forEach(v => {  
-    const val = p.get("d"+v) || 0;  
-    html += `<div class="confirm-matrix-card"><span>₹${v}</span><strong>${val}</strong></div>`;  
-  });  
+  denoms.forEach(v => { const val = p.get("d"+v) || 0; html += `<div class="confirm-matrix-card"><span>₹${v}</span><strong>${val}</strong></div>`; });  
   html += '</div>';  
   return html;  
 }  
-  
-function getCashTextSummary(p) {  
-    return denoms.map(v => `${v}x${p.get("d"+v) || 0}`).join(", ");  
-}  
-  
+
+function getCashTextSummary(p) { return denoms.map(v => `${v}x${p.get("d"+v) || 0}`).join(", "); }  
+
 document.getElementById('txnForm').onsubmit = function(e) {
   e.preventDefault();
   const form = e.target;
   const isOnline = navigator.onLine;
-  const isBatch = document.getElementById('batchToggle').checked;
-  const isRecurring = document.getElementById('recurringToggle')?.checked;
+  const isBatch = batchMode;
+  const isRecurring = recurringMode;
   const hasCashMode = Array.from(document.querySelectorAll('.row-type')).some(s => s.value === 'CASH');
   const cashTotal = Array.from(document.querySelectorAll('.denom-input')).reduce((sum, i) => sum + (i.value * i.dataset.val), 0);
 
@@ -910,10 +843,9 @@ document.getElementById('txnForm').onsubmit = function(e) {
     refVal = `REF-${datePart}-${randomPart}`;
   }
 
-  // ========== SPLIT MODE ==========
+  // SPLIT MODE
   const splitData = window.getSplitData ? window.getSplitData() : null;
-  if (splitData && document.getElementById('splitToggle').checked) {
-    // Validate split totals
+  if (splitData && splitMode) {
     const total = parseFloat(gTotalStr.replace('₹', ''));
     const splitTotal = splitData.personal + splitData.recipients.reduce((s, r) => s + r.amount, 0);
     if (Math.abs(splitTotal - total) > 0.01) {
@@ -921,7 +853,6 @@ document.getElementById('txnForm').onsubmit = function(e) {
       return;
     }
 
-    // Build a single payload that includes split info + all payment rows
     const payload = new URLSearchParams();
     payload.append('date', document.getElementById('date').value);
     payload.append('narration', document.getElementById('narration').value);
@@ -934,7 +865,6 @@ document.getElementById('txnForm').onsubmit = function(e) {
     payload.append('personal_share', splitData.personal);
     payload.append('recipients', JSON.stringify(splitData.recipients));
 
-    // Collect payment rows (same as original, but store as JSON)
     const payments = [];
     document.querySelectorAll('.payment-row-wrapper').forEach(row => {
       const accSel = row.querySelector('.row-acc');
@@ -951,11 +881,9 @@ document.getElementById('txnForm').onsubmit = function(e) {
     });
     payload.append('payments', JSON.stringify(payments));
 
-    // Store as a single‑element array (compatible with saveToDB / processSave)
     window.currentPayloads = [payload.toString()];
     const repeatData = [payload.toString()];
 
-    // Build confirm details using split data
     function buildSplitConfirmHtml() {
       let html = `
         <div class="confirm-item"><span class="confirm-label">Date</span><span class="confirm-val">${formatDisplayDate(document.getElementById('date').value)}</span></div>
@@ -990,7 +918,6 @@ document.getElementById('txnForm').onsubmit = function(e) {
     localStorage.setItem("lastPackage", JSON.stringify(repeatData));
     trainPurpose(document.getElementById("narration").value, pFinal);
 
-    // Recurring handling (if also enabled)
     if (isRecurring) {
       const template = {
         narration: document.getElementById("narration").value,
@@ -1018,20 +945,15 @@ document.getElementById('txnForm').onsubmit = function(e) {
       localStorage.setItem("recurringTemplates", JSON.stringify(list));
       syncRecurringBackup();
       fullReset();
-      return; // 🚪 exit – don't go further
+      return;
     }
 
-    // Save (online / offline)
-    if (!isOnline || isBatch) {
-      saveToDB();   // this uses window.currentPayloads
-    } else {
-      document.getElementById('confirmModal').classList.remove('hidden');
-    }
-    return; // 🚪 exit – split handled, skip original code
+    if (!isOnline || isBatch) saveToDB(); else document.getElementById('confirmModal').classList.remove('hidden');
+    return;
   }
-  // ========== END SPLIT MODE ==========
+  // END SPLIT MODE
 
-  // ========== ORIGINAL (non‑split) CODE ==========
+  // NON-SPLIT MODE
   window.currentPayloads = [];
   const repeatData = [];
 
@@ -1059,7 +981,6 @@ document.getElementById('txnForm').onsubmit = function(e) {
     repeatData.push(p.toString());
   });
 
-  // Build confirm details (same as before)
   let detailsHtml = `
     <div class="confirm-item"><span class="confirm-label">Date</span><span class="confirm-val">${formatDisplayDate(document.getElementById('date').value)}</span></div>
     <div class="confirm-item"><span class="confirm-label">Narration</span><span class="confirm-val">${document.getElementById('narration').value}</span></div>
@@ -1111,39 +1032,23 @@ document.getElementById('txnForm').onsubmit = function(e) {
     return;
   }
 
-  if (!isOnline || isBatch) {
-    saveToDB();
-  } else {
-    document.getElementById('confirmModal').classList.remove('hidden');
-  }
-};  
+  if (!isOnline || isBatch) saveToDB(); else document.getElementById('confirmModal').classList.remove('hidden');
+};
+
 function syncRecurringBackup(){
-
   const templates = localStorage.getItem("recurringTemplates");
-
-  fetch(SCRIPT_URL,{
-    method:"POST",
-    headers:{
-      "Content-Type":"application/x-www-form-urlencoded"
-    },
-    body:new URLSearchParams({
-      action:"backupRecurring",
-      data:templates
-    })
-  })
-  .then(r=>r.text())
-  .then(()=>console.log("Recurring backup updated"))
-  .catch(()=>console.log("Backup skipped (offline)"));
-renderUpcomingRecurring();
+  fetch(SCRIPT_URL,{ method:"POST", headers:{ "Content-Type":"application/x-www-form-urlencoded" }, body:new URLSearchParams({ action:"backupRecurring", data:templates }) })
+  .then(r=>r.text()).catch(()=>console.log("Backup skipped (offline)"));
+  renderUpcomingRecurring();
 }
+
 async function processSave() {  
   document.getElementById('confirmModal').classList.add('hidden');  
   const btn = document.getElementById('submitBtn');   
   const originalText = btn.textContent;  
   btn.disabled = true; btn.innerHTML = `<span class="saving-text">Saving...</span>`;  
-  
   try {  
-    for(let body of currentPayloads) { await fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body }); }  
+    for(let body of window.currentPayloads) { await fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body }); }  
     showToast("✔ Transaction Saved"); 
     updateRecurringNextDate();
     fullReset();  
@@ -1152,1034 +1057,416 @@ async function processSave() {
     showToast("📦 Saved offline", "#3b82f6");  
   } finally { btn.disabled = false; btn.textContent = originalText; }  
 }  
-  
-function saveToDB() {
-  if (!db) {
-    showToast("Database not ready", "#f87171");
-    return;
-  }
 
+function saveToDB() {
+  if (!db) { showToast("Database not ready", "#f87171"); return; }
   const tx = db.transaction(STORE_NAME, "readwrite");
   const store = tx.objectStore(STORE_NAME);
-
-  currentPayloads.forEach(body => {
-    store.add(body);
-  });
-
+  window.currentPayloads.forEach(body => store.add(body));
   tx.oncomplete = () => {
     updatePendingCount();
-    const isBatch = document.getElementById('batchToggle').checked;
-    showToast(isBatch ? "📦 Added to Batch Queue" : "📦 Saved Offline");
+    showToast(batchMode ? "📦 Added to Batch Queue" : "📦 Saved Offline");
     fullReset();
   };
-
-  tx.onerror = (e) => {
-    console.error("Queue save failed", e);
-    showToast("Error saving to queue", "#f87171");
-  };
+  tx.onerror = (e) => { console.error("Queue save failed", e); showToast("Error saving to queue", "#f87171"); };
 }
 
 function applyAutoFill(text) {  
-  
-  const getVal = (key) => {  
-    const regex = new RegExp(`${key}:\\s*(.*)`, 'i');  
-    const match = text.match(regex);  
-    return match ? match[1].trim() : "";  
-  };  
-  
-  const rawDate = getVal('📅 Date');  
-  const name = getVal('👤 Name');  
-  const msg = getVal('📝 Msg');  
-  const amountStr = getVal('💰 Amount');  
-  const ref = getVal('🔗 Ref');  
-  const rawType = getVal('⇄ Type');  
-  const rawAcc = getVal('🏢 Account');  
-  const rawDirection = getVal('📊 Direction');
-  const rawCategory = getVal('🏷️ Category');
-  // DATE  
-  if (rawDate) {  
-    const parts = rawDate.split('-');  
-    if (parts.length === 3) {  
-      document.getElementById('date').value =  
-        `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;  
-    }  
-  }  
-  
-// NARRATION
-let fullNarration = "";
-let hasValidMsg = false;
-
-if (name) {
-  let prefix = "";
-
-  if (rawDirection?.toLowerCase().includes("in"))
-    prefix = "Received from ";
-  else if (rawDirection?.toLowerCase().includes("out"))
-    prefix = "Paid to ";
-
-  fullNarration = prefix + name;
-
-  // ✅ Append message only if it's valid
-  if (
-    msg &&
-    !msg.toLowerCase().includes("amount") &&
-    !msg.includes("💰") &&
-    !msg.includes("📅") &&
-    !msg.includes("🔗")
-  ) {
-    fullNarration += " - " + msg;
-    hasValidMsg = true; // 🔥 important
-  }
-}
-
-if (fullNarration) {
-  document.getElementById("narration").value = fullNarration;
-
-  setTimeout(() => {
-
-    if (hasValidMsg) {
-      // ✅ Open Spent For
-      const spentField = document.getElementById("spent_for");
-      spentField.focus();
-      spentField.click();   // 🔥 attempt open
-    } else {
-      // ✅ Open Purpose
-      const purposeField = document.getElementById("purpose");
-      purposeField.focus();
-      purposeField.click(); // 🔥 attempt open
-    }
-
-  }, 150);
-}
-// ✅ DIRECT CATEGORY FILL (No AI guessing needed)
-if (rawCategory) {
-
-  const purposeSelect = document.getElementById("purpose");
-  const otherInput = document.getElementById("purpose_other");
-
-  const categoryClean = rawCategory.trim();
-
-  const optionMatch = Array.from(purposeSelect.options)
-    .find(opt => opt.value.toLowerCase() === categoryClean.toLowerCase());
-
-  if (optionMatch) {
-    purposeSelect.value = optionMatch.value;
-    toggleSmartOther(purposeSelect, 'purpose_other', 'purposeSmartRow', true);
-  } else {
-    purposeSelect.value = "Other";
-    toggleSmartOther(purposeSelect, 'purpose_other', 'purposeSmartRow', true);
-    otherInput.value = categoryClean;
-  }
-
-} else {
-  // fallback to AI prediction only if category not provided
-  autoPredictPurpose();
-}
-  // FLOW  
-  const flowField = document.getElementById('flow');  
-  if (rawDirection?.toLowerCase().includes("in")) flowField.value = "deposit";  
-  if (rawDirection?.toLowerCase().includes("out")) flowField.value = "withdraw";  
-  
-    
-  // PAYMENT ROW  
-  let firstRow = document.querySelector('.payment-row-wrapper');  
-  if (!firstRow) {  
-    createPaymentRow();  
-    firstRow = document.querySelector('.payment-row-wrapper');  
-  }  
-  
-  const typeSelect = firstRow.querySelector('.row-type');  
-  const accSelect = firstRow.querySelector('.row-acc');  
-  const amtInput = firstRow.querySelector('.row-amt');  
-  
-if (rawType) {  
-  const typeLower = rawType.toLowerCase();  
-  
-  if (typeLower.includes("credit")) typeSelect.value = "CREDIT";  
-  else if (typeLower.includes("debit")) typeSelect.value = "DEBIT";  
-  else if (typeLower.includes("upi")) typeSelect.value = "UPI";  
-  else if (typeLower.includes("net")) typeSelect.value = "NET";  
+  const getVal = (key) => { const regex = new RegExp(`${key}:\\s*(.*)`, 'i'); const match = text.match(regex); return match ? match[1].trim() : ""; };  
+  const rawDate = getVal('📅 Date'); const name = getVal('👤 Name'); const msg = getVal('📝 Msg'); const amountStr = getVal('💰 Amount'); const ref = getVal('🔗 Ref'); const rawType = getVal('⇄ Type'); const rawAcc = getVal('🏢 Account'); const rawDirection = getVal('📊 Direction'); const rawCategory = getVal('🏷️ Category');
+  if (rawDate) { const parts = rawDate.split('-'); if (parts.length === 3) document.getElementById('date').value = `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`; }
+  let fullNarration = ""; let hasValidMsg = false;
+  if (name) { let prefix = ""; if (rawDirection?.toLowerCase().includes("in")) prefix = "Received from "; else if (rawDirection?.toLowerCase().includes("out")) prefix = "Paid to "; fullNarration = prefix + name; if (msg && !msg.toLowerCase().includes("amount") && !msg.includes("💰") && !msg.includes("📅") && !msg.includes("🔗")) { fullNarration += " - " + msg; hasValidMsg = true; } }
+  if (fullNarration) { document.getElementById("narration").value = fullNarration; setTimeout(() => { if (hasValidMsg) document.getElementById("spent_for").focus(); else document.getElementById("purpose").focus(); }, 150); }
+  if (rawCategory) { const purposeSelect = document.getElementById("purpose"); const otherInput = document.getElementById("purpose_other"); const categoryClean = rawCategory.trim(); const optionMatch = Array.from(purposeSelect.options).find(opt => opt.value.toLowerCase() === categoryClean.toLowerCase()); if (optionMatch) { purposeSelect.value = optionMatch.value; toggleSmartOther(purposeSelect, 'purpose_other', 'purposeSmartRow', true); } else { purposeSelect.value = "Other"; toggleSmartOther(purposeSelect, 'purpose_other', 'purposeSmartRow', true); otherInput.value = categoryClean; } } else autoPredictPurpose();
+  const flowField = document.getElementById('flow'); if (rawDirection?.toLowerCase().includes("in")) flowField.value = "deposit"; if (rawDirection?.toLowerCase().includes("out")) flowField.value = "withdraw";  
+  let firstRow = document.querySelector('.payment-row-wrapper'); if (!firstRow) { createPaymentRow(); firstRow = document.querySelector('.payment-row-wrapper'); }  
+  const typeSelect = firstRow.querySelector('.row-type'); const accSelect = firstRow.querySelector('.row-acc'); const amtInput = firstRow.querySelector('.row-amt');  
+  if (rawType) { const typeLower = rawType.toLowerCase(); if (typeLower.includes("credit")) typeSelect.value = "CREDIT"; else if (typeLower.includes("debit")) typeSelect.value = "DEBIT"; else if (typeLower.includes("upi")) typeSelect.value = "UPI"; else if (typeLower.includes("net")) typeSelect.value = "NET"; }  
+  typeSelect.dispatchEvent(new Event('change'));  
+  setTimeout(() => { if (!rawAcc) return; const raw = rawAcc.toLowerCase().trim(); const options = Array.from(accSelect.options); let match = options.find(opt => opt.value.toLowerCase() === raw); if (!match) match = options.find(opt => raw.includes(opt.value.toLowerCase())); if (match) accSelect.value = match.value; else { accSelect.value = "Other"; accSelect.dispatchEvent(new Event('change')); firstRow.querySelector('.row-acc-other').value = rawAcc; } }, 50);  
+  if (amountStr) { const numericAmt = amountStr.replace(/[^\d.]/g, ''); amtInput.value = numericAmt; updateGrandTotal(); }  
+  if (ref) { document.getElementById('referenceWrapper').classList.remove('hidden'); document.getElementById('reference').value = ref; }  
 }  
-  
-// 🔥 Force dropdown rebuild FIRST  
-typeSelect.dispatchEvent(new Event('change'));  
-  
-// 🔥 Delay account matching slightly to ensure options loaded  
-setTimeout(() => {  
-  
-  if (!rawAcc) return;  
-  
-  const raw = rawAcc.toLowerCase().trim();  
-  const options = Array.from(accSelect.options);  
-  
-  let match = options.find(opt =>  
-    opt.value.toLowerCase() === raw  
-  );  
-  
-  if (!match) {  
-    match = options.find(opt =>  
-      raw.includes(opt.value.toLowerCase())  
-    );  
-  }  
-  
-  if (match) {  
-    accSelect.value = match.value;  
-  } else {  
-    accSelect.value = "Other";  
-    accSelect.dispatchEvent(new Event('change'));  
-    firstRow.querySelector('.row-acc-other').value = rawAcc;  
-  }  
-  
-}, 50);   // 👈 critical delay  
-  if (amountStr) {  
-    const numericAmt = amountStr.replace(/[^\d.]/g, '');  
-    amtInput.value = numericAmt;  
-    updateGrandTotal();  
-  }  
-  
-  // REFERENCE  
-  if (ref) {  
-    document.getElementById('referenceWrapper').classList.remove('hidden');  
-    document.getElementById('reference').value = ref;  
-  }  
-  
-  
-}  
+
 function fullReset() {  
-  const batchState = document.getElementById('batchToggle').checked;  
   document.getElementById('txnForm').reset();  
-  document.getElementById('batchToggle').checked = batchState;  
+  batchMode = false; recurringMode = false; splitMode = false; updateModeButtons();
+  document.getElementById('recurringOptions').classList.add('hidden');
+  document.getElementById('splitPanel').style.display = 'none';
   document.getElementById('txnForm').classList.remove('was-validated');  
   document.getElementById('purpose_other').classList.add('hidden');  
   document.getElementById('spent_for_other').classList.add('hidden');  
-  // 🔥 Reset smart-row layouts properly  
-document.getElementById('purposeSmartRow').classList.remove('has-other');  
-document.getElementById('spentSmartRow').classList.remove('has-other');  
-  
-document.getElementById('purpose_other').disabled = true;  
-document.getElementById('spent_for_other').disabled = true;  
+  document.getElementById('purposeSmartRow').classList.remove('has-other');  
+  document.getElementById('spentSmartRow').classList.remove('has-other');  
+  document.getElementById('purpose_other').disabled = true;  
+  document.getElementById('spent_for_other').disabled = true;  
   document.getElementById('referenceWrapper').classList.add('hidden');  
   document.getElementById('paymentContainer').innerHTML = "";   
   createPaymentRow();  
   document.getElementById('date').value = getTodayLocal();  
   document.querySelectorAll('.denom-input').forEach(i => i.value = "");  
-  document.getElementById("recurringToggle").checked = false;
-document.getElementById("recurringOptions").classList.add("hidden");
+  if (window.clearSplitPanel) window.clearSplitPanel();
   toggleCashBlock(); updateGrandTotal();  
 }  
+
 function autoPredictPurpose() {
   const narrationField = document.getElementById("narration");
   const suggestion = predictPurposeSmart(narrationField.value);
   if (!suggestion) return;
-
   const purposeSelect = document.getElementById("purpose");
   const otherInput = document.getElementById("purpose_other");
-
-  const optionExists = Array.from(purposeSelect.options)
-    .some(opt => opt.value === suggestion);
-
-  if (optionExists) {
-    purposeSelect.value = suggestion;
-    toggleSmartOther(purposeSelect, 'purpose_other', 'purposeSmartRow', true);
-  } else {
-    purposeSelect.value = "Other";
-    toggleSmartOther(purposeSelect, 'purpose_other', 'purposeSmartRow', true);
-    otherInput.value = suggestion;
-  }
+  const optionExists = Array.from(purposeSelect.options).some(opt => opt.value === suggestion);
+  if (optionExists) { purposeSelect.value = suggestion; toggleSmartOther(purposeSelect, 'purpose_other', 'purposeSmartRow', true); }
+  else { purposeSelect.value = "Other"; toggleSmartOther(purposeSelect, 'purpose_other', 'purposeSmartRow', true); otherInput.value = suggestion; }
 }
+
 function checkRecurringTemplates(){
-
   const today = new Date();
-  const day = today.getDate();
-
   const templates = JSON.parse(localStorage.getItem("recurringTemplates") || "[]");
-
-  const todayTemplates = templates.filter(t => {
-
-  if(!t.active) return false;
-
-  const d = new Date(t.date);
-
-  return (
-    d.getDate() === today.getDate() &&
-    d.getMonth() === today.getMonth()
-  );
-
-});
-
+  const todayTemplates = templates.filter(t => t.active && new Date(t.date).getDate() === today.getDate() && new Date(t.date).getMonth() === today.getMonth());
   if(todayTemplates.length === 0) return;
-
-  if(!confirm(`You have ${todayTemplates.length} recurring transactions today.\nLoad them?`))
-    return;
-
+  if(!confirm(`You have ${todayTemplates.length} recurring transactions today.\nLoad them?`)) return;
   document.getElementById("paymentContainer").innerHTML="";
-
   todayTemplates.forEach(t => {
-
     document.getElementById("narration").value = t.narration;
     document.getElementById("purpose").value = t.purpose;
     document.getElementById("spent_for").value = t.spent_for;
     document.getElementById("flow").value = t.flow;
-
     t.payments.forEach(p=>{
       const params = new URLSearchParams(p);
-
-      createPaymentRow({
-        type: params.get("trtype"),
-        acc: params.get("from_to"),
-        amt: params.get("withdrawn") || params.get("deposit")
-      });
+      createPaymentRow({ type: params.get("trtype"), acc: params.get("from_to"), amt: params.get("withdrawn") || params.get("deposit") });
     });
-
   });
-
   updateGrandTotal();
 }
+
 function predictPurposeSmart(text) {
-
-  const words = text
-    .toLowerCase()
-    .split(/\s+/)
-    .filter(w =>
-      w.length > 2 &&
-      !STOP_WORDS.includes(w)
-    );
-
+  const words = text.toLowerCase().split(/\s+/).filter(w => w.length > 2 && !STOP_WORDS.includes(w));
   let scores = {};
-
-  words.forEach(word => {
-    if (globalMemory[word]) {
-      for (let category in globalMemory[word]) {
-        scores[category] = (scores[category] || 0) + globalMemory[word][category];
-      }
-    }
-  });
-
-  let best = "";
-  let max = 0;
-
-  for (let category in scores) {
-    if (scores[category] > max) {
-      max = scores[category];
-      best = category;
-    }
-  }
-
+  words.forEach(word => { if (globalMemory[word]) { for (let category in globalMemory[word]) scores[category] = (scores[category] || 0) + globalMemory[word][category]; } });
+  let best = "", max = 0;
+  for (let category in scores) if (scores[category] > max) { max = scores[category]; best = category; }
   return best;
 }
+
 async function syncAllData(){
-
-  if (!navigator.onLine){
-    showToast("Internet needed to sync.","#f87171");
-    return;
-  }
-
+  if (!navigator.onLine){ showToast("Internet needed to sync.","#f87171"); return; }
   const ok = await showConfirm("Start syncing all queued transactions?");
   if(!ok) return;
-
-  const btnSync = document.getElementById('btnSyncAll');
-  const btnStop = document.getElementById('btnStopSync');
-
+  const btnSync = document.getElementById('btnSyncAll'); const btnStop = document.getElementById('btnStopSync');
   syncAborted = false;
-  btnSync.classList.add('hidden');
-  btnStop.classList.remove('hidden');
-  
-  const tx = db.transaction(STORE_NAME, "readonly");  
-  const store = tx.objectStore(STORE_NAME);  
+  btnSync.classList.add('hidden'); btnStop.classList.remove('hidden');
+  const tx = db.transaction(STORE_NAME, "readonly"); const store = tx.objectStore(STORE_NAME);  
   const items = await new Promise(r => { store.getAll().onsuccess = (e) => r(e.target.result); });  
   const keys = await new Promise(r => { store.getAllKeys().onsuccess = (e) => r(e.target.result); });  
-  
   for (let i = 0; i < items.length; i++) {  
     if(syncAborted) break;  
     btnStop.textContent = `🛑 Stop Syncing (${i+1}/${items.length})`;  
     try {  
       await fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: items[i] });  
       updateRecurringNextDate();
-      await new Promise(res => {  
-          db.transaction(STORE_NAME, "readwrite").objectStore(STORE_NAME).delete(keys[i]).onsuccess = () => { updatePendingCount(); res(); };  
-      });  
+      await new Promise(res => { db.transaction(STORE_NAME, "readwrite").objectStore(STORE_NAME).delete(keys[i]).onsuccess = () => { updatePendingCount(); res(); }; });  
     } catch (err) { showToast("Sync interrupted."); break; }  
   }  
-    
-  btnStop.classList.add('hidden');  
-  btnStop.textContent = "🛑 Stop Sync";  
-  btnSync.classList.remove('hidden');  
+  btnStop.classList.add('hidden'); btnStop.textContent = "🛑 Stop Sync"; btnSync.classList.remove('hidden');  
   if(syncAborted) showToast("Sync stopped.");  
 }  
+
 function trainPurpose(narration, purpose) {
-
-  const words = narration
-    .toLowerCase()
-    .split(/\s+/)
-    .filter(w =>
-      w.length > 2 &&
-      !STOP_WORDS.includes(w)
-    );
-
-  words.forEach(word => {
-
-    if (!globalMemory[word]) globalMemory[word] = {};
-    if (!globalMemory[word][purpose]) globalMemory[word][purpose] = 0;
-    globalMemory[word][purpose]++;
-
-    // backend update
-    fetch(SCRIPT_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        action: "trainMemory",
-        word: word,
-        category: purpose
-      })
-    });
-  });
-
+  const words = narration.toLowerCase().split(/\s+/).filter(w => w.length > 2 && !STOP_WORDS.includes(w));
+  words.forEach(word => { if (!globalMemory[word]) globalMemory[word] = {}; if (!globalMemory[word][purpose]) globalMemory[word][purpose] = 0; globalMemory[word][purpose]++; fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ action: "trainMemory", word: word, category: purpose }) }); });
   localStorage.setItem("purposeMemoryCache", JSON.stringify(globalMemory));
 }  
+
 function renderQueue(items) {  
   const body = document.getElementById('queueBody'); body.innerHTML = "";  
   items.forEach((item, idx) => {  
     const p = new URLSearchParams(item);  
     const amt = parseFloat(p.get('withdrawn')) > 0 ? p.get('withdrawn') : p.get('deposit');  
     const invoice = p.get('invoice_no') || "-";  
-      
-    let cashInfo = '';  
-    if(p.get('trtype') === 'CASH') {  
-        cashInfo = `<div class="queue-denoms">${getCashTextSummary(p)}</div>`;  
-    }  
+    let cashInfo = ''; if(p.get('trtype') === 'CASH') cashInfo = `<div class="queue-denoms">${getCashTextSummary(p)}</div>`;  
     let accountDisplay = `<strong>${p.get('from_to')}</strong>`;  
-if (p.get('trtype') === 'CASH') {  
-    accountDisplay += cashInfo;  
-} else {  
-    accountDisplay += `<div style="font-size:10px; color:#94a3b8; margin-top:2px;">(${p.get('trtype')})</div>`;  
+    if (p.get('trtype') === 'CASH') accountDisplay += cashInfo; else accountDisplay += `<div style="font-size:10px; color:#94a3b8; margin-top:2px;">(${p.get('trtype')})</div>`;  
+    body.innerHTML += `<tr><td>${formatDisplayDate(p.get('date'))}</td><td>${p.get('narration')}</td><td>${invoice}</td><td>${p.get('purpose')}</td><td>${accountDisplay}</td><td>${p.get('flow')}</td><td>₹${amt}</td><td><div class="td-center"><span style="cursor:pointer; font-size:16px;" onclick="editQueue(${idx})">✏️</span><span style="cursor:pointer; font-size:16px;" onclick="deleteQueue(${idx})">🗑️</span></div></td></tr>`;   
+  });  
 }  
-  
-    body.innerHTML += `<tr>  
-  <td>${formatDisplayDate(p.get('date'))}</td>
-  <td>${p.get('narration')}</td>  
-  <td>${invoice}</td>  
-  <td>${p.get('purpose')}</td>  
-  <td>${accountDisplay}</td>  
-  <td>${p.get('flow')}</td>  
-  <td>₹${amt}</td>  
-  <td><div class="td-center">  
-    <span style="cursor:pointer; font-size:16px;" onclick="editQueue(${idx})">✏️</span>  
-    <span style="cursor:pointer; font-size:16px;" onclick="deleteQueue(${idx})">🗑️</span>  
-  </div></td>  
-</tr>`;   
- });  
-}  
+
 document.getElementById("narration").addEventListener("blur", autoPredictPurpose);  
 document.getElementById("narration").addEventListener("input", autoFillSalary);
-window.deleteQueue = async (idx) => {
 
-  const ok = await showConfirm("Delete this queued item?");
-  if(!ok) return;  
-  const tx = db.transaction(STORE_NAME, "readwrite");  
-  const store = tx.objectStore(STORE_NAME);  
-  store.getAllKeys().onsuccess = (e) => { store.delete(e.target.result[idx]).onsuccess = () => updatePendingCount(); };  
-};  
-  
+window.deleteQueue = async (idx) => { const ok = await showConfirm("Delete this queued item?"); if(!ok) return; const tx = db.transaction(STORE_NAME, "readwrite"); const store = tx.objectStore(STORE_NAME); store.getAllKeys().onsuccess = (e) => { store.delete(e.target.result[idx]).onsuccess = () => updatePendingCount(); }; };  
+
 window.editQueue = (idx) => {  
-  const tx = db.transaction(STORE_NAME, "readwrite");  
-  const store = tx.objectStore(STORE_NAME);  
+  const tx = db.transaction(STORE_NAME, "readwrite"); const store = tx.objectStore(STORE_NAME);  
   store.getAll().onsuccess = (e) => {  
-    const item = e.target.result[idx];  
-    const p = new URLSearchParams(item);  
+    const item = e.target.result[idx]; const p = new URLSearchParams(item);  
     document.getElementById('paymentContainer').innerHTML = "";  
-    document.getElementById('date').value = p.get('date');  
-    document.getElementById('narration').value = p.get('narration');  
-    document.getElementById('invoice_no').value = p.get('invoice_no') || "";  
-    if(p.get('reference')) {  
-        document.getElementById('referenceWrapper').classList.remove('hidden');  
-        document.getElementById('reference').value = p.get('reference');  
-    }  
+    document.getElementById('date').value = p.get('date'); document.getElementById('narration').value = p.get('narration'); document.getElementById('invoice_no').value = p.get('invoice_no') || "";  
+    if(p.get('reference')) { document.getElementById('referenceWrapper').classList.remove('hidden'); document.getElementById('reference').value = p.get('reference'); }  
     const purpVal = p.get('purpose'); const purpSel = document.getElementById('purpose');  
-    if(Array.from(purpSel.options).some(o => o.value === purpVal)) purpSel.value = purpVal;  
-    else { purpSel.value = "Other"; document.getElementById('purpose_other').value = purpVal; }  
+    if(Array.from(purpSel.options).some(o => o.value === purpVal)) purpSel.value = purpVal; else { purpSel.value = "Other"; document.getElementById('purpose_other').value = purpVal; }  
     toggleSmartOther(purpSel, 'purpose_other', 'purposeSmartRow');  
     const spentVal = p.get('spent_for'); const spentSel = document.getElementById('spent_for');  
-    if(Array.from(spentSel.options).some(o => o.value === spentVal)) spentSel.value = spentVal;  
-    else { spentSel.value = "Other"; document.getElementById('spent_for_other').value = spentVal; }  
+    if(Array.from(spentSel.options).some(o => o.value === spentVal)) spentSel.value = spentVal; else { spentSel.value = "Other"; document.getElementById('spent_for_other').value = spentVal; }  
     toggleSmartOther(spentSel, 'spent_for_other', 'spentSmartRow');  
     document.getElementById('flow').value = p.get('flow');  
     const amt = p.get('flow') === 'withdraw' ? p.get('withdrawn') : p.get('deposit');  
     createPaymentRow({ type: p.get('trtype'), acc: p.get('from_to'), amt: amt });  
-      
-    if(p.get('trtype') === 'CASH') {  
-        denoms.forEach(v => {  
-            const val = p.get('d'+v);  
-            document.querySelector(`.denom-input[data-val="${v}"]`).value = val || "";  
-        });  
-        recalcCash();  
-    }  
-      
+    if(p.get('trtype') === 'CASH') { denoms.forEach(v => { const val = p.get('d'+v); document.querySelector(`.denom-input[data-val="${v}"]`).value = val || ""; }); recalcCash(); }  
     updateGrandTotal();  
     store.getAllKeys().onsuccess = (ev) => { store.delete(ev.target.result[idx]).onsuccess = () => { updatePendingCount(); document.getElementById('queueModal').classList.add('hidden'); }; };  
   };  
 };  
+
 function renderRecurringTemplates(){
-
   const list = JSON.parse(localStorage.getItem("recurringTemplates") || "[]");
-
-  const body = document.getElementById("recurringBody");
-  body.innerHTML = "";
-
+  const body = document.getElementById("recurringBody"); body.innerHTML = "";
   list.forEach((t, index) => {
-
-    let account = "";
-    let amount = "";
-
+    let account = "", amount = "";
     if(t.payments && t.payments.length > 0){
-
       const params = new URLSearchParams(t.payments[0]);
-
       account = params.get("from_to") || "-";
-
-      amount =
-        params.get("withdrawn") && params.get("withdrawn") !== "0"
-          ? params.get("withdrawn")
-          : params.get("deposit");
+      amount = params.get("withdrawn") && params.get("withdrawn") !== "0" ? params.get("withdrawn") : params.get("deposit");
     }
-
-    body.innerHTML += `
-      <tr>
-        <td>${t.date ? formatDisplayDate(t.date) : t.day}</td>
-        <td>${t.narration}</td>
-        <td>${t.purpose}</td>
-        <td>${t.spent_for}</td>
-        <td>${t.flow}</td>
-        <td>${account}</td>
-        <td>₹${amount || "-"}</td>
-        <td>
-<div class="td-center">
-<span style="cursor:pointer;font-size:16px" onclick="editRecurring(${index})">✏️</span>
-<span onclick="loadRecurring(${index})">📥</span>
-<span onclick="toggleRecurring(${index})">
-${t.active ? "🟢" : "⚪"}
-</span>
-<span onclick="deleteRecurring(${index})">🗑️</span>
-
-</div>
-</td>
-      </tr>
-    `;
-
+    body.innerHTML += `<tr><td>${t.date ? formatDisplayDate(t.date) : t.day}</td><td>${t.narration}</td><td>${t.purpose}</td><td>${t.spent_for}</td><td>${t.flow}</td><td>${account}</td><td>₹${amount || "-"}</td><td><div class="td-center"><span style="cursor:pointer;font-size:16px" onclick="editRecurring(${index})">✏️</span><span onclick="loadRecurring(${index})">📥</span><span onclick="toggleRecurring(${index})">${t.active ? "🟢" : "⚪"}</span><span onclick="deleteRecurring(${index})">🗑️</span></div></td></tr>`;
   });
-
 }
+
 function editRecurring(index){
-
   window.editRecurringIndex = index;
-
   const templates = JSON.parse(localStorage.getItem("recurringTemplates") || "[]");
   const t = templates[index];
-
   document.getElementById("date").value = t.date || getTodayLocal();
   document.getElementById("narration").value = t.narration;
   document.getElementById("purpose").value = t.purpose;
   document.getElementById("spent_for").value = t.spent_for;
   document.getElementById("flow").value = t.flow;
-// ⭐ Activate recurring mode
-document.getElementById("recurringToggle").checked = true;
-document.getElementById("recurringOptions").classList.remove("hidden");
-
-// ⭐ Restore frequency
-document.getElementById("recurringType").value = t.frequency || "monthly";
-
-// ⭐ Restore custom days if used
-if(t.frequency === "custom"){
-  document.getElementById("customDays").classList.remove("hidden");
-  document.getElementById("customDays").value = t.customDays || "";
-}
+  setMode('recurring', true);
+  document.getElementById("recurringType").value = t.frequency || "monthly";
+  if(t.frequency === "custom"){ document.getElementById("customDays").classList.remove("hidden"); document.getElementById("customDays").value = t.customDays || ""; }
   document.getElementById("paymentContainer").innerHTML="";
-
-  t.payments.forEach(p=>{
-    const params = new URLSearchParams(p);
-
-    createPaymentRow({
-      type: params.get("trtype"),
-      acc: params.get("from_to"),
-      amt: params.get("withdrawn") || params.get("deposit")
-    });
-  });
-
+  t.payments.forEach(p=>{ const params = new URLSearchParams(p); createPaymentRow({ type: params.get("trtype"), acc: params.get("from_to"), amt: params.get("withdrawn") || params.get("deposit") }); });
   updateGrandTotal();
-
   closeRecurringManager();
-
   showToast("✏️ Editing recurring template");
 }
+
 function toggleRecurring(index){
-
   let templates = JSON.parse(localStorage.getItem("recurringTemplates") || "[]");
-
   templates[index].active = !templates[index].active;
-
   localStorage.setItem("recurringTemplates", JSON.stringify(templates));
-
   renderRecurringTemplates();
   renderUpcomingRecurring();
 }
-function openRecurringManager(){
 
-  renderRecurringTemplates();
-  document.getElementById("recurringModal").classList.remove("hidden");
+function openRecurringManager(){ renderRecurringTemplates(); document.getElementById("recurringModal").classList.remove("hidden"); }
+function closeRecurringManager(){ document.getElementById("recurringModal").classList.add("hidden"); }
 
-}
-
-function closeRecurringManager(){
-
-  document.getElementById("recurringModal").classList.add("hidden");
-
-}
 function updateRecurringNextDate(){
-
   let templates = JSON.parse(localStorage.getItem("recurringTemplates") || "[]");
   if(!templates.length) return;
-
   const narration = document.getElementById("narration").value;
-
   templates.forEach(t => {
-
     if(!t.active || !t.date) return;
-
     if(t.narration !== narration) return;
-
     let d = new Date(t.date);
-
-    if(t.frequency === "weekly"){
-  d.setDate(d.getDate()+7);
-}
-
-else if(t.frequency === "monthly"){
-  d.setMonth(d.getMonth()+1);
-}
-
-else if(t.frequency === "quarterly"){
-  d.setMonth(d.getMonth()+3);
-}
-
-else if(t.frequency === "halfyearly"){
-  d.setMonth(d.getMonth()+6);
-}
-
-else if(t.frequency === "yearly"){
-  d.setFullYear(d.getFullYear()+1);
-}
-
-else if(t.frequency === "custom"){
-  const days = Number(t.customDays || 1);
-  d.setDate(d.getDate()+days);
-}
-
-    const yyyy = d.getFullYear();
-    const mm = String(d.getMonth()+1).padStart(2,'0');
-    const dd = String(d.getDate()).padStart(2,'0');
-
+    if(t.frequency === "weekly") d.setDate(d.getDate()+7);
+    else if(t.frequency === "monthly") d.setMonth(d.getMonth()+1);
+    else if(t.frequency === "quarterly") d.setMonth(d.getMonth()+3);
+    else if(t.frequency === "halfyearly") d.setMonth(d.getMonth()+6);
+    else if(t.frequency === "yearly") d.setFullYear(d.getFullYear()+1);
+    else if(t.frequency === "custom") d.setDate(d.getDate() + (Number(t.customDays) || 1));
+    const yyyy = d.getFullYear(), mm = String(d.getMonth()+1).padStart(2,'0'), dd = String(d.getDate()).padStart(2,'0');
     t.date = `${yyyy}-${mm}-${dd}`;
-
   });
-
   localStorage.setItem("recurringTemplates", JSON.stringify(templates));
-
   syncRecurringBackup();
   renderUpcomingRecurring();
 }
-function renderUpcomingRecurring(){
 
+function renderUpcomingRecurring() {
   const list = JSON.parse(localStorage.getItem("recurringTemplates") || []);
   const preview = document.getElementById("recurringPreview");
-
-  const today = new Date();
+  const todayDate = new Date();
+  todayDate.setHours(0, 0, 0, 0);
 
   const dueTemplates = list.filter(t => {
-
-    if(!t.active || !t.date) return false;
-
-    const d = new Date(t.date);
-
-    return today >= d; // ⭐ show if today passed the recurring date
-
+    if (!t.active || !t.date) return false;
+    const dueDate = new Date(t.date);
+    dueDate.setHours(0, 0, 0, 0);
+    return dueDate <= todayDate;  // Show if due today or earlier
   });
 
-  if(dueTemplates.length === 0){
+  if (dueTemplates.length === 0) {
     preview.classList.add("hidden");
     return;
   }
 
   preview.classList.remove("hidden");
-
-  preview.innerHTML = `
-  🔁 ${dueTemplates.length} recurring transaction${dueTemplates.length>1?"s":""} pending
-  <br>
-  ${dueTemplates.map(t => `• ${t.narration}`).join("<br>")}
-  `;
+  preview.innerHTML = `🔁 ${dueTemplates.length} recurring transaction${dueTemplates.length > 1 ? "s" : ""} pending<br>${dueTemplates.map(t => `• ${t.narration}`).join("<br>")}`;
 }
 function loadRecurring(index){
-window.activeRecurringIndex = index;
+  window.activeRecurringIndex = index;
   const templates = JSON.parse(localStorage.getItem("recurringTemplates") || "[]");
   const t = templates[index];
-
   const today = new Date();
-  let year = today.getFullYear();
-  let month = today.getMonth();
-
-  const recurringDay = t.date
-    ? new Date(t.date).getDate()
-    : t.day;
-
-  if (today.getDate() < recurringDay) {
-    month -= 1;
-  }
-
+  let year = today.getFullYear(), month = today.getMonth();
+  const recurringDay = t.date ? new Date(t.date).getDate() : t.day;
+  if (today.getDate() < recurringDay) month -= 1;
   const final = new Date(year, month, recurringDay);
-
-const yyyy = final.getFullYear();
-const mm = String(final.getMonth()+1).padStart(2,'0');
-const dd = String(final.getDate()).padStart(2,'0');
-
-document.getElementById("date").value = `${yyyy}-${mm}-${dd}`;
-
+  const yyyy = final.getFullYear(), mm = String(final.getMonth()+1).padStart(2,'0'), dd = String(final.getDate()).padStart(2,'0');
+  document.getElementById("date").value = `${yyyy}-${mm}-${dd}`;
   document.getElementById("narration").value = t.narration;
   document.getElementById("purpose").value = t.purpose;
   document.getElementById("spent_for").value = t.spent_for;
   document.getElementById("flow").value = t.flow;
-
   document.getElementById("paymentContainer").innerHTML="";
-
-  t.payments.forEach(p=>{
-    const params = new URLSearchParams(p);
-
-    createPaymentRow({
-      type: params.get("trtype"),
-      acc: params.get("from_to"),
-      amt: params.get("withdrawn") || params.get("deposit")
-    });
-  });
-
+  t.payments.forEach(p=>{ const params = new URLSearchParams(p); createPaymentRow({ type: params.get("trtype"), acc: params.get("from_to"), amt: params.get("withdrawn") || params.get("deposit") }); });
   updateGrandTotal();
   closeRecurringManager();
 }
-async function deleteRecurring(index){
 
+async function deleteRecurring(index){
   const ok = await showConfirm("Delete this recurring template?");
   if(!ok) return;
-
   let templates = JSON.parse(localStorage.getItem("recurringTemplates") || "[]");
-
   templates.splice(index,1);
-
   localStorage.setItem("recurringTemplates",JSON.stringify(templates));
-
   syncRecurringBackup();
-
   renderRecurringTemplates();
-renderUpcomingRecurring();
+  renderUpcomingRecurring();
   showToast("🗑️ Recurring template deleted","#f87171");
-  
 }
+
 function restoreRecurringBackup(){
-
   if(localStorage.getItem("recurringTemplates")) return;
-
-  fetch(SCRIPT_URL + "?action=getRecurringBackup")
-  .then(r=>r.json())
-  .then(data=>{
-    if(data.length){
-      localStorage.setItem("recurringTemplates", JSON.stringify(data));
-    }
-  });
-
+  fetch(SCRIPT_URL + "?action=getRecurringBackup").then(r=>r.json()).then(data=>{ if(data.length) localStorage.setItem("recurringTemplates", JSON.stringify(data)); });
 }
+
 function getTodayLocal(){
   const d = new Date();
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth()+1).padStart(2,'0');
-  const dd = String(d.getDate()).padStart(2,'0');
+  const yyyy = d.getFullYear(), mm = String(d.getMonth()+1).padStart(2,'0'), dd = String(d.getDate()).padStart(2,'0');
   return `${yyyy}-${mm}-${dd}`;
 }
+
 function toggleSmartOther(selectObj, otherId, parentId, silent = false) {
   const otherInput = document.getElementById(otherId);
   const parent = document.getElementById(parentId);
   const isOther = selectObj.value === 'Other';
-
   otherInput.classList.toggle('hidden', !isOther);
   otherInput.disabled = !isOther;
   otherInput.required = isOther;
   parent.classList.toggle('has-other', isOther);
-
-  // 🚀 Only focus if NOT silent
-  if (isOther && !silent) {
-    otherInput.focus();
-  }
+  if (isOther && !silent) otherInput.focus();
 }
+
 function showToast(msg, color="var(--primary)"){
-
   const toast = document.getElementById("toast");
-
   toast.textContent = msg;
   toast.style.background = color;
-
   toast.classList.remove("hidden");
-
-  requestAnimationFrame(()=>{
-    toast.classList.add("show");
-  });
-
-  setTimeout(()=>{
-    toast.classList.remove("show");
-
-    setTimeout(()=>{
-      toast.classList.add("hidden");
-    },350);
-
-  },2200);
-}
-function isLastDayOfMonth(date){
-  const d = new Date(date);
-  const lastDay = new Date(d.getFullYear(), d.getMonth()+1, 0).getDate();
-  return d.getDate() === lastDay;
+  requestAnimationFrame(()=> toast.classList.add("show"));
+  setTimeout(()=>{ toast.classList.remove("show"); setTimeout(()=> toast.classList.add("hidden"),350); },2200);
 }
 
-function isLastFriday(date){
-  const d = new Date(date);
-  if(d.getDay() !== 5) return false; // 5 = Friday
+function isLastDayOfMonth(date){ const d = new Date(date); const lastDay = new Date(d.getFullYear(), d.getMonth()+1, 0).getDate(); return d.getDate() === lastDay; }
+function isLastFriday(date){ const d = new Date(date); if(d.getDay() !== 5) return false; const nextWeek = new Date(d); nextWeek.setDate(d.getDate()+7); return nextWeek.getMonth() !== d.getMonth(); }
 
-  const nextWeek = new Date(d);
-  nextWeek.setDate(d.getDate()+7);
-
-  return nextWeek.getMonth() !== d.getMonth();
-}
 function autoFillSalary(){
-
   const narrationField = document.getElementById("narration");
   const text = narrationField.value.toLowerCase().trim();
-
   if(!text.includes("salary")) return;
-
   const today = new Date();
-
   if(!(isLastDayOfMonth(today) || isLastFriday(today))) return;
-
-  // Date
   document.getElementById("date").value = getTodayLocal();
-
-  // Narration
-  if(narrationField.value.toLowerCase() === "salary"){
-  narrationField.value = "Salary Credited";
-}
-
-  // Purpose
+  if(narrationField.value.toLowerCase() === "salary") narrationField.value = "Salary Credited";
   document.getElementById("purpose").value = "Income";
   toggleSmartOther(document.getElementById("purpose"),'purpose_other','purposeSmartRow',true);
-
-  // Spent For
   document.getElementById("spent_for").value = "Self";
   toggleSmartOther(document.getElementById("spent_for"),'spent_for_other','spentSmartRow',true);
-
-  // Flow
   document.getElementById("flow").value = "deposit";
-
-  // Payment row
   let row = document.querySelector('.payment-row-wrapper');
-
-  if(!row){
-    createPaymentRow();
-    row = document.querySelector('.payment-row-wrapper');
-  }
-
-  const type = row.querySelector('.row-type');
-  const acc = row.querySelector('.row-acc');
-
-  type.value = "NET";
-  type.dispatchEvent(new Event('change'));
-
-  setTimeout(()=>{
-
-  acc.value = "HDFC New";
-
-  // Focus amount field
-  const amountField = row.querySelector('.row-amt');
-
-  if(amountField){
-    amountField.focus();
-    amountField.click();
-  }
-
-},120);
+  if(!row){ createPaymentRow(); row = document.querySelector('.payment-row-wrapper'); }
+  const type = row.querySelector('.row-type'); const acc = row.querySelector('.row-acc');
+  type.value = "NET"; type.dispatchEvent(new Event('change'));
+  setTimeout(()=>{ acc.value = "HDFC New"; const amountField = row.querySelector('.row-amt'); if(amountField){ amountField.focus(); amountField.click(); } },120);
   showToast("💰 Salary template loaded");
 }
+
 function showConfirm(message){
-
   return new Promise(resolve=>{
-
     const modal = document.getElementById("confirmPopup");
-
     document.getElementById("confirmMsg").textContent = message;
-
     modal.classList.remove("hidden");
-
-    document.getElementById("confirmYes").onclick = ()=>{
-      modal.classList.add("hidden");
-      resolve(true);
-    };
-
-    document.getElementById("confirmNo").onclick = ()=>{
-      modal.classList.add("hidden");
-      resolve(false);
-    };
-
+    document.getElementById("confirmYes").onclick = ()=>{ modal.classList.add("hidden"); resolve(true); };
+    document.getElementById("confirmNo").onclick = ()=>{ modal.classList.add("hidden"); resolve(false); };
   });
-
 }
+
 denoms.forEach(v => {  
   const c = document.createElement("div"); c.className = "cash-card";  
   c.innerHTML = `<span>₹${v}</span><input type="number" data-val="${v}" class="denom-input" placeholder="0">`;  
   c.querySelector('input').oninput = recalcCash;  
   document.getElementById('cashGrid').appendChild(c);  
 });  
-  
+
 document.getElementById('btnAddMode').onclick = () => createPaymentRow();  
 document.getElementById('btnViewQueue').onclick = () => document.getElementById('queueModal').classList.remove('hidden');  
 document.getElementById('btnSyncAll').onclick = syncAllData;  
 document.getElementById('btnStopSync').onclick = () => { syncAborted = true; };  
-  document.getElementById("recurringToggle").addEventListener("change",function(){
-  if(this.checked){
-    document.getElementById("batchToggle").checked=false;
-  }
-});
-const recurringToggle = document.getElementById("recurringToggle");
-const recurringOptions = document.getElementById("recurringOptions");
 
-recurringToggle.addEventListener("change", function(){
-
-  if(this.checked){
-    recurringOptions.classList.remove("hidden");
-  }else{
-    recurringOptions.classList.add("hidden");
-  }
-
-});
 const recurringType = document.getElementById("recurringType");
 const customDaysInput = document.getElementById("customDays");
+recurringType.addEventListener("change",function(){ if(this.value === "custom") customDaysInput.classList.remove("hidden"); else customDaysInput.classList.add("hidden"); });
 
-recurringType.addEventListener("change",function(){
-
-  if(this.value === "custom"){
-    customDaysInput.classList.remove("hidden");
-  }else{
-    customDaysInput.classList.add("hidden");
-  }
-
-});
-document.getElementById("batchToggle").addEventListener("change", function(){
-
-  if(this.checked){
-
-    const recurringToggle = document.getElementById("recurringToggle");
-
-    recurringToggle.checked = false;
-
-    // Trigger the recurring toggle logic
-    recurringToggle.dispatchEvent(new Event("change"));
-
-  }
-
-});
-if (document.body.classList.contains('dark')) {  
-    themeToggle.textContent = '☀️';  
-}  
-  
+if (document.body.classList.contains('dark')) themeToggle.textContent = '☀️';  
 document.getElementById('btnConfirmFinal').onclick = processSave;  
 document.getElementById('btnConfirmCancel').onclick = () => document.getElementById('confirmModal').classList.add('hidden');  
-  
+
 document.getElementById('btnRepeat').onclick = () => {
   const last = localStorage.getItem("lastPackage");
   if (!last) return;
-
   const list = JSON.parse(last);
   if (!list.length) return;
-
-  // Check if it's a split transaction (first payload has split_enabled=1)
   const firstPayload = list[0];
   const params = new URLSearchParams(firstPayload);
   const isSplit = params.get('split_enabled') === '1';
-
   if (isSplit) {
-    // Split mode: restore split UI
-    const splitToggle = document.getElementById('splitToggle');
-    if (!splitToggle.checked) {
-      splitToggle.checked = true;
-      splitToggle.dispatchEvent(new Event('change'));
-    }
-
-    // Restore personal share
+    setMode('split', true);
     const personalShare = parseFloat(params.get('personal_share') || 0);
     document.getElementById('personalShare').value = personalShare;
-
-    // Restore recipients
     const recipients = JSON.parse(params.get('recipients') || '[]');
     const recipientsContainer = document.getElementById('recipientsContainer');
-    recipientsContainer.innerHTML = ''; // clear existing
-    recipients.forEach(rec => {
-      // Use the existing addRecipientRow function (global)
-      if (typeof window.addRecipientRow === 'function') {
-        window.addRecipientRow(rec.name, rec.amount);
-      } else {
-        // Fallback: manual creation (but it should exist)
-        console.warn('addRecipientRow not found');
-      }
-    });
-
-    // Restore payment rows from payments JSON
+    recipientsContainer.innerHTML = '';
+    recipients.forEach(rec => { if (typeof window.addRecipientRow === 'function') window.addRecipientRow(rec.name, rec.amount); });
     const payments = JSON.parse(params.get('payments') || '[]');
     const paymentContainer = document.getElementById('paymentContainer');
-    paymentContainer.innerHTML = ''; // clear existing
+    paymentContainer.innerHTML = '';
     payments.forEach(pmt => {
-      // Use existing createPaymentRow function
       if (typeof createPaymentRow === 'function') {
-        createPaymentRow({
-          type: pmt.type,
-          acc: pmt.account,
-          amt: pmt.amount
-        });
-        // For cash rows, restore denominations
+        createPaymentRow({ type: pmt.type, acc: pmt.account, amt: pmt.amount });
         if (pmt.type === 'CASH' && pmt.denominations) {
           const lastRow = document.querySelector('.payment-row-wrapper:last-child');
           if (lastRow) {
             const denomInputs = lastRow.parentElement.querySelectorAll('.denom-input');
-            denomInputs.forEach(input => {
-              const val = input.dataset.val;
-              if (pmt.denominations[val]) {
-                input.value = pmt.denominations[val];
-              }
-            });
-            recalcCash(); // update cash total
+            denomInputs.forEach(input => { const val = input.dataset.val; if (pmt.denominations[val]) input.value = pmt.denominations[val]; });
+            recalcCash();
           }
         }
-      } else {
-        console.warn('createPaymentRow not found');
       }
     });
-
-    // Restore other form fields
     document.getElementById('narration').value = params.get('narration') || '';
     document.getElementById('invoice_no').value = params.get('invoice_no') || '';
     document.getElementById('purpose').value = params.get('purpose') || '';
     document.getElementById('spent_for').value = params.get('spent_for') || '';
     document.getElementById('flow').value = params.get('flow') || '';
     document.getElementById('date').value = params.get('date') || getTodayLocal();
-
-    // Trigger smart toggles
     toggleSmartOther(document.getElementById('purpose'), 'purpose_other', 'purposeSmartRow');
     toggleSmartOther(document.getElementById('spent_for'), 'spent_for_other', 'spentSmartRow');
-
     updateGrandTotal();
-    return; // done
+    return;
   }
-
-  // Non-split mode: original logic
   document.getElementById('paymentContainer').innerHTML = "";
   list.forEach((s, idx) => {
     const p = new URLSearchParams(s);
@@ -2192,26 +1479,23 @@ document.getElementById('btnRepeat').onclick = () => {
       toggleSmartOther(document.getElementById('purpose'), 'purpose_other', 'purposeSmartRow');
       toggleSmartOther(document.getElementById('spent_for'), 'spent_for_other', 'spentSmartRow');
     }
-    createPaymentRow({
-      type: p.get('trtype'),
-      acc: p.get('from_to'),
-      amt: p.get('flow') === 'withdraw' ? p.get('withdrawn') : p.get('deposit')
-    });
+    createPaymentRow({ type: p.get('trtype'), acc: p.get('from_to'), amt: p.get('flow') === 'withdraw' ? p.get('withdrawn') : p.get('deposit') });
     if (p.get('trtype') === 'CASH') {
-      denoms.forEach(v => {
-        document.querySelector(`.denom-input[data-val="${v}"]`).value = p.get('d' + v) || "";
-      });
+      denoms.forEach(v => { document.querySelector(`.denom-input[data-val="${v}"]`).value = p.get('d' + v) || ""; });
       recalcCash();
     }
   });
   updateGrandTotal();
 }; 
+
 document.getElementById('date').value = getTodayLocal();  
 loadPurposeMemory();
 restoreRecurringBackup();
 createPaymentRow();  
 renderUpcomingRecurring();
-</script>  <script>  
+</script>  
+
+<script>  
 if ('serviceWorker' in navigator) {  
     window.addEventListener('load', () => {  
       navigator.serviceWorker.register('./sw.js')  
@@ -2224,8 +1508,6 @@ if ('serviceWorker' in navigator) {
 <!-- Split Helper Script (no button, plus icon gesture) -->
 <script>
     (function() {
-      // DOM elements
-      const splitToggle = document.getElementById('splitToggle');
       const splitPanel = document.getElementById('splitPanel');
       const splitTotalSpan = document.getElementById('splitTotalAmount');
       const personalShareInput = document.getElementById('personalShare');
@@ -2234,13 +1516,11 @@ if ('serviceWorker' in navigator) {
   
       const recipientOptions = ["Mother", "Grand Father", "Chinnama", "Srinivas Babai", "Other"];
   
-      // Update total shown in split panel
-      function updateSplitTotal() {
+      window.updateSplitTotal = function() {
         const grandTotalElem = document.getElementById('grandTotal');
         if (grandTotalElem) splitTotalSpan.textContent = grandTotalElem.innerText;
-      }
+      };
   
-      // Create a swipe‑to‑delete recipient row (no manual delete button)
       function addRecipientRow(initialName = "", initialAmount = "") {
         const rowDiv = document.createElement('div');
         rowDiv.className = 'recipient-row';
@@ -2256,7 +1536,6 @@ if ('serviceWorker' in navigator) {
         swipeContent.style.transition = 'transform 0.25s ease, opacity 0.2s ease';
         swipeContent.style.touchAction = 'pan-y';
   
-        // Dropdown
         const select = document.createElement('select');
         select.className = 'recipient-select';
         recipientOptions.forEach(opt => {
@@ -2267,7 +1546,6 @@ if ('serviceWorker' in navigator) {
         });
         if (initialName) select.value = initialName;
   
-        // Other name input (hidden initially)
         const otherInput = document.createElement('input');
         otherInput.type = 'text';
         otherInput.placeholder = 'Name';
@@ -2293,7 +1571,6 @@ if ('serviceWorker' in navigator) {
         if (select.value === 'Other') otherInput.style.display = 'block';
         if (initialName === 'Other' && initialAmount) otherInput.value = initialAmount;
   
-        // Amount input
         const amountInput = document.createElement('input');
         amountInput.type = 'number';
         amountInput.placeholder = 'Amount';
@@ -2307,7 +1584,6 @@ if ('serviceWorker' in navigator) {
         rowDiv.appendChild(otherInput);
         recipientsContainer.appendChild(rowDiv);
   
-        // Swipe‑to‑delete for recipient row
         let startX = 0, currentX = 0, isDragging = false;
         const startHandler = (e) => {
           isDragging = true;
@@ -2318,9 +1594,7 @@ if ('serviceWorker' in navigator) {
           if (!isDragging) return;
           const x = e.touches ? e.touches[0].clientX : e.clientX;
           currentX = x - startX;
-          if (currentX < 0) {
-            swipeContent.style.transform = `translateX(${currentX}px)`;
-          }
+          if (currentX < 0) swipeContent.style.transform = `translateX(${currentX}px)`;
         };
         const endHandler = () => {
           if (!isDragging) return;
@@ -2345,33 +1619,19 @@ if ('serviceWorker' in navigator) {
         rowDiv.addEventListener('dragstart', (e) => e.preventDefault());
       }
   
-      // Clear all recipients
-      function clearRecipients() {
-        recipientsContainer.innerHTML = '';
-      }
+      function clearRecipients() { recipientsContainer.innerHTML = ''; }
   
-      // Toggle split panel visibility
-      splitToggle.addEventListener('change', function() {
-        splitPanel.style.display = this.checked ? 'block' : 'none';
-        if (this.checked) updateSplitTotal();
-      });
+      if (addRecipientIcon) addRecipientIcon.addEventListener('click', () => addRecipientRow());
   
-      // Add recipient via plus icon click
-      if (addRecipientIcon) {
-        addRecipientIcon.addEventListener('click', () => addRecipientRow());
-      }
-  
-      // Keep total in sync with grand total changes
-      const observer = new MutationObserver(() => {
-        if (splitToggle.checked) updateSplitTotal();
-      });
       const grandTotalElem = document.getElementById('grandTotal');
-      if (grandTotalElem) observer.observe(grandTotalElem, { childList: true, subtree: true, characterData: true });
-      window.addEventListener('click', () => { if (splitToggle.checked) updateSplitTotal(); });
+      if (grandTotalElem) {
+        const observer = new MutationObserver(() => { if (splitMode) window.updateSplitTotal(); });
+        observer.observe(grandTotalElem, { childList: true, subtree: true, characterData: true });
+      }
+      window.addEventListener('click', () => { if (splitMode) window.updateSplitTotal(); });
   
-      // Expose functions for use in the main form submit handler
       window.getSplitData = function() {
-        if (!splitToggle.checked) return null;
+        if (!splitMode) return null;
         const personal = parseFloat(personalShareInput.value) || 0;
         const recipients = [];
         document.querySelectorAll('.recipient-row').forEach(row => {
@@ -2381,7 +1641,7 @@ if ('serviceWorker' in navigator) {
           let name = select.value;
           if (name === 'Other') {
             name = otherInput.value.trim();
-            if (!name) return; // skip invalid
+            if (!name) return;
           }
           const amount = parseFloat(amountInput.value) || 0;
           if (amount > 0) recipients.push({ name, amount });
@@ -2389,10 +1649,8 @@ if ('serviceWorker' in navigator) {
         return { personal, recipients };
       };
   
-      window.clearSplitPanel = function() {
-        personalShareInput.value = '0';
-        clearRecipients();
-      };window.addRecipientRow = addRecipientRow;
+      window.clearSplitPanel = function() { personalShareInput.value = '0'; clearRecipients(); };
+      window.addRecipientRow = addRecipientRow;
     })();
   </script>
 <div id="toast" class="hidden"></div>
