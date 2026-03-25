@@ -345,6 +345,24 @@
       grid-column: 1 / span 2;
       margin-top: 4px;
     }
+    #recurringModal .modal-content {
+      width: 95%;           /* Increase from 85% or 70% */
+      max-width: 1000px;    /* Allow it to expand up to 1000px */
+    }
+    #recurringModal .table-container {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    #recurringModal table {
+      min-width: 900px;     /* Forces the table to maintain a wider structure */
+      width: 100%;
+    }
+    #recurringModal th:nth-child(1), 
+    #recurringModal td:nth-child(1) {
+      width: 100px; 
+      text-align: center;
+    }
   </style>
 </head>
 <body>
@@ -464,17 +482,24 @@
   <!-- Split panel -->
   <div id="splitPanel" style="display: none; margin-top: 12px; border-top: 1px solid var(--border-color); padding-top: 12px;">
     <div style="display:flex; justify-content:space-between; background:var(--bg-input); padding:8px 12px; border-radius:12px; margin-bottom:12px;">
-      <span>Total Transaction Amount:</span>
+      <span>Total Transaction:</span>
       <strong id="splitTotalAmount">₹0.00</strong>
     </div>
-    <label>My Share (Personal)</label>
-    <input type="number" id="personalShare" placeholder="0.00" step="0.01" value="0">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin: 12px 0 8px 0;">
-      <span style="font-size:12px; font-weight:600;">Recipients</span>
-      <span id="addRecipientIcon" style="cursor:pointer; font-size:18px; font-weight:bold; color:var(--secondary);">➕</span>
+
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px;">
+      <span style="font-size:12px; font-weight:600;">Split Mode:</span>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <button type="button" id="globalSplitMode" class="mode-btn" style="width:auto; height:26px; font-size:10px; padding:0 10px; background:rgba(34,197,94,0.1); color:var(--primary); border:1px solid var(--primary); margin:0; border-radius:6px;" onclick="toggleGlobalSplitMode(this)">Value</button>
+        <button type="button" id="btnSplitEqually" style="width:auto; height:26px; font-size:10px; padding:0 10px; background:rgba(34,197,94,0.1); color:var(--primary); border:1px solid var(--primary); margin:0; border-radius:6px;">Split Equally</button>
+        <span id="addRecipientIcon" style="cursor:pointer; font-size:20px; color:var(--secondary);">➕</span>
+      </div>
     </div>
+
+    <label>My Share (Personal)</label>
+    <input type="number" id="personalShare" placeholder="0.00" step="0.01"  style="margin-bottom:10px;">
+
     <div id="recipientsContainer"></div>
-  </div>
+</div>
 
   <div class="total-wrapper">
     <span style="font-size: 12px; font-weight: 700; color: var(--text-label);">Total Amount:</span>
@@ -1633,152 +1658,118 @@ if ('serviceWorker' in navigator) {
 
 <!-- Split Helper Script (no button, plus icon gesture) -->
 <script>
-    (function() {
-      const splitPanel = document.getElementById('splitPanel');
-      const splitTotalSpan = document.getElementById('splitTotalAmount');
-      const personalShareInput = document.getElementById('personalShare');
-      const recipientsContainer = document.getElementById('recipientsContainer');
-      const addRecipientIcon = document.getElementById('addRecipientIcon');
-  
-      const recipientOptions = ["Mother", "Grand Father", "Chinnama", "Srinivas Babai", "Other"];
-  
-      window.updateSplitTotal = function() {
-        const grandTotalElem = document.getElementById('grandTotal');
-        if (grandTotalElem) splitTotalSpan.textContent = grandTotalElem.innerText;
-      };
-  
-      function addRecipientRow(initialName = "", initialAmount = "") {
+(function() {
+    const splitTotalSpan = document.getElementById('splitTotalAmount');
+    const recipientsContainer = document.getElementById('recipientsContainer');
+    const globalModeBtn = document.getElementById('globalSplitMode');
+    
+    // 1. Toggle Global Mode (Value vs Percent)
+    window.toggleGlobalSplitMode = function(btn) {
+        const isVal = btn.textContent === 'Value';
+        const grandTotal = parseFloat(document.getElementById('grandTotal').textContent.replace('₹', '')) || 0;
+        
+        if (grandTotal <= 0) { showToast("Enter total amount first", "#f87171"); return; }
+
+        // Change button appearance
+        btn.textContent = isVal ? 'Percent' : 'Value';
+        btn.style.borderColor = isVal ? 'var(--secondary)' : 'var(--border-color)';
+
+        // Convert ALL inputs (Personal + Recipients)
+        const allInputs = [document.getElementById('personalShare'), ...document.querySelectorAll('.recipient-row input[type="number"]')];
+        
+        allInputs.forEach(input => {
+            const currentVal = parseFloat(input.value) || 0;
+            if (isVal) { // Switching to Percent
+                input.value = ((currentVal / grandTotal) * 100).toFixed(2);
+                input.placeholder = "0.00%";
+            } else { // Switching to Value
+                input.value = ((currentVal / 100) * grandTotal).toFixed(2);
+                input.placeholder = "0.00";
+            }
+        });
+    };
+
+    // 2. Add Recipient Row
+    window.addRecipientRow = function(initialName = "", initialAmount = "") {
         const rowDiv = document.createElement('div');
         rowDiv.className = 'recipient-row';
-        rowDiv.style.position = 'relative';
-        rowDiv.style.overflow = 'hidden';
-  
-        const swipeContent = document.createElement('div');
-        swipeContent.className = 'recipient-swipe-content';
-        swipeContent.style.display = 'grid';
-        swipeContent.style.gridTemplateColumns = '1fr 1fr';
-        swipeContent.style.gap = '8px';
-        swipeContent.style.alignItems = 'center';
-        swipeContent.style.transition = 'transform 0.25s ease, opacity 0.2s ease';
-        swipeContent.style.touchAction = 'pan-y';
-  
-        const select = document.createElement('select');
-        select.className = 'recipient-select';
-        recipientOptions.forEach(opt => {
-          const option = document.createElement('option');
-          option.value = opt;
-          option.textContent = opt;
-          select.appendChild(option);
-        });
-        if (initialName) select.value = initialName;
-  
-        const otherInput = document.createElement('input');
-        otherInput.type = 'text';
-        otherInput.placeholder = 'Name';
-        otherInput.className = 'recipient-other-input';
-        otherInput.style.display = 'none';
-        otherInput.style.gridColumn = '1 / span 2';
-        otherInput.style.marginTop = '4px';
-        otherInput.style.border = '1px solid var(--border-color)';
-        otherInput.style.borderRadius = '6px';
-        otherInput.style.padding = '6px 8px';
-        otherInput.style.backgroundColor = 'var(--bg-input)';
-        otherInput.style.color = 'var(--text-main)';
-  
-        select.addEventListener('change', () => {
-          if (select.value === 'Other') {
-            otherInput.style.display = 'block';
-            otherInput.required = true;
-          } else {
-            otherInput.style.display = 'none';
-            otherInput.required = false;
-          }
-        });
-        if (select.value === 'Other') otherInput.style.display = 'block';
-        if (initialName === 'Other' && initialAmount) otherInput.value = initialAmount;
-  
-        const amountInput = document.createElement('input');
-        amountInput.type = 'number';
-        amountInput.placeholder = 'Amount';
-        amountInput.step = '0.01';
-        amountInput.value = initialAmount;
-        amountInput.style.width = '100%';
-  
-        swipeContent.appendChild(select);
-        swipeContent.appendChild(amountInput);
-        rowDiv.appendChild(swipeContent);
-        rowDiv.appendChild(otherInput);
+        rowDiv.style.display = "grid";
+        rowDiv.style.gridTemplateColumns = "1fr 1fr";
+        rowDiv.style.gap = "8px";
+        rowDiv.style.marginBottom = "8px";
+
+        rowDiv.innerHTML = `
+            <select class="recipient-select">
+                <option>Mother</option><option>Grand Father</option>
+                <option>Chinnama</option><option>Srinivas Babai</option>
+                <option value="Other">Other</option>
+            </select>
+            <input type="number" placeholder="0.00" step="0.01" value="${initialAmount}">
+            <input type="text" class="recipient-other-input hidden" placeholder="Custom Name" style="grid-column: span 2; margin-top: -4px;">
+        `;
+
+        const select = rowDiv.querySelector('.recipient-select');
+        const other = rowDiv.querySelector('.recipient-other-input');
+        select.onchange = () => other.classList.toggle('hidden', select.value !== 'Other');
+
         recipientsContainer.appendChild(rowDiv);
-  
-        let startX = 0, currentX = 0, isDragging = false;
-        const startHandler = (e) => {
-          isDragging = true;
-          startX = e.touches ? e.touches[0].clientX : e.clientX;
-          swipeContent.style.transition = 'none';
-        };
-        const moveHandler = (e) => {
-          if (!isDragging) return;
-          const x = e.touches ? e.touches[0].clientX : e.clientX;
-          currentX = x - startX;
-          if (currentX < 0) swipeContent.style.transform = `translateX(${currentX}px)`;
-        };
-        const endHandler = () => {
-          if (!isDragging) return;
-          isDragging = false;
-          if (currentX < -150) {
-            swipeContent.style.transition = 'transform 0.2s ease, opacity 0.2s ease';
-            swipeContent.style.transform = 'translateX(-100%)';
-            swipeContent.style.opacity = '0';
-            setTimeout(() => rowDiv.remove(), 200);
-          } else {
-            swipeContent.style.transition = 'transform 0.2s ease';
-            swipeContent.style.transform = 'translateX(0)';
-          }
-          currentX = 0;
-        };
-        rowDiv.addEventListener('touchstart', startHandler);
-        rowDiv.addEventListener('touchmove', moveHandler);
-        rowDiv.addEventListener('touchend', endHandler);
-        rowDiv.addEventListener('mousedown', startHandler);
-        window.addEventListener('mousemove', moveHandler);
-        window.addEventListener('mouseup', endHandler);
-        rowDiv.addEventListener('dragstart', (e) => e.preventDefault());
-      }
-  
-      function clearRecipients() { recipientsContainer.innerHTML = ''; }
-  
-      if (addRecipientIcon) addRecipientIcon.addEventListener('click', () => addRecipientRow());
-  
-      const grandTotalElem = document.getElementById('grandTotal');
-      if (grandTotalElem) {
-        const observer = new MutationObserver(() => { if (splitMode) window.updateSplitTotal(); });
-        observer.observe(grandTotalElem, { childList: true, subtree: true, characterData: true });
-      }
-      window.addEventListener('click', () => { if (splitMode) window.updateSplitTotal(); });
-  
-      window.getSplitData = function() {
+    };
+
+    // 3. Split Equally Logic
+    document.getElementById('btnSplitEqually').onclick = function() {
+        const grandTotal = parseFloat(document.getElementById('grandTotal').textContent.replace('₹', '')) || 0;
+        const rows = document.querySelectorAll('.recipient-row');
+        const totalPeople = rows.length + 1;
+        const mode = globalModeBtn.textContent;
+
+        if (grandTotal <= 0) { showToast("Enter total amount first", "#f87171"); return; }
+
+        const val = (grandTotal / totalPeople).toFixed(2);
+        const pct = (100 / totalPeople).toFixed(2);
+        const finalVal = (mode === 'Value') ? val : pct;
+
+        document.getElementById('personalShare').value = finalVal;
+        rows.forEach(row => {
+            row.querySelector('input[type="number"]').value = finalVal;
+        });
+        showToast("Distributed equally!");
+    };
+
+    // 4. "+" Button Listener
+    document.getElementById('addRecipientIcon').onclick = () => window.addRecipientRow();
+
+    // 5. Data Retrieval for Save
+    window.getSplitData = function() {
         if (!splitMode) return null;
-        const personal = parseFloat(personalShareInput.value) || 0;
+        const grandTotal = parseFloat(document.getElementById('grandTotal').textContent.replace('₹', '')) || 0;
+        const isPercent = globalModeBtn.textContent === 'Percent';
+
+        const toRealVal = (val) => isPercent ? (val / 100) * grandTotal : val;
+
+        const personal = toRealVal(parseFloat(document.getElementById('personalShare').value) || 0);
         const recipients = [];
         document.querySelectorAll('.recipient-row').forEach(row => {
-          const select = row.querySelector('.recipient-select');
-          const amountInput = row.querySelector('input[type="number"]');
-          const otherInput = row.querySelector('.recipient-other-input');
-          let name = select.value;
-          if (name === 'Other') {
-            name = otherInput.value.trim();
-            if (!name) return;
-          }
-          const amount = parseFloat(amountInput.value) || 0;
-          if (amount > 0) recipients.push({ name, amount });
+            const sel = row.querySelector('.recipient-select');
+            const name = sel.value === 'Other' ? row.querySelector('.recipient-other-input').value : sel.value;
+            const amt = toRealVal(parseFloat(row.querySelector('input[type="number"]').value) || 0);
+            if (amt > 0) recipients.push({ name, amount: amt });
         });
         return { personal, recipients };
-      };
-  
-      window.clearSplitPanel = function() { personalShareInput.value = '0'; clearRecipients(); };
-      window.addRecipientRow = addRecipientRow;
-    })();
-  </script>
+    };
+
+    window.updateSplitTotal = () => {
+        const gt = document.getElementById('grandTotal').innerText;
+        if(splitTotalSpan) splitTotalSpan.textContent = gt;
+    };
+    
+    window.clearSplitPanel = () => {
+        document.getElementById('personalShare').value = '0';
+        recipientsContainer.innerHTML = '';
+        globalModeBtn.textContent = 'Value';
+    };
+
+})();
+</script>
 <div id="toast" class="hidden"></div>
 <div id="confirmPopup" class="modal hidden">
   <div class="confirm-card">
