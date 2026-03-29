@@ -376,8 +376,8 @@
       <div class="nav-fab-container" id="navFab">
         <button type="button" id="fabToggle" title="Navigation">🔗</button>
         <div class="nav-options">
-          <a href="javascript:void(0)" onclick="launchApp('https://oprasannakumar.github.io/LoanTransferGoogleSheets/')" class="nav-item">🔄 Loan Entry</a>
-          <a href="javascript:void(0)" onclick="launchApp('https://oprasannakumar.github.io/Self-TransferGoogleScripts/')" class="nav-item">🏦 Self Transfer</a>
+          <a href="https://oprasannakumar.github.io/LoanTransferGoogleSheets/" class="nav-item">🔄 Loan Entry</a>
+          <a href="https://oprasannakumar.github.io/Self-TransferGoogleScripts/" class="nav-item">🏦 Self Transfer</a>
           <a href="#" class="nav-item" onclick="openRecurringManager()">🔁 Recurring</a>
         </div>
       </div>
@@ -1223,15 +1223,7 @@ function trainPurpose(narration, purpose) {
   words.forEach(word => { if (!globalMemory[word]) globalMemory[word] = {}; if (!globalMemory[word][purpose]) globalMemory[word][purpose] = 0; globalMemory[word][purpose]++; fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ action: "trainMemory", word: word, category: purpose }) }); });
   localStorage.setItem("purposeMemoryCache", JSON.stringify(globalMemory));
 }  
-function launchApp(url) {
-  // Opening with _blank and noopener forces the PWA to look for an external handler (the other app)
-  const newWindow = window.open(url, '_blank', 'noopener,noreferrer');
-  
-  // If the window successfully opened, we can close the FAB menu
-  if (newWindow) {
-    document.getElementById('navFab').classList.remove('active');
-  }
-}
+
 function renderQueue(items) {  
   const body = document.getElementById('queueBody'); 
   body.innerHTML = "";  
