@@ -120,12 +120,17 @@
       transition: all 0.2s ease;
     }
     .mode-btn.active {
-        background: rgba(59, 130, 246, 0.1);
-        color: var(--secondary);
-        border-color:var(--secondary);
+        background: rgba(59, 130, 246, 0.15) !important;
+        color: var(--secondary) !important;
+        border-color: var(--secondary) !important;
         box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
         transform: scale(1.02);
-        transition: all 0.2s ease;
+    }
+     @media (hover: hover) {
+        .mode-btn:hover:not(.active) {
+            background: rgba(59, 130, 246, 0.05);
+            border-color: var(--border-color);
+        }
     }
     .mode-btn:hover {
         background: rgba(59, 130, 246, 0.1);
@@ -651,6 +656,9 @@ document.getElementById('recurringModeBtn').addEventListener('click', () => setM
 document.getElementById('splitModeBtn').addEventListener('click', () => setMode('split', !splitMode));
 
 function setMode(mode, state) {
+  // Force the button to lose focus to clear "sticky" mobile hover states
+  if (document.activeElement) document.activeElement.blur();
+
   if (mode === 'batch') {
     if (state) {
       batchMode = true;
@@ -674,6 +682,7 @@ function setMode(mode, state) {
   }
   updateModeButtons();
 }
+
 
 function updateModeButtons() {
   document.getElementById('batchModeBtn').classList.toggle('active', batchMode);
