@@ -329,18 +329,22 @@
 
     /* Split recipient row styling */
     .recipient-row {
-      position: relative;
-      overflow: hidden;
-      margin-top: 8px;
-    }
-    .recipient-swipe-content {
-      display: grid;
-      grid-template-columns: 1fr 1fr 30px;
-      gap: 8px;
-      align-items: center;
-      transition: transform 0.25s ease, opacity 0.2s ease;
-      touch-action: pan-y;
-    }
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 8px;
+  background: var(--bg-card);
+  border-radius: 10px;
+}
+
+.recipient-swipe-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 4px;
+  transition: transform 0.25s ease, opacity 0.2s ease;
+  touch-action: pan-y;
+  background: var(--bg-card);
+}
     .recipient-other-input {
       grid-column: 1 / span 2;
       margin-top: 4px;
@@ -780,7 +784,8 @@ function enableSwipeToDelete(wrapper) {
   const end = () => {
     if (!isDragging) return;
     isDragging = false;
-    const allRows = document.querySelectorAll('.payment-row-wrapper');
+    const container = wrapper.parentElement;
+const allRows = container.children;
     if (currentX < -150 && allRows.length > 1) {
       content.style.transition = "transform 0.2s ease, opacity 0.2s ease";
       content.style.transform = "translateX(-100%)";
@@ -1096,7 +1101,7 @@ async function processSave() {
     for(let body of window.currentPayloads) { await fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body }); }  
     showToast("✔ Transaction Saved"); 
     updateRecurringNextDate();
-    fullReset();  
+    fullReset(batchMode);
   } catch (err) {  
     saveToDB();  
     showToast("📦 Saved offline", "#3b82f6");  
@@ -1111,7 +1116,7 @@ function saveToDB() {
   tx.oncomplete = () => {
     updatePendingCount();
     showToast(batchMode ? "📦 Added to Batch Queue" : "📦 Saved Offline");
-    fullReset();
+    fullReset(batchMode);
   };
   tx.onerror = (e) => { console.error("Queue save failed", e); showToast("Error saving to queue", "#f87171"); };
 }
@@ -1134,11 +1139,20 @@ function applyAutoFill(text) {
   if (ref) { document.getElementById('referenceWrapper').classList.remove('hidden'); document.getElementById('reference').value = ref; }  
 }  
 
-function fullReset() {  
+function fullReset(keepModes = false) {  
+  // Reset the form values
   document.getElementById('txnForm').reset();  
-  batchMode = false; recurringMode = false; splitMode = false; updateModeButtons();
-  document.getElementById('recurringOptions').classList.add('hidden');
-  document.getElementById('splitPanel').style.display = 'none';
+  
+  // Only reset modes if not explicitly told to keep them
+  if (!keepModes) {
+    batchMode = false; 
+    recurringMode = false; 
+    splitMode = false; 
+    updateModeButtons();
+    document.getElementById('recurringOptions').classList.add('hidden');
+    document.getElementById('splitPanel').style.display = 'none';
+  }
+
   document.getElementById('txnForm').classList.remove('was-validated');  
   document.getElementById('purpose_other').classList.add('hidden');  
   document.getElementById('spent_for_other').classList.add('hidden');  
@@ -1147,13 +1161,21 @@ function fullReset() {
   document.getElementById('purpose_other').disabled = true;  
   document.getElementById('spent_for_other').disabled = true;  
   document.getElementById('referenceWrapper').classList.add('hidden');  
+  
+  // Re-initialize the payment rows
   document.getElementById('paymentContainer').innerHTML = "";   
   createPaymentRow();  
+  
+  // Maintain the date for faster batch entry
   document.getElementById('date').value = getTodayLocal();  
+  
   document.querySelectorAll('.denom-input').forEach(i => i.value = "");  
   if (window.clearSplitPanel) window.clearSplitPanel();
-  toggleCashBlock(); updateGrandTotal();  
-}  
+  
+  toggleCashBlock(); 
+  updateGrandTotal();  
+}
+
 
 function autoPredictPurpose() {
   const narrationField = document.getElementById("narration");
@@ -1691,29 +1713,38 @@ if ('serviceWorker' in navigator) {
 
     // 2. Add Recipient Row
     window.addRecipientRow = function(initialName = "", initialAmount = "") {
-        const rowDiv = document.createElement('div');
-        rowDiv.className = 'recipient-row';
-        rowDiv.style.display = "grid";
-        rowDiv.style.gridTemplateColumns = "1fr 1fr";
-        rowDiv.style.gap = "8px";
-        rowDiv.style.marginBottom = "8px";
+    const rowDiv = document.createElement('div');
+    rowDiv.className = 'recipient-row swipe-wrapper';
 
-        rowDiv.innerHTML = `
+    rowDiv.innerHTML = `
+        <div class="swipe-content recipient-swipe-content">
             <select class="recipient-select">
-                <option>Mother</option><option>Grand Father</option>
-                <option>Chinnama</option><option>Srinivas Babai</option>
-                <option value="Other">Other</option>
+                <option ${initialName === 'Mother' ? 'selected' : ''}>Mother</option>
+                <option ${initialName === 'Grand Father' ? 'selected' : ''}>Grand Father</option>
+                <option ${initialName === 'Chinnama' ? 'selected' : ''}>Chinnama</option>
+                <option ${initialName === 'Srinivas Babai' ? 'selected' : ''}>Srinivas Babai</option>
+                <option value="Other" ${!['Mother','Grand Father','Chinnama','Srinivas Babai',''].includes(initialName) ? 'selected' : ''}>Other</option>
             </select>
             <input type="number" placeholder="0.00" step="0.01" value="${initialAmount}">
-            <input type="text" class="recipient-other-input hidden" placeholder="Custom Name" style="grid-column: span 2; margin-top: -4px;">
-        `;
+            <input type="text" class="recipient-other-input ${(!['Mother','Grand Father','Chinnama','Srinivas Babai',''].includes(initialName) && initialName !== '') ? '' : 'hidden'}" 
+                   placeholder="Custom Name" style="grid-column: span 2; margin-top: 4px;" value="${initialName === 'Other' ? '' : initialName}">
+        </div>
+    `;
 
-        const select = rowDiv.querySelector('.recipient-select');
-        const other = rowDiv.querySelector('.recipient-other-input');
-        select.onchange = () => other.classList.toggle('hidden', select.value !== 'Other');
-
-        recipientsContainer.appendChild(rowDiv);
+    const select = rowDiv.querySelector('.recipient-select');
+    const other = rowDiv.querySelector('.recipient-other-input');
+    
+    select.onchange = () => {
+        other.classList.toggle('hidden', select.value !== 'Other');
+        if(select.value === 'Other') other.focus();
     };
+
+    recipientsContainer.appendChild(rowDiv);
+    
+    // Use the existing payment row swipe logic
+    enableSwipeToDelete(rowDiv);
+};
+
 
     // 3. Split Equally Logic
     document.getElementById('btnSplitEqually').onclick = function() {
