@@ -1223,24 +1223,74 @@ function predictPurposeSmart(text) {
   return best;
 }
 
-async function syncAllData(){
-  // ... existing logic (navigator check, confirm) ...
-  
-  for (let i = 0; i < items.length; i++) {  
-    if(syncAborted) break;  
-    // ... fetch logic ...
+async function syncAllData() {
+  if (!navigator.onLine) {
+    showToast("Internet needed to sync.", "#f87171");
+    return;
+  }
+
+  // Get current items from IndexedDB
+  const txRead = db.transaction(STORE_NAME, "readonly");
+  const storeRead = txRead.objectStore(STORE_NAME);
+  const items = await new Promise(r => { storeRead.getAll().onsuccess = (e) => r(e.target.result); });
+  const keys = await new Promise(r => { storeRead.getAllKeys().onsuccess = (e) => r(e.target.result); });
+
+  if (items.length === 0) {
+    showToast("Queue is empty");
+    return;
+  }
+
+  const ok = await showConfirm(`Start syncing ${items.length} queued transactions?`);
+  if (!ok) return;
+
+  const btnSync = document.getElementById('btnSyncAll');
+  const btnStop = document.getElementById('btnStopSync');
+  syncAborted = false;
+
+  btnSync.classList.add('hidden');
+  btnStop.classList.remove('hidden');
+
+  for (let i = 0; i < items.length; i++) {
+    if (syncAborted) break;
+    btnStop.textContent = `🛑 Stop Syncing (${i + 1}/${items.length})`;
+
     try {
-      await fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: items[i] });
-      
-      // Extract narration to update the specific recurring template date
+      // 1. Send to Google Sheets
+      await fetch(SCRIPT_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: items[i]
+      });
+
+      // 2. Handle Recurring Date Updates if applicable
       const p = new URLSearchParams(items[i]);
       const narration = p.get('narration');
-      triggerRecurringUpdateByNarration(narration); 
-      
-      // ... delete from DB logic ...
-    } catch (err) { /* handle err */ }
+      if (narration) {
+        triggerRecurringUpdateByNarration(narration);
+      }
+
+      // 3. Remove from local IndexedDB
+      await new Promise(res => {
+        const txDel = db.transaction(STORE_NAME, "readwrite");
+        txDel.objectStore(STORE_NAME).delete(keys[i]).onsuccess = () => {
+          updatePendingCount();
+          res();
+        };
+      });
+
+    } catch (err) {
+      console.error("Sync error:", err);
+      showToast("Sync interrupted.", "#f87171");
+      break;
+    }
   }
-  // ... existing cleanup logic ...
+
+  btnStop.classList.add('hidden');
+  btnStop.textContent = "🛑 Stop Sync";
+  btnSync.classList.remove('hidden');
+
+  if (syncAborted) showToast("Sync stopped.");
+  else showToast("✔ All data synced to Drive");
 }
 
 function triggerRecurringUpdateByNarration(narration) {
