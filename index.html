@@ -1098,15 +1098,21 @@ async function processSave() {
   const originalText = btn.textContent;  
   btn.disabled = true; btn.innerHTML = `<span class="saving-text">Saving...</span>`;  
   try {  
-    for(let body of window.currentPayloads) { await fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body }); }  
+    for(let body of window.currentPayloads) { 
+      await fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body }); 
+    }  
     showToast("✔ Transaction Saved"); 
-    updateRecurringNextDate();
-    fullReset(batchMode);
+    
+    // This is the trigger: update the date and push the backup to Drive
+    updateRecurringNextDate(); 
+    
+    fullReset(batchMode);  // Pass batchMode to keep it active if enabled
   } catch (err) {  
     saveToDB();  
     showToast("📦 Saved offline", "#3b82f6");  
   } finally { btn.disabled = false; btn.textContent = originalText; }  
-}  
+}
+
 
 function saveToDB() {
   if (!db) { showToast("Database not ready", "#f87171"); return; }
@@ -1218,27 +1224,52 @@ function predictPurposeSmart(text) {
 }
 
 async function syncAllData(){
-  if (!navigator.onLine){ showToast("Internet needed to sync.","#f87171"); return; }
-  const ok = await showConfirm("Start syncing all queued transactions?");
-  if(!ok) return;
-  const btnSync = document.getElementById('btnSyncAll'); const btnStop = document.getElementById('btnStopSync');
-  syncAborted = false;
-  btnSync.classList.add('hidden'); btnStop.classList.remove('hidden');
-  const tx = db.transaction(STORE_NAME, "readonly"); const store = tx.objectStore(STORE_NAME);  
-  const items = await new Promise(r => { store.getAll().onsuccess = (e) => r(e.target.result); });  
-  const keys = await new Promise(r => { store.getAllKeys().onsuccess = (e) => r(e.target.result); });  
+  // ... existing logic (navigator check, confirm) ...
+  
   for (let i = 0; i < items.length; i++) {  
     if(syncAborted) break;  
-    btnStop.textContent = `🛑 Stop Syncing (${i+1}/${items.length})`;  
-    try {  
-      await fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: items[i] });  
-      updateRecurringNextDate();
-      await new Promise(res => { db.transaction(STORE_NAME, "readwrite").objectStore(STORE_NAME).delete(keys[i]).onsuccess = () => { updatePendingCount(); res(); }; });  
-    } catch (err) { showToast("Sync interrupted."); break; }  
-  }  
-  btnStop.classList.add('hidden'); btnStop.textContent = "🛑 Stop Sync"; btnSync.classList.remove('hidden');  
-  if(syncAborted) showToast("Sync stopped.");  
-}  
+    // ... fetch logic ...
+    try {
+      await fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: items[i] });
+      
+      // Extract narration to update the specific recurring template date
+      const p = new URLSearchParams(items[i]);
+      const narration = p.get('narration');
+      triggerRecurringUpdateByNarration(narration); 
+      
+      // ... delete from DB logic ...
+    } catch (err) { /* handle err */ }
+  }
+  // ... existing cleanup logic ...
+}
+
+function triggerRecurringUpdateByNarration(narration) {
+  let templates = JSON.parse(localStorage.getItem("recurringTemplates") || "[]");
+  let updated = false;
+
+  templates.forEach(t => {
+    if (t.active && t.narration === narration) {
+      let d = new Date(t.date);
+      if (t.frequency === "weekly") d.setDate(d.getDate() + 7);
+      else if (t.frequency === "monthly") d.setMonth(d.getMonth() + 1);
+      else if (t.frequency === "quarterly") d.setMonth(d.getMonth() + 3);
+      else if (t.frequency === "halfyearly") d.setMonth(d.getMonth() + 6);
+      else if (t.frequency === "yearly") d.setFullYear(d.getFullYear() + 1);
+      else if (t.frequency === "custom") d.setDate(d.getDate() + (Number(t.customDays) || 1));
+
+      const yyyy = d.getFullYear(), mm = String(d.getMonth() + 1).padStart(2, '0'), dd = String(d.getDate()).padStart(2, '0');
+      t.date = `${yyyy}-${mm}-${dd}`;
+      updated = true;
+    }
+  });
+
+  if (updated) {
+    localStorage.setItem("recurringTemplates", JSON.stringify(templates));
+    syncRecurringBackup(); // This pushes the new dates to Google Drive backup
+    renderUpcomingRecurring();
+  }
+}
+
 
 function trainPurpose(narration, purpose) {
   const words = narration.toLowerCase().split(/\s+/).filter(w => w.length > 2 && !STOP_WORDS.includes(w));
