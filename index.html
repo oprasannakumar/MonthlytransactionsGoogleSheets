@@ -1228,13 +1228,71 @@ function fullReset(keepModes = false) {
 
 function autoPredictPurpose() {
   const narrationField = document.getElementById("narration");
-  const suggestion = predictPurposeSmart(narrationField.value);
-  if (!suggestion) return;
+  const text = narrationField.value.toLowerCase().trim();
+  const flowField = document.getElementById('flow');
   const purposeSelect = document.getElementById("purpose");
-  const otherInput = document.getElementById("purpose_other");
-  const optionExists = Array.from(purposeSelect.options).some(opt => opt.value === suggestion);
-  if (optionExists) { purposeSelect.value = suggestion; toggleSmartOther(purposeSelect, 'purpose_other', 'purposeSmartRow', true); }
-  else { purposeSelect.value = "Other"; toggleSmartOther(purposeSelect, 'purpose_other', 'purposeSmartRow', true); otherInput.value = suggestion; }
+  const spentForSelect = document.getElementById("spent_for");
+
+  // 1. AUTO-FLOW LOGIC
+  const depositWords = ["credited", "received", "recieved", "income", "added", "salary", "refund", "cashback"];
+  const withdrawWords = ["paid", "given", "debited", "spent", "purchased", "bought", "payment", "bill"];
+
+  if (depositWords.some(word => text.includes(word))) {
+    flowField.value = "deposit";
+  } else if (withdrawWords.some(word => text.includes(word))) {
+    flowField.value = "withdraw";
+  }
+
+  // 2. KEYWORD MAPPING (Customized for Prasanna)
+  const mapping = {
+    "Food": ["pani puri", "swiggy", "zomato", "restaurant", "cafe", "sitara", "dinner", "lunch", "breakfast", "sweets", "bakery", "mess"],
+    "Grocery": ["bigbasket", "zepto", "bbnow", "supermarket", "milk", "vegetables", "kirana", "mart", "blinkit"],
+    "Travelling": ["ola", "uber", "rapido", "bus", "train", "flight", "redbus", "auto", "ooty", "tirupati", "mysore", "coimbatore", "nandi hills", "petrol", "charging", "simple one", "ev"],
+    "Utility Bills": ["electricity", "recharge", "water", "wifi", "internet", "jio", "airtel", "gas", "current bill"],
+    "Entertainment": ["netflix", "theatre", "cinema", "movie", "bookmyshow", "pvr", "pvp", "inox", "prime video", "disney"],
+    "Medicines": ["apollo", "pharmacy", "medical", "tablet", "hospital", "doctor", "health"],
+    "House": ["rent", "maintenance", "maid", "plumber", "electrician", "furniture", "cleaning"],
+    "Income": ["salary", "bonus", "dividend", "interest", "incentive"],
+    "Shopping": ["amazon", "flipkart", "myntra", "clothes", "shirt", "shoes"]
+  };
+
+  // 3. FIND BEST MATCH
+  let suggestedPurpose = "";
+  for (const [category, keywords] of Object.entries(mapping)) {
+    if (keywords.some(kw => text.includes(kw))) {
+      suggestedPurpose = category;
+      break;
+    }
+  }
+
+  // Apply Purpose
+  if (suggestedPurpose) {
+    purposeSelect.value = suggestedPurpose;
+    toggleSmartOther(purposeSelect, 'purpose_other', 'purposeSmartRow', true);
+  } else {
+    // Fallback to the Smart Memory logic if no direct keyword match
+    const memorySuggestion = predictPurposeSmart(text);
+    if (memorySuggestion) {
+      const optionExists = Array.from(purposeSelect.options).some(opt => opt.value === memorySuggestion);
+      if (optionExists) {
+        purposeSelect.value = memorySuggestion;
+        toggleSmartOther(purposeSelect, 'purpose_other', 'purposeSmartRow', true);
+      }
+    }
+  }
+
+  // 4. AUTO-SPENT FOR (Logic for Family)
+  if (text.includes("mother") || text.includes("amma")) {
+    spentForSelect.value = "Mother";
+  } else if (text.includes("grand") || text.includes("tatha")) {
+    spentForSelect.value = "Grand Father";
+  } else if (text.includes("house") || text.includes("home")) {
+    spentForSelect.value = "House";
+  } else if (text.length > 0) {
+    spentForSelect.value = "Self"; // Default to self if typing
+  }
+  
+  toggleSmartOther(spentForSelect, 'spent_for_other', 'spentSmartRow', true);
 }
 
 function checkRecurringTemplates(){
