@@ -1969,34 +1969,64 @@ if ('serviceWorker' in navigator) {
     const rowDiv = document.createElement('div');
     rowDiv.className = 'recipient-row swipe-wrapper';
 
+    // List of your standard options
+    const standardOptions = ["Mother", "Grand Father", "Family", "Pedhamma", "Vasavi", "Sandeep"];
+    const isContactApiSupported = ('contacts' in navigator && 'ContactsManager' in window);
+
     rowDiv.innerHTML = `
         <div class="swipe-content recipient-swipe-content">
             <select class="recipient-select">
-                <option ${initialName === 'Mother' ? 'selected' : ''}>Mother</option>
-                <option ${initialName === 'Grand Father' ? 'selected' : ''}>Grand Father</option>
-                <option ${initialName === 'Chinnama' ? 'selected' : ''}>Chinnama</option>
-                <option ${initialName === 'Srinivas Babai' ? 'selected' : ''}>Srinivas Babai</option>
-                <option value="Other" ${!['Mother','Grand Father','Chinnama','Srinivas Babai',''].includes(initialName) ? 'selected' : ''}>Other</option>
+                ${standardOptions.map(name => 
+                    `<option value="${name}" ${initialName === name ? 'selected' : ''}>${name}</option>`
+                ).join('')}
+                <option value="Other" ${initialName && !standardOptions.includes(initialName) ? 'selected' : ''}>Other</option>
             </select>
             <input type="number" placeholder="0.00" step="0.01" value="${initialAmount}">
-            <input type="text" class="recipient-other-input ${(!['Mother','Grand Father','Chinnama','Srinivas Babai',''].includes(initialName) && initialName !== '') ? '' : 'hidden'}" 
-                   placeholder="Custom Name" style="grid-column: span 2; margin-top: 4px;" value="${initialName === 'Other' ? '' : initialName}">
+            <div class="recipient-other-wrapper ${(!standardOptions.includes(initialName) && initialName !== '') ? '' : 'hidden'}" 
+                 style="grid-column: span 2; display: flex; gap: 5px; margin-top: 4px;">
+                <input type="text" class="recipient-other-input" placeholder="Custom Name" 
+                       style="flex: 1; margin-top:0;" value="${(!standardOptions.includes(initialName)) ? initialName : ''}">
+                ${isContactApiSupported ? '<button type="button" class="btn-contact-picker" style="width: 42px; margin-top:0; background: var(--bg-input); border-radius:10px; border:1px solid var(--border-color);">👤</button>' : ''}
+            </div>
         </div>
     `;
 
     const select = rowDiv.querySelector('.recipient-select');
-    const other = rowDiv.querySelector('.recipient-other-input');
+    const otherWrapper = rowDiv.querySelector('.recipient-other-wrapper');
+    const pickerBtn = rowDiv.querySelector('.btn-contact-picker');
     
     select.onchange = () => {
-        other.classList.toggle('hidden', select.value !== 'Other');
-        if(select.value === 'Other') other.focus();
+        const isOther = select.value === 'Other';
+        otherWrapper.classList.toggle('hidden', !isOther);
+        if(isOther) otherWrapper.querySelector('input').focus();
     };
 
+    if(pickerBtn) {
+        pickerBtn.onclick = () => selectFromContacts(otherWrapper.querySelector('input'));
+    }
+
     recipientsContainer.appendChild(rowDiv);
-    
-    // Use the existing payment row swipe logic
     enableSwipeToDelete(rowDiv);
 };
+async function selectFromContacts(targetInput) {
+    const props = ['name'];
+    const opts = { multiple: false };
+
+    try {
+        const contacts = await navigator.contacts.select(props, opts);
+        if (contacts.length > 0 && contacts[0].name && contacts[0].name.length > 0) {
+            // Pick the first name found for that contact
+            targetInput.value = contacts[0].name[0];
+            showToast("👤 Contact imported");
+        }
+    } catch (ex) {
+        if (ex.name !== 'AbortError') {
+            console.error('Contact Picker Error:', ex);
+            showToast("Failed to open contacts", "#f87171");
+        }
+    }
+}
+
 
 
     // 3. Split Equally Logic
