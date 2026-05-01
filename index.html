@@ -1641,17 +1641,18 @@ function updateRecurringNextDate(){
 }
 
 function renderUpcomingRecurring() {
-  const list = JSON.parse(localStorage.getItem("recurringTemplates") || []);
+  const list = JSON.parse(localStorage.getItem("recurringTemplates") || "[]");
   const preview = document.getElementById("recurringPreview");
   const todayDate = new Date();
   todayDate.setHours(0, 0, 0, 0);
 
-  const dueTemplates = list.filter(t => {
-    if (!t.active || !t.date) return false;
-    const dueDate = new Date(t.date);
-    dueDate.setHours(0, 0, 0, 0);
-    return dueDate <= todayDate;  // Show if due today or earlier
-  });
+  const dueTemplates = list.map((t, index) => ({ ...t, originalIndex: index }))
+    .filter(t => {
+      if (!t.active || !t.date) return false;
+      const dueDate = new Date(t.date);
+      dueDate.setHours(0, 0, 0, 0);
+      return dueDate <= todayDate;
+    });
 
   if (dueTemplates.length === 0) {
     preview.classList.add("hidden");
@@ -1659,28 +1660,98 @@ function renderUpcomingRecurring() {
   }
 
   preview.classList.remove("hidden");
-  preview.innerHTML = `🔁 ${dueTemplates.length} recurring transaction${dueTemplates.length > 1 ? "s" : ""} pending<br>${dueTemplates.map(t => `• ${t.narration}`).join("<br>")}`;
+  
+  let html = `<div style="font-weight:700; margin-bottom:8px; color:var(--primary); font-size:13px; display:flex; align-items:center; gap:5px;">
+                <span>🔁 Due Today</span>
+              </div>`;
+  
+  dueTemplates.forEach(t => {
+    let amt = "0.00";
+    let acc = "";
+
+    if (t.split_enabled) {
+      // For Split Mode, calculate total from payments array
+      const total = t.payments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
+      amt = total.toFixed(2);
+      acc = "✂️ Split";
+    } else if (t.payments && t.payments.length > 0) {
+      // For Normal Mode, parse from URLSearchParams
+      const p = new URLSearchParams(t.payments[0]);
+      amt = p.get("withdrawn") !== "0" ? p.get("withdrawn") : p.get("deposit");
+      acc = p.get("from_to");
+    }
+
+    html += `
+      <div onclick="loadRecurring(${t.originalIndex})" 
+           style="cursor:pointer; padding:10px; margin-bottom:6px; background: var(--bg-card); border-radius:10px; border:1px solid var(--border-color); box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: transform 0.1s active;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+          <div style="font-weight:600; font-size:13px; color:var(--text-main);">${t.narration}</div>
+          <div style="font-weight:700; font-size:13px; color:var(--primary);">₹${amt}</div>
+        </div>
+        <div style="display:flex; justify-content:space-between; margin-top:4px; font-size:11px; color:var(--text-label);">
+          <span>📂 ${t.purpose}</span>
+          <span style="font-style:italic;">💳 ${acc}</span>
+        </div>
+      </div>`;
+  });
+
+  preview.innerHTML = html;
 }
-function loadRecurring(index){
-  window.activeRecurringIndex = index;
+
+
+function loadRecurring(index) {
   const templates = JSON.parse(localStorage.getItem("recurringTemplates") || "[]");
   const t = templates[index];
+  if (!t) return;
+
+  // Clear current form state
+  fullReset(true); 
+
+  // Set Date to the Scheduled Date (or Today if overdue)
   const today = new Date();
-  let year = today.getFullYear(), month = today.getMonth();
-  const recurringDay = t.date ? new Date(t.date).getDate() : t.day;
-  if (today.getDate() < recurringDay) month -= 1;
-  const final = new Date(year, month, recurringDay);
-  const yyyy = final.getFullYear(), mm = String(final.getMonth()+1).padStart(2,'0'), dd = String(final.getDate()).padStart(2,'0');
-  document.getElementById("date").value = `${yyyy}-${mm}-${dd}`;
+  const scheduledDate = new Date(t.date);
+  document.getElementById("date").value = scheduledDate <= today ? t.date : getTodayLocal();
+
+  // Basic Fields
   document.getElementById("narration").value = t.narration;
   document.getElementById("purpose").value = t.purpose;
   document.getElementById("spent_for").value = t.spent_for;
   document.getElementById("flow").value = t.flow;
-  document.getElementById("paymentContainer").innerHTML="";
-  t.payments.forEach(p=>{ const params = new URLSearchParams(p); createPaymentRow({ type: params.get("trtype"), acc: params.get("from_to"), amt: params.get("withdrawn") || params.get("deposit") }); });
+
+  // Toggle "Other" inputs if necessary
+  toggleSmartOther(document.getElementById("purpose"), 'purpose_other', 'purposeSmartRow', true);
+  toggleSmartOther(document.getElementById("spent_for"), 'spent_for_other', 'spentSmartRow', true);
+
+  // Handle Split Mode vs Normal Mode
+  if (t.split_enabled) {
+    setMode('split', true);
+    document.getElementById('personalShare').value = t.personal_share;
+    const container = document.getElementById('recipientsContainer');
+    container.innerHTML = '';
+    t.recipients.forEach(r => window.addRecipientRow(r.name, r.amount));
+    
+    document.getElementById('paymentContainer').innerHTML = "";
+    t.payments.forEach(p => createPaymentRow({ type: p.type, acc: p.account, amt: p.amount }));
+  } else {
+    setMode('split', false);
+    document.getElementById("paymentContainer").innerHTML = "";
+    t.payments.forEach(p => {
+      const params = new URLSearchParams(p);
+      createPaymentRow({ 
+        type: params.get("trtype"), 
+        acc: params.get("from_to"), 
+        amt: params.get("withdrawn") || params.get("deposit") 
+      });
+    });
+  }
+
   updateGrandTotal();
-  closeRecurringManager();
+  showToast("📥 Template Loaded");
+  
+  // Optional: Auto-scroll to top of form on mobile
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
+
 
 async function deleteRecurring(index){
   const ok = await showConfirm("Delete this recurring template?");
